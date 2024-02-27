@@ -1,0 +1,19 @@
+{
+
+    "env_name": "flag_automata",
+
+    "ind_size": 12,
+    "min_value": -1,
+    "max_value": 1,
+    "min_strategy": null,
+    "max_strategy": null,
+    "nb_gen": null,
+    "mu": null,
+    "off_lambda": 5,
+
+    "init_cell_state_value": 0.0,
+
+    "verbose_debug": false,
+    "write_analyses_bool": true,
+    "withParallelization_bool": false
+}
