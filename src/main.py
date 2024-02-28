@@ -1,37 +1,32 @@
 import time
 
-import json
+import numpy as np
+
+from deap import tools
 
 from initializations import *
 from analysis import *
 
-import numpy as np
+import json
 
 sep = "\n################################################\n"
 
 
 
 
-def cmaES_EvoAlgorithm():
+def cmaES_EvoAlgorithm(run, params):
 
-
-    params = get_parameters_from_json()
-    params = init_analysis(params)
-    params = set_env(params)
+    params = init_one_run_analysis(run, params)
     toolbox = init_toolbox(params)
 
-    save_data_to_csv(params['analysis_dir'] + "/data/data_all_pop.csv", [], header = ["Generation", "Fitness", "Individual"])
 
+    # ind_x = [] 
+    # ind_y = []
 
+    # minall= np.inf
+    # best_ind = None
 
-    
-
-
-    ind_x = [] 
-    ind_y = []
-
-
-    for gen in range(1):
+    for gen in range(params['nb_generations']):
 
 
 
@@ -43,25 +38,31 @@ def cmaES_EvoAlgorithm():
         # http://deap.gel.ulaval.ca/doc/default/examples/eda.html
 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
-        minfit = np.inf
+        # best_ind_gen = None
+        # mingen = np.inf
+
+
+
         eval_results = toolbox.map(toolbox.evaluate, population)
         for ind, fit in zip(population, eval_results):
 
             # final individual evaluation
             ind.fitness.values = fit
-            # ind.fit = fit
-            # ind_x.append(ind[0])
-            # ind_y.append(ind[1])
-            # print(ind, ind[0], ind[1])
-            if fit[0] < minfit:
-                best_ind = ind
-                minfit = fit[0]
+
+            # if fit[0] < mingen:
+            #     print("nex best gen", gen, fit[0])
+            #     best_ind_gen = ind
+            #     mingen = fit[0]
+
+            #     if fit[0] < minall:
+            #         best_ind = ind
+            #         minall = fit[0]
 
             # if True:
             #     print("evaluate: ind =", ind, "ind.fit =", fit)
-                
+        # print("gen", gen, "best", best_ind_gen[0], best_ind_gen[1], mingen)
 
-        write_EvoAlgorithm_data(gen, population)
+        write_single_run_data(run, gen, population, params['analysis_dir_data'])
 
         toolbox.update(population) # update the current covariance matrix strategy from the population; update the strategy with the evaluated individuals
 
@@ -73,7 +74,8 @@ def cmaES_EvoAlgorithm():
         # ind_y = []
 
 
-    print("best", best_ind[0], best_ind[1], minfit )
+    # print("run", run, "best", best_ind[0], best_ind[1], minall)
+    plot_single_run_data(params['analysis_dir_data'], params['analysis_dir_plots'])
     #plot(params['analysis_dir'])
 
     #---------------------------------------------------
@@ -116,23 +118,22 @@ def cmaES_EvoAlgorithm():
 
 if (__name__ == "__main__"):
 
-    # Launch the Evolutionary Algorithm
-    t = time.time()
-    params = cmaES_EvoAlgorithm()
-    t = time.time() - t
-    print("\nExecution time:", t, "seconds")
+    params = get_parameters_from_json()
+    params = init_all_runs_analysis(params)
+    params = set_env(params)
 
-    # Save a trace of used parameters for this run in run_params.json
-    params['execution_time'] = t
+    for run in range(params['nb_runs']):
+        # Launch the Evolutionary Algorithm
+        t = time.time()
+        params = cmaES_EvoAlgorithm(run, params)
+        t = time.time() - t
+        print("\ncmaES run n." + str(run) + " - Execution time:", t, "seconds") # kale change save time for each run
+
+    # Save a trace of used parameters for this simulation in run_params.json
+    params['simulation_execution_time'] = t # kale useful?
     del params['env']['eval_function'] # not JSON serializable object
     with open(params['analysis_dir'] + "/run_params.json", "w") as f:
         json.dump({k:v for k,v in params.items()}, f, indent=2)
 
-
-        
-    # if global_params['write_analyses_bool']:
-    #     write_success_archives(analysis_dir, env_fit=global_params['eval_fit_params']['env_fit'], ds_success_threshold=0.0, best_fitness=global_params['eval_fit_params']['best_fitness']-global_params['eval_fit_params']['best_fitness_lim'])
-    #     print("Results saved in " + analysis_dir)
-
-    #     if global_params['plot_analyses']:
-    #         plot_all_metrics(analysis_dir, global_params, global_params['show_plot_bool'])
+    write_all_runs_data(params['analysis_dir'])
+    # plot_all_runs_data(params['analysis_dir'])

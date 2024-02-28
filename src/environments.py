@@ -33,15 +33,9 @@ def rastrigin_function(a):
     return (result,)
 
 
-def flag_automata(time_steps, time_window_start, time_window_end, analysis_dir, weights):
-    time_steps = 10
-    time_window_start = 7
-    time_window_end = 10
-    # self.time_steps = 200 # evolution time, i.e. total life of the automata
-    # self.time_window_start = 140 # time_window_start is in [0, time_window_end]
-    # self.time_window_end = 200 # time_window_end is in [time_window_start, time_steps]
+def flag_automata(automata_nb_rows, automata_nb_cols, time_steps, time_window_start, time_window_end, analysis_dir, weights):
 
-    fa = flagAutomata(automata_nb_rows=3, automata_nb_cols=5)
+    fa = flagAutomata(automata_nb_rows, automata_nb_cols)
     fa.set_cell_controller(weights)
 
     flags_distance = None
@@ -52,25 +46,15 @@ def flag_automata(time_steps, time_window_start, time_window_end, analysis_dir, 
             flags_distance = fa.eval_flags_distance()
             sum_flags_distances += flags_distance
 
-        fa.write_flagAutomata_data(t, flags_distance, weights, analysis_dir=analysis_dir + "/data")
+        fa.write_flagAutomata_data(t, flags_distance, weights, analysis_dir=analysis_dir+"/data")
         fa.step()
 
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
 
-
-
-
-
-    # plot flag target
-    # flag_target_list = fa.convert_flag_to_list(fa.flag_target)
-    # fa.plot_flag_target(flag_target_list, title = "Flag target", analysis_dir=analysis_dir + "/plots/flags", )
-
     # plot flag
-    fa.plot_flag_target2(data_flag_file=analysis_dir+"/data/data_flag_target.csv", title="Flaggggggghhhhh target", analysis_dir=analysis_dir+"/plots/flags")
-    fa.plot_flag_target2(data_flag_file=analysis_dir+"/data/data_flag.csv", title="Flaggggggghhhhh", analysis_dir=analysis_dir+"/plots/flags")
+    # fa.plot_flag_from_file(data_flag_file=analysis_dir+"/data/data_flag_target.csv", title="Flag target", analysis_dir=analysis_dir+"/plots/flags")
+    # fa.plot_flag_from_file(data_flag_file=analysis_dir+"/data/data_flag.csv", title="Flag", analysis_dir=analysis_dir+"/plots/flags")
 
-
-    exit()
     return (mean_tw_flags_distances,)
 
 
@@ -206,38 +190,7 @@ class flagAutomata:
 
     #---------------------------------------------------
 
-    def plot_flag_target(self, flag_target_list, title, analysis_dir):
-        circle_radius = 0.4
-
-        fig, ax = plt.subplots()
-
-        for cell, neighbors in self.map_cell_neighbors.items():
-            for neighbor in neighbors:
-                if neighbor:
-                    ax.plot([cell[1], neighbor[1]], [-cell[0], -neighbor[0]], color='black', linestyle=':', zorder=1)
-
-        for p, pos in enumerate(self.map_cell_neighbors.keys()):
-            c = flag_target_list[p]
-        
-            if c > 0.9:
-                circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='-', linewidth=1.0, zorder=2)    
-            else:
-                circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(c), facecolor='white', linewidth=6.0, zorder=2)
-            ax.add_patch(circle)
-            ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(flag_target_list[p],2)), color='black', va='center', ha='center')
-
-        ax.set_aspect('equal')
-        plt.xlim(-0.5, self.automata_nb_cols-0.5)
-        plt.ylim(-self.automata_nb_rows+0.5, 0.5)
-        plt.axis('off')
-        plt.title(title)
-
-        os.makedirs(analysis_dir, exist_ok=True)
-        plt.savefig(analysis_dir + "/" + title)
-
-    #---------------------------------------------------
-
-    def plot_flag_target2(self, data_flag_file, title, analysis_dir):
+    def plot_flag_from_file(self, data_flag_file, title, analysis_dir):
 
         dataset = pd.read_csv(data_flag_file)
 
@@ -253,9 +206,6 @@ class flagAutomata:
                 flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
 
 
-
-                circle_radius = 0.4
-
                 fig, ax = plt.subplots()
 
                 for cell, neighbors in self.map_cell_neighbors.items():
@@ -263,13 +213,14 @@ class flagAutomata:
                         if neighbor:
                             ax.plot([cell[1], neighbor[1]], [-cell[0], -neighbor[0]], color='black', linestyle=':', zorder=1)
 
+                circle_radius = 0.4
                 for p, pos in enumerate(self.map_cell_neighbors.keys()):
-                    c = flag_list[p]
+                    grey_value = flag_list[p]
                 
-                    if c > 0.9:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='-', linewidth=1.0, zorder=2)    
+                    if grey_value > 0.9: # close to white
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
                     else:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(c), facecolor='white', linewidth=6.0, zorder=2)
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
                     ax.add_patch(circle)
                     ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(flag_list[p],2)), color='black', va='center', ha='center')
 
@@ -284,64 +235,8 @@ class flagAutomata:
                         os.makedirs(analysis_dir + "/flag_individual_"+str(i), exist_ok=True)
                         with open (analysis_dir + "/flag_individual_"+str(i)+"/flag_individual.txt", 'w') as f:
                             f.write(ind + "\n")
-                
                     plt.savefig(analysis_dir + "/flag_individual_"+str(i)+"/flag_step_"+str(step)+".png")
+
                 else: # target
                     os.makedirs(analysis_dir, exist_ok=True)
                     plt.savefig(analysis_dir + "/" + title)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def plot_flag(self, flag_list):
-
-
-                fig, ax = plt.subplots()
-
-
-
-                # Draw connections
-                for cell, neighbors in self.map_cell_neighbors.items():
-                    for neighbor in neighbors:
-                        if neighbor:
-                            ax.plot([cell[1], neighbor[1]], [-cell[0], -neighbor[0]], color='black', linestyle='--')
-
-                for p, pos in enumerate(self.map_cell_neighbors.keys()):
-                    c = str((1 - flag_list[p])/2)
-                    circle_radius = 0.4
-                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=c, facecolor='white', linewidth=3.0)
-                    ax.add_patch(circle)
-                    # ax.add_artist(circle)
-                    ax.text(pos[1], -pos[0], "(" + str(pos[1]) +"," + str(-pos[0]) + ")\n"+ str(round(flag_list[p],2)), color='black', va='center', ha='center')
-                plt.title(str(step))
-
-                ax.set_aspect('equal', adjustable='box')
-                plt.xlim(-circle_radius, self.automata_nb_cols + circle_radius)
-                plt.ylim(-circle_radius, self.automata_nb_rows + circle_radius)
-                plt.axis('off')
-
-                if int(step) == 0:
-                    os.makedirs(analysis_dir + "/flag_individual_"+str(i), exist_ok=True)
-                    with open (analysis_dir + "/flag_individual_"+str(i)+"/flag_individual.txt", 'w') as f:
-                        f.write(ind + "\n")
-                
-                plt.savefig(analysis_dir + "/flag_individual_"+str(i)+"/flag_step_"+str(step)+".png")
-
-                plt.clf()

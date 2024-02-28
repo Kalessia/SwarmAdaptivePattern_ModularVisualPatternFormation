@@ -1,19 +1,15 @@
-import os
-from datetime import datetime
-
 import multiprocessing
 
 from deap import creator
 from deap import base
-from deap import tools
 from deap import algorithms
 from deap import cma
 
-import numpy
+import numpy as np
+import random
 
 from environments import *
 
-import csv
 import json
 
 
@@ -74,9 +70,11 @@ def set_env(params):
                     'flag_automata': {
                         'eval_function': flag_automata, 
                         'eval_function_params': {
-                            'time_steps': 200,
-                            'time_window_start': 140,
-                            'time_window_end': 200
+                            'automata_nb_rows': params['automata_nb_rows'], 
+                            'automata_nb_cols': params['automata_nb_cols'],
+                            'time_steps': params['time_steps'],
+                            'time_window_start': params['time_window_start'],
+                            'time_window_end': params['time_window_end']
                         },
                         'env_boundaries': None,
                         'toolbox_cmaes': {
@@ -142,18 +140,19 @@ def set_env(params):
 
 def init_toolbox(params):
 
-    numpy.random.seed(14)
+    # numpy.random.seed(14)
+    np.random.seed(random.randint(1, 100))
+    
+    toolbox = base.Toolbox()
 
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
     creator.create("Individual", list, fitness=creator.FitnessMin)
-    
     creator.create("Strategy", list)
     
-    toolbox = base.Toolbox()
-    toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params']['time_steps'], params['env']['eval_function_params']['time_window_start'], params['env']['eval_function_params']['time_window_end'], params['analysis_dir'])
+    toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params']['automata_nb_rows'], params['env']['eval_function_params']['automata_nb_cols'], params['env']['eval_function_params']['time_steps'], params['env']['eval_function_params']['time_window_start'], params['env']['eval_function_params']['time_window_end'], params['analysis_dir_run'])
     # kale solve acquisition
 
-    if params['withParallelization_bool']:
+    if params['with_parallelization_bool']:
         pool = multiprocessing.Pool()
         toolbox.register("map", pool.map)
     else:
@@ -165,58 +164,6 @@ def init_toolbox(params):
 
     toolbox.register("generate", strategy.generate, creator.Individual)
     toolbox.register("update", strategy.update)
-
-
-
-
-
-    # if global_params['algo'] not in implemented_algos:
-    #     print("main.py --- Error in DEAP initialization: unknown QD algorithm in global_params['algo'].")
-    #     exit()
-
-    # elif global_params['algo'] in ["NS+FIT", "NSLC"]: # multi-objectives to maximize by Pareto front
-    #     # NSGA-II uses a binary tournament mating selection: each individual is first compared by rank and then by crowding distance.
-    #     # rank = individuals are selected frontwise. By doing so, there will be the situation
-    #     # where a front needs to be split because not all individuals are allowed to survive.
-    #     # In this splitting front, solutions are selected based on crowding distance (Manhatten Distance in the objective space).
-    #     creator.create("MyFitness", base.Fitness, weights=(1.0,1.0)) 
-    #     toolbox.register("select", tools.selNSGA2)
-
-    # else: # [NS, MAP-Elites, MAP-Elites-S] # mono-objective to maximize
-    #     # Select the k 'best' individuals among the input individuals, following 'fitness' or 'novelty'
-    #     creator.create("MyFitness", base.Fitness, weights=(1.0,))
-    #     toolbox.register("select", tools.selBest) 
-
-    # NB: [DeepGrid, DeepGrid-S] selection is made with the fitness_proportionate_selection function, in archive.py
-
-
-    # creator.create("Individual", array.array, typecode="d", fitness=creator.MyFitness, strategy=None)
-    # creator.create("Strategy", array.array, typecode="d")
-
-    # toolbox.register("individual", generateES, creator.Individual, creator.Strategy, 
-    #                  global_params["ind_size"],
-    #                  global_params["min_value"],
-    #                  global_params["max_value"],
-    #                  global_params["min_strategy"],
-    #                  global_params["max_strategy"])
-
-    # toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-    # toolbox.register("mate", tools.cxESBlend, alpha=0.1)
-
-    # if global_params['fitness_strategy'] == "DS":
-    #     toolbox.register("mutate", tools.mutGaussian, mu=0., sigma=global_params['mut_sigma'], indpb=global_params['mut_indpb'])
-    # else:
-    #     toolbox.register("mutate", tools.mutESLogNormal, c=1.0, indpb=global_params['mut_indpb']) # default: c=1.0, indpb=0.3
-
-
-    # toolbox.register("map", futures.map)
-
-    # # toolbox.decorate("mate", checkStrategy(global_params["min_strategy"]))
-    # # toolbox.decorate("mutate", checkStrategy(global_params["min_strategy"]))
-
-    # toolbox.register("evaluate", global_params['eval_functiontion'], **global_params['eval_params'], **global_params['env_DS_params'], **global_params['eval_fit_params'], **global_params['noise_params'])
-    # toolbox.register("evaluate_det", global_params['eval_functiontion'], **global_params['eval_params'], **global_params['env_DS_params'], **global_params['eval_fit_params'], noise_bool=False)
 
     return toolbox
 

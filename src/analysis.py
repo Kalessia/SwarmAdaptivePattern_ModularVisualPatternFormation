@@ -1,10 +1,13 @@
 import os
-import datetime
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
+from operator import attrgetter
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+import seaborn as sns
 
 import csv
 
@@ -12,15 +15,28 @@ import csv
 analysis_dir = ""
 
 
-def init_analysis(params):
+def init_all_runs_analysis(params):
 
     # Analysis folders creation
     global analysis_dir
     analysis_dir = "simulationAnalysis/" + params['env_name'] + "_simulation_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     os.makedirs(analysis_dir, exist_ok=True)
-    os.makedirs(analysis_dir + "/data", exist_ok=True)
-    os.makedirs(analysis_dir + "/plots", exist_ok=True)
     params['analysis_dir'] = analysis_dir
+
+    return params
+
+
+def init_one_run_analysis(run, params):
+
+    # Analysis folders creation
+    params['analysis_dir_run'] = params['analysis_dir'] + "/run_" + str(run)
+    params['analysis_dir_data'] = params['analysis_dir'] + "/run_" + str(run) + "/data"
+    params['analysis_dir_plots'] = params['analysis_dir'] + "/run_" + str(run) + "/plots"
+    os.makedirs(params['analysis_dir_data'], exist_ok=True)
+    os.makedirs(params['analysis_dir_plots'], exist_ok=True)
+
+    save_data_to_csv(params['analysis_dir_data'] + "/data_all_pop.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir_data'] + "/data_best_inds.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
 
     return params
 
@@ -43,21 +59,113 @@ def save_data_to_csv(fichier_name, data, header=None):
 
 
 
-def write_EvoAlgorithm_data(gen, population):
+def write_single_run_data(run, gen, population, analysis_dir_data):
 
-    # population data: Generation, Behavior_descriptor_x,Behavior_descriptor_y, Novelty, Fitness, Individual
-    data_all_pop = []
+    data_all_pop = [] # data_all_pop: Generation, Fitness, Individual
+    data_best_ind = [] # data_best_ind: Generation, Fitness, Individual
     for ind in population:
-        data_all_pop.append([str(gen), str(ind.fitness.values[0]).strip(), str(ind).strip()]) # [0]: en fonction de len fitness Kale
+        data_all_pop.append([str(run), str(gen), str(ind.fitness.values[0]).strip(), str(ind).strip()]) # [0]: en fonction de len fitness Kale
 
-    save_data_to_csv(analysis_dir + "/data/data_all_pop.csv", data_all_pop)
+    best_ind = max(population, key=attrgetter("fitness")) # 'max' is the best fitness, deap manage if 'max' is maximization or minimization
+    data_best_ind.append([str(run), str(gen), str(best_ind.fitness.values[0]).strip(), str(best_ind).strip()])
 
-    # data_best_inds_fit = save_data_to_csv(analysis_dir + "/data_best_inds_fit.csv", data_best_inds_fit)
+    save_data_to_csv(analysis_dir_data + "/data_all_pop.csv", data_all_pop)
+    save_data_to_csv(analysis_dir_data + "/data_best_inds.csv", data_best_ind)
 
 
 
+def write_all_runs_data(analysis_dir):
+
+    analysis_single_run_dirs = os.listdir(analysis_dir)
+    analysis_single_run_dirs.remove('run_params.json')
+    analysis_single_run_dirs.sort()
+
+    data_all_runs_best_inds = []
+
+    for single_run_dir in analysis_single_run_dirs:
+
+        path = analysis_dir + "/" + single_run_dir + "/data/data_best_inds.csv"
+        df = pd.read_csv(path)
+
+        single_run_best_fitness = df['Fitness'].min()
+        single_run_best_inds = df.loc[(df.Fitness==single_run_best_fitness)]
+
+        for index in single_run_best_inds.index:
+            data_all_runs_best_inds.append([str(df.loc[index, 'Run']).strip(), str(df.loc[index, 'Generation']).strip(), str(df.loc[index, 'Fitness']).strip(), str(df.loc[index, 'Individual']).strip()])
+
+    os.makedirs(analysis_dir+"/data_all_runs", exist_ok=True)
+    save_data_to_csv(analysis_dir+"/data_all_runs/data_all_runs_best_inds.csv", data_all_runs_best_inds, header = ["Run", "Generation", "Fitness", "Individual"])
+
+#---------------------------------------------------
+    
+def plot_single_run_data(analysis_dir_data, analysis_dir_plots):
+
+    path = analysis_dir_data+"/data_all_pop.csv"
+    dataset = pd.read_csv(path)
+    plot_fitnesses_boxplot(dataset, analysis_dir_plots)
+
+    path = analysis_dir_data+"/data_best_inds.csv"
+    dataset = pd.read_csv(path)
+    plot_best_fitness_ever(dataset, analysis_dir_plots)
+
+#---------------------------------------------------
+    
+# La valeur centrale du graphique est la médiane (il existe autant de valeur supérieures qu'inférieures à cette valeur dans l'échantillon).
+# Les bords du rectangle sont les quartiles (Pour le bord inférieur, un quart des observations ont des valeurs plus petites et trois quart ont des valeurs plus grandes, le bord supérieur suit le même raisonnement).
+# Les extrémités des moustaches sont calculées en utilisant 1.5 fois l'espace interquartile (la distance entre le 1er et le 3ème quartile).
+# On peut remarquer que 50% des observations se trouvent à l'intérieur de la boîte.
+
+# Les valeurs à l'extérieur des moustaches sont représentées par des points. On ne peut pas dire que si une observation est à l'extérieur des moustaches alors elles est une valeur aberrante. Par contre, cela indique qu'il faut étudier plus en détail cette observation.
+
+def plot_fitnesses_boxplot(dataset, analysis_dir_plots):
+
+    # list_gen_fitnesses = []
+    # generations = dataset['Generation'].unique()
+    # for gen in generations:
+    #     dataset_gen = dataset.loc[dataset.Generation==gen]
+    #     list_gen_fitnesses.append(dataset_gen['Fitness'].tolist())
+
+    # plt.boxplot(list_gen_fitnesses, positions=generations)
+    sns.set_theme()
+    sns.boxplot(x='Generation', y='Fitness', data=dataset, color='skyblue')
+    
+    # plt.suptitle("Fitnesses")
+    # plt.xlabel("Generation")
+    # plt.ylabel("Fitness")
+
+    plt.savefig(analysis_dir_plots + "/data_all_pop_fitnesses_boxplot.png")
+    plt.clf()
 
 
+def plot_best_fitness_ever(dataset, analysis_dir_plots):
+
+    # generations = dataset['Generation'].to_list()
+    # fitnesses = dataset['Fitness'].to_list()
+    generations = []
+    best_fitnesses_ever = []
+    best_fit = np.inf
+    # for fit in fitnesses:
+    #     if fit < best_fit:
+    #         best_fit = fit
+    #     best_fitnesses_ever.append(best_fit)
+
+    for index in dataset.index:
+        gen = dataset.loc[index, 'Generation']
+        fit = dataset.loc[index, 'Fitness']
+        print(gen, fit)
+        generations.append(gen)
+        if fit < best_fit:
+            best_fit = fit
+        best_fitnesses_ever.append(best_fit)
+
+    plt.step(generations, best_fitnesses_ever, where='post')
+
+    plt.suptitle("Fitnesses")
+    plt.xlabel("Generation")
+    plt.ylabel("Fitness")
+
+    plt.savefig(analysis_dir_plots + "/data_best_inds_best_fitness_ever.png")
+    plt.clf()
 
 
 def plot_bla_bla(env_boundaries_2D, g, ind_x, ind_y, eval_function, best_ind): # amelioration : eviter de recalculer la matrice
@@ -156,4 +264,3 @@ def plot_archive_fitnesses_curves(dataset, save_dir=None):
     plt.close()
 
 
-#---------------------------------------------------
