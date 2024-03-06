@@ -7,6 +7,7 @@
 # IMPORTS
 ################################################################################################################
 
+import numpy as np
 import math
 import random
 import copy
@@ -211,7 +212,8 @@ class NeuralNetwork:
         """
         Returns the result of the function sigmoid(activation)
         """
-        return self.stableSigmoid(activation)
+        # return self.stableSigmoid(activation)
+        return np.tanh(activation)
 
 
     #------------------------------------------------------------- 
@@ -222,8 +224,8 @@ class NeuralNetwork:
 
         :param inputsNeuronsValues : values of the first neuron's layer (inputs)
         """
-        # print(inputsNeuronsValues)
-        # print(self.weights)
+        # print("nn: inputsNeuronsValues", inputsNeuronsValues)
+        # print("nn: weights", self.weights)
 
         # for each layer in 'weights' (hidden + output):
         inputLayer = inputsNeuronsValues
@@ -237,12 +239,15 @@ class NeuralNetwork:
             for weightsNeuron in self.weights[layer]:
                 # print("nous somme en ", layer,  ". Weights:", weightsNeuron, "Input layer:", inputLayer)
                 activation = self.neuronActivation(weightsNeuron, inputLayer) # sum(input_i * w_i) previous Layer
-                self.neurons[layer].append(self.transferNeuronActivation(activation)) # sigmoid function
+                self.neurons[layer].append(self.transferNeuronActivation(activation)) # activation function (sigmoid, tanh, ...)
                 newInputLayer.append(self.neurons[layer][-1])
+            # print("input layer previous layer", newInputLayer)
             inputLayer = newInputLayer
 
         global firstForwardPropagation
         firstForwardPropagation = True
+
+        # print("nn: inputLayer", inputLayer)
 
         # we return the last inputLayer, which corresponds to the output layer of the NN
         return inputLayer
@@ -413,7 +418,9 @@ class NeuralNetwork:
         : param inputLayer : list of sensors representing the environment around the robot capted by sensors
         """
         outputs = self.forwardPropagation(inputLayer)
-        return outputs
+        # return outputs
+        # return [self.stableSigmoid(o) for o in outputs]
+        return [((o+1)/2) for o in outputs] # (x + 1) / 2 to rescale [-1,1[ in [0,1[ keeping the scale
 
 
     #------------------------------------------------------------- 

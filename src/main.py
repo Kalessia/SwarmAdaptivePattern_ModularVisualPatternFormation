@@ -42,8 +42,7 @@ def cmaES_EvoAlgorithm(run, params):
         # mingen = np.inf
 
 
-
-        eval_results = toolbox.map(toolbox.evaluate, population)
+        eval_results = toolbox.map(toolbox.evaluate, [gen]*len(population), population)
         for ind, fit in zip(population, eval_results):
 
             # final individual evaluation

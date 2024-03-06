@@ -72,15 +72,18 @@ def set_env(params):
                         'eval_function_params': {
                             'automata_nb_rows': params['automata_nb_rows'], 
                             'automata_nb_cols': params['automata_nb_cols'],
+                            'init_cell_state_value': params['init_cell_state_value'],
                             'time_steps': params['time_steps'],
                             'time_window_start': params['time_window_start'],
                             'time_window_end': params['time_window_end']
                         },
                         'env_boundaries': None,
                         'toolbox_cmaes': {
-                            'centroid': [10.0]*params['ind_size'], 
-                            'sigma': 3.0,
-                            'lambda_': 20
+                            # 'centroid': [10.0]*params['ind_size'], 
+                            # 'centroid': list(np.random.uniform(-1, 1, params['ind_size'])), # good! sigma: 0.5
+                            'centroid': list(np.random.uniform(-1, 1, params['ind_size'])),
+                            'sigma': 0.5,
+                            'lambda_': params['off_lambda']
                         },
                         'env_boundaries_2D': {
                             'theta_space_min_x': -15,
@@ -149,7 +152,7 @@ def init_toolbox(params):
     creator.create("Individual", list, fitness=creator.FitnessMin)
     creator.create("Strategy", list)
     
-    toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params']['automata_nb_rows'], params['env']['eval_function_params']['automata_nb_cols'], params['env']['eval_function_params']['time_steps'], params['env']['eval_function_params']['time_window_start'], params['env']['eval_function_params']['time_window_end'], params['analysis_dir_run'])
+    toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params']['automata_nb_rows'], params['env']['eval_function_params']['automata_nb_cols'], params['env']['eval_function_params']['init_cell_state_value'], params['env']['eval_function_params']['time_steps'], params['env']['eval_function_params']['time_window_start'], params['env']['eval_function_params']['time_window_end'], params['analysis_dir_run'])
     # kale solve acquisition
 
     if params['with_parallelization_bool']:
