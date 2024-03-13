@@ -53,12 +53,12 @@ class NeuralNetwork:
         self.weights = {}
         self.neurons = {}
         self.errors = {}
-        cptLayers = 0
 
         # Hidden layers' weights : for every neuron on a hidden layer, we stock the weight 
         # linking that neuron with all the neurons and the bias of the previous layer.
         # We apply the same procedure to all the hidden layers.
         # NB. The first hidden layer will be linked with the input layer.
+        cptLayers = 0
         self.n_neuronsPreviousLayer = self.n_neuronsPerInputs + 1
         for layer in range(self.n_hiddenLayers):
             cptLayers += 1
@@ -208,28 +208,37 @@ class NeuralNetwork:
 
     #------------------------------------------------------------- 
 
-    def transferNeuronActivation(self, activation):
+    def transferNeuronActivation_tanh(self, activation):
         """
-        Returns the result of the function sigmoid(activation)
+        Returns the result of the function tanh(activation)
         """
-        # return self.stableSigmoid(activation)
+
         return np.tanh(activation)
 
 
-    #------------------------------------------------------------- 
+    #-------------------------------------------------------------  
 
+    def transferNeuronActivation_sig(self, activation):
+        """
+        Returns the result of the function sigmoid(activation)
+        """
+        return self.stableSigmoid(activation)
+
+
+    #------------------------------------------------------------- 
     def forwardPropagation(self, inputsNeuronsValues):
         """
         Returns the output layer, given the input layer
 
         :param inputsNeuronsValues : values of the first neuron's layer (inputs)
         """
-        # print("nn: inputsNeuronsValues", inputsNeuronsValues)
+        # print("nn: inputsNeuronsValues before forward", inputsNeuronsValues)
         # print("nn: weights", self.weights)
+        # print("neurons before", self.neurons)
 
         # for each layer in 'weights' (hidden + output):
         inputLayer = inputsNeuronsValues
-        for layer in self.weights.keys(): 
+        for l, layer in enumerate(self.weights.keys()): 
             self.neurons[layer] = []        
             newInputLayer = [] 
 
@@ -237,18 +246,26 @@ class NeuralNetwork:
             # of the previous layer. The current layer becomes the new input layer for the next iteration.
             # For each 'neuron':
             for weightsNeuron in self.weights[layer]:
-                # print("nous somme en ", layer,  ". Weights:", weightsNeuron, "Input layer:", inputLayer)
+                
                 activation = self.neuronActivation(weightsNeuron, inputLayer) # sum(input_i * w_i) previous Layer
-                self.neurons[layer].append(self.transferNeuronActivation(activation)) # activation function (sigmoid, tanh, ...)
-                newInputLayer.append(self.neurons[layer][-1])
-            # print("input layer previous layer", newInputLayer)
+                # print("nous somme en ", layer, ". Activation:", activation)
+                if l != (len(self.weights.keys()) - 1):
+                    self.neurons[layer].append(self.transferNeuronActivation_tanh(activation)) # activation function (sigmoid, tanh, ...)
+                    newInputLayer.append(self.neurons[layer][-1])
+                    # print("layer", layer, "activation", activation, "applying tanh", newInputLayer)
+                else: # last layer (outputs)
+                    self.neurons[layer].append(self.transferNeuronActivation_sig(activation)) # activation function (sigmoid, tanh, ...)
+                    newInputLayer.append(self.neurons[layer][-1])
+                    # print("layer", layer, "activation", activation, "applying sig", newInputLayer)
+                # print("input layer previous layer", layer, newInputLayer)
             inputLayer = newInputLayer
 
         global firstForwardPropagation
         firstForwardPropagation = True
 
-        # print("nn: inputLayer", inputLayer)
-
+        # print("neurons after", self.neurons)
+        # print("return inputLayer", inputLayer)
+        # exit()
         # we return the last inputLayer, which corresponds to the output layer of the NN
         return inputLayer
 
@@ -418,9 +435,8 @@ class NeuralNetwork:
         : param inputLayer : list of sensors representing the environment around the robot capted by sensors
         """
         outputs = self.forwardPropagation(inputLayer)
-        # return outputs
-        # return [self.stableSigmoid(o) for o in outputs]
-        return [((o+1)/2) for o in outputs] # (x + 1) / 2 to rescale [-1,1[ in [0,1[ keeping the scale
+        return outputs
+        # return [((o+1)/2) for o in outputs] # (x + 1) / 2 to rescale [-1,1[ in [0,1[ keeping the scale
 
 
     #------------------------------------------------------------- 

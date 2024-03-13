@@ -1,8 +1,8 @@
 {
 
     "env_name": "flag_automata",
-    "automata_nb_rows": 3, 
-    "automata_nb_cols": 5,
+    "automata_nb_rows": 10, 
+    "automata_nb_cols": 10,
     "time_steps": 200,
     "time_window_start": 140,
     "time_window_end": 180,
@@ -14,10 +14,10 @@
     "max_strategy": null,
     "nb_gen": null,
     "mu": null,
-    "off_lambda": 20,
+    "off_lambda": null,
 
     "nb_runs": 1,
-    "nb_generations": 25,
+    "nb_generations": 100,
 
     "init_cell_state_value": null,
 

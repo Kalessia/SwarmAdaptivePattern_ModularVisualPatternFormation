@@ -16,6 +16,8 @@ sep = "\n################################################\n"
 
 def cmaES_EvoAlgorithm(run, params):
 
+    time_run = time.time()
+
     params = init_one_run_analysis(run, params)
     toolbox = init_toolbox(params)
 
@@ -38,30 +40,12 @@ def cmaES_EvoAlgorithm(run, params):
         # http://deap.gel.ulaval.ca/doc/default/examples/eda.html
 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
-        # best_ind_gen = None
-        # mingen = np.inf
-
 
         eval_results = toolbox.map(toolbox.evaluate, [gen]*len(population), population)
         for ind, fit in zip(population, eval_results):
-
-            # final individual evaluation
             ind.fitness.values = fit
 
-            # if fit[0] < mingen:
-            #     print("nex best gen", gen, fit[0])
-            #     best_ind_gen = ind
-            #     mingen = fit[0]
-
-            #     if fit[0] < minall:
-            #         best_ind = ind
-            #         minall = fit[0]
-
-            # if True:
-            #     print("evaluate: ind =", ind, "ind.fit =", fit)
-        # print("gen", gen, "best", best_ind_gen[0], best_ind_gen[1], mingen)
-
-        write_single_run_data(run, gen, population, params['analysis_dir_data'])
+        write_single_gen_data(run, gen, population, params['analysis_dir']['data'])
 
         toolbox.update(population) # update the current covariance matrix strategy from the population; update the strategy with the evaluated individuals
 
@@ -74,8 +58,12 @@ def cmaES_EvoAlgorithm(run, params):
 
 
     # print("run", run, "best", best_ind[0], best_ind[1], minall)
-    plot_single_run_data(params['analysis_dir_data'], params['analysis_dir_plots'])
-    #plot(params['analysis_dir'])
+    time_run = time.time() - time_run
+    print("cmaES run n." + str(run) + " - Execution time:", time_run, "seconds") # kale change save time for each run
+
+    write_single_run_data(run, time_run, params['analysis_dir'])
+    plot_single_run_data(params)
+    #plot(params['analysis_dir']['root'])
 
     #---------------------------------------------------
     # Evolutionary Algorithm initialization
@@ -100,6 +88,8 @@ def cmaES_EvoAlgorithm(run, params):
 
 
 
+
+    
     return params
 
 
@@ -123,16 +113,12 @@ if (__name__ == "__main__"):
 
     for run in range(params['nb_runs']):
         # Launch the Evolutionary Algorithm
-        t = time.time()
         params = cmaES_EvoAlgorithm(run, params)
-        t = time.time() - t
-        print("\ncmaES run n." + str(run) + " - Execution time:", t, "seconds") # kale change save time for each run
 
-    # Save a trace of used parameters for this simulation in run_params.json
-    params['simulation_execution_time'] = t # kale useful?
+    # Save a trace of used parameters for this simulation in simulation_params.json
     del params['env']['eval_function'] # not JSON serializable object
-    with open(params['analysis_dir'] + "/run_params.json", "w") as f:
+    with open(params['analysis_dir']['root'] + "/simulation_params.json", "w") as f:
         json.dump({k:v for k,v in params.items()}, f, indent=2)
 
-    write_all_runs_data(params['analysis_dir'])
-    # plot_all_runs_data(params['analysis_dir'])
+    write_all_runs_data(params['analysis_dir']['root'])
+    plot_all_runs_data(params)

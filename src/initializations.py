@@ -1,5 +1,7 @@
 import multiprocessing
 
+import warnings
+
 from deap import creator
 from deap import base
 from deap import algorithms
@@ -56,9 +58,9 @@ def set_env(params):
                         'eval_function': rastrigin_function,
                         'eval_function_params': None,
                         'toolbox_cmaes': {
-                            'centroid': [5.0]*params['ind_size'], # starting individual
+                            'centroid': [5.0]*params['ind_size'],
                             'sigma': 5.0,
-                            'lambda_': 20*params['ind_size'] # number of offspring to generate from the centroid individual
+                            'lambda_': 20*params['ind_size']
                         },
                         'env_boundaries_2D': {
                             'theta_space_min_x': -5.12,
@@ -79,11 +81,9 @@ def set_env(params):
                         },
                         'env_boundaries': None,
                         'toolbox_cmaes': {
-                            # 'centroid': [10.0]*params['ind_size'], 
-                            # 'centroid': list(np.random.uniform(-1, 1, params['ind_size'])), # good! sigma: 0.5
                             'centroid': list(np.random.uniform(-1, 1, params['ind_size'])),
                             'sigma': 0.5,
-                            'lambda_': params['off_lambda']
+                            'lambda_': int(4 + 3 * np.log(params['automata_nb_rows'] * params['automata_nb_cols']))
                         },
                         'env_boundaries_2D': {
                             'theta_space_min_x': -15,
@@ -143,16 +143,19 @@ def set_env(params):
 
 def init_toolbox(params):
 
-    # numpy.random.seed(14)
     np.random.seed(random.randint(1, 100))
     
     toolbox = base.Toolbox()
 
+    warnings.filterwarnings("ignore", category=RuntimeWarning, message="A class named 'FitnessMin' has already been created")
+    warnings.filterwarnings("ignore", category=RuntimeWarning, message="A class named 'Individual' has already been created")
+    warnings.filterwarnings("ignore", category=RuntimeWarning, message="A class named 'Strategy' has already been created")
+    
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
     creator.create("Individual", list, fitness=creator.FitnessMin)
     creator.create("Strategy", list)
     
-    toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params']['automata_nb_rows'], params['env']['eval_function_params']['automata_nb_cols'], params['env']['eval_function_params']['init_cell_state_value'], params['env']['eval_function_params']['time_steps'], params['env']['eval_function_params']['time_window_start'], params['env']['eval_function_params']['time_window_end'], params['analysis_dir_run'])
+    toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params'], params['analysis_dir'])
     # kale solve acquisition
 
     if params['with_parallelization_bool']:
@@ -164,6 +167,8 @@ def init_toolbox(params):
     # strategy = cma.Strategy(centroid=numpy.random.uniform(-5, 5, N), sigma=0.5, lambda_=params['off_lambda'])
     c, s, l = params['env']['toolbox_cmaes']['centroid'], params['env']['toolbox_cmaes']['sigma'], params['env']['toolbox_cmaes']['lambda_']
     strategy = cma.Strategy(centroid=c, sigma=s, lambda_=l)
+    # strategy = cma.Strategy(centroid=c, sigma=s)
+    # default lambda_ = int(4 + 3 * log(N)) with N the individual’s size (integer).
 
     toolbox.register("generate", strategy.generate, creator.Individual)
     toolbox.register("update", strategy.update)
