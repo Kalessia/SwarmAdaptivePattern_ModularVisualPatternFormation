@@ -41,7 +41,7 @@ def cmaES_EvoAlgorithm(run, params):
 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
 
-        eval_results = toolbox.map(toolbox.evaluate, [gen]*len(population), population)
+        eval_results = toolbox.map(toolbox.evaluate, [run]*len(population), [gen]*len(population), population)
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
 
@@ -62,7 +62,11 @@ def cmaES_EvoAlgorithm(run, params):
     print("cmaES run n." + str(run) + " - Execution time:", time_run, "seconds") # kale change save time for each run
 
     write_single_run_data(run, time_run, params['analysis_dir'])
-    plot_single_run_data(params)
+
+    # Plot data for one single run
+    if params['plot_analysis_bool']:
+        plot_single_run_data(run, params) 
+
     #plot(params['analysis_dir']['root'])
 
     #---------------------------------------------------
@@ -107,18 +111,22 @@ def cmaES_EvoAlgorithm(run, params):
 
 if (__name__ == "__main__"):
 
+    # Initialization
     params = get_parameters_from_json()
     params = init_all_runs_analysis(params)
     params = set_env(params)
 
-    for run in range(params['nb_runs']):
-        # Launch the Evolutionary Algorithm
+    # Launch the Evolutionary Algorithm
+    for run in range(params['nb_runs']):    
         params = cmaES_EvoAlgorithm(run, params)
+
 
     # Save a trace of used parameters for this simulation in simulation_params.json
     del params['env']['eval_function'] # not JSON serializable object
     with open(params['analysis_dir']['root'] + "/simulation_params.json", "w") as f:
         json.dump({k:v for k,v in params.items()}, f, indent=2)
 
-    write_all_runs_data(params['analysis_dir']['root'])
-    plot_all_runs_data(params)
+    # Plot data for all the runs
+    if params['plot_analysis_bool']:
+        write_all_runs_data(params['analysis_dir']['root'])
+        plot_all_runs_data(params)

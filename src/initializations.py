@@ -21,9 +21,12 @@ import json
 # Parameters initialization
 ###########################################################################
 
-def get_parameters_from_json():
+def get_parameters_from_json(file_name=None):
 
-    with open("/home/kalessia/flagAutomata/src/params.json", "r") as f:
+    if file_name is None:
+        file_name = "/home/kalessia/flagAutomata/src/simulation_params.json"
+
+    with open(file_name, "r") as f:
         params = json.load(f)
 
     return params
@@ -74,6 +77,7 @@ def set_env(params):
                         'eval_function_params': {
                             'automata_nb_rows': params['automata_nb_rows'], 
                             'automata_nb_cols': params['automata_nb_cols'],
+                            'flag_pattern': params['flag_pattern'],
                             'init_cell_state_value': params['init_cell_state_value'],
                             'time_steps': params['time_steps'],
                             'time_window_start': params['time_window_start'],
@@ -81,7 +85,7 @@ def set_env(params):
                         },
                         'env_boundaries': None,
                         'toolbox_cmaes': {
-                            'centroid': list(np.random.uniform(-1, 1, params['ind_size'])),
+                            'centroid': list(np.random.uniform(params['ind_min_value'], params['ind_max_value'], params['ind_size'])),
                             'sigma': 0.5,
                             'lambda_': int(4 + 3 * np.log(params['automata_nb_rows'] * params['automata_nb_cols']))
                         },
@@ -100,6 +104,7 @@ def set_env(params):
 
     print("gnééé") # Kale
     exit()
+    # (params['nn_nb_neurons_per_inputs']*params['nn_nb_neurons_per_hidden'])+((params['nn_nb_hidden_layers']-1)*(params['nn_nb_neurons_per_hidden']**2))+params['automata_mode'])
  
 
 
