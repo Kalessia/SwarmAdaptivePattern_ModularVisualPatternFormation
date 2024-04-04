@@ -5,7 +5,7 @@
     "automata_nb_rows": 3, 
     "automata_nb_cols": 5,
     "flag_pattern": "2_stripes",
-    "time_steps": 10,
+    "time_steps": 100,
     "time_window_start": 60,
     "time_window_end": 99,
 

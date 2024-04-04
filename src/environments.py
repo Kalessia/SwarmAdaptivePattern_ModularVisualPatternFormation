@@ -8,7 +8,7 @@ import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
 
 from nn import NeuralNetwork
-from analysis import save_data_to_csv
+from learning_analysis import save_data_to_csv
 
 
 
@@ -106,7 +106,7 @@ class flagAutomata:
         self.flag_target = self.build_flag(flag_pattern)
         self.flag = self.init_flag(init_cell_state_value) # values in [0.0, 1.0]. 0.0 represents black, 1.0 represents white. NB: high value is excluded
         
-        self.automata_mode = 1
+        self.automata_mode = 2
         if self.automata_mode == 1:
             self.cell_controller = NeuralNetwork(nb_neuronsPerInputs=4, nb_hiddenLayers=1, nb_neuronsPerHidden=2, nb_neuronsPerOutputs=1)
         elif self.automata_mode == 2: # nb: weights ind doit etre adaptée 
@@ -299,8 +299,8 @@ class flagAutomata:
     
     def write_flag_data(self, run, gen, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, analysis_dir):
 
-        if not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")):
-            save_data_to_csv(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.convert_flag_to_list(self.flag_target)).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
+        if not (os.path.exists(analysis_dir['root']+"/learning/data_all_runs/data_env_flag_target.csv")):
+            save_data_to_csv(analysis_dir['root']+"/learning/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.convert_flag_to_list(self.flag_target)).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
         
         if not (os.path.exists(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv")):
             os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
@@ -430,10 +430,13 @@ class flagAutomata:
 
 
         nb_ind = np.where(individuals_gen==str(ind))[0][0]
-        file_path = analysis_dir_plots+"/run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+"/flag_individual.txt"
-        if not os.path.exists(file_path):
-            with open (file_path, 'w') as f:
-                f.write(str(ind))
+        file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
+        if not os.path.exists(analysis_dir_plots+"/"+file_name):
+            os.makedirs(analysis_dir_plots+"/"+file_name, exist_ok=True)
+            file_path = analysis_dir_plots+"/"+file_name+"/flag_individual.txt"
+            if not os.path.exists(file_path):
+                with open (file_path, 'w') as f:
+                    f.write(str(ind))
 
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)

@@ -7,7 +7,7 @@
 # to leave the default parameters.
 ###########################################################################
 
-analysis_dir="simulationAnalysis/flag_automata_simulation_2024-03-14_16-53-48" # relative path, ex: "simulationAnalysis/flag_automata_simulation_2024-03-14_07-32-14"
+analysis_dir="simulationAnalysis/flag_automata_simulation_2024-03-16_18-37-12" # relative path, ex: "simulationAnalysis/flag_automata_simulation_2024-03-14_07-32-14"
 
 
 ###########################################################################

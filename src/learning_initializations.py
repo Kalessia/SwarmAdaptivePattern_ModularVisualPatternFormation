@@ -24,7 +24,7 @@ import json
 def get_parameters_from_json(file_name=None):
 
     if file_name is None:
-        file_name = "/home/kalessia/flagAutomata/src/simulation_params.json"
+        file_name = "/home/kalessia/flagAutomata/src/learning_params.json" # ???
 
     with open(file_name, "r") as f:
         params = json.load(f)
@@ -87,7 +87,8 @@ def set_env(params):
                         'toolbox_cmaes': {
                             'centroid': list(np.random.uniform(params['ind_min_value'], params['ind_max_value'], params['ind_size'])),
                             'sigma': 0.5,
-                            'lambda_': int(4 + 3 * np.log(params['automata_nb_rows'] * params['automata_nb_cols']))
+                            # 'lambda_': int(4 + 3 * np.log(params['automata_nb_rows'] * params['automata_nb_cols']))
+                            'lambda_': None
                         },
                         'env_boundaries_2D': {
                             'theta_space_min_x': -15,
@@ -171,8 +172,8 @@ def init_toolbox(params):
 
     # strategy = cma.Strategy(centroid=numpy.random.uniform(-5, 5, N), sigma=0.5, lambda_=params['off_lambda'])
     c, s, l = params['env']['toolbox_cmaes']['centroid'], params['env']['toolbox_cmaes']['sigma'], params['env']['toolbox_cmaes']['lambda_']
-    strategy = cma.Strategy(centroid=c, sigma=s, lambda_=l)
-    # strategy = cma.Strategy(centroid=c, sigma=s)
+    # strategy = cma.Strategy(centroid=c, sigma=s, lambda_=l)
+    strategy = cma.Strategy(centroid=c, sigma=s)
     # default lambda_ = int(4 + 3 * log(N)) with N the individual’s size (integer).
 
     toolbox.register("generate", strategy.generate, creator.Individual)

@@ -4,8 +4,8 @@ import numpy as np
 
 from deap import tools
 
-from initializations import *
-from analysis import *
+from learning_initializations import *
+from learning_analysis import *
 
 import json
 
@@ -14,12 +14,12 @@ sep = "\n################################################\n"
 
 
 
-def cmaES_EvoAlgorithm(run, params):
+def cmaES_EvoAlgorithm(run, learning_params):
 
     time_run = time.time()
 
-    params = init_one_run_analysis(run, params)
-    toolbox = init_toolbox(params)
+    learning_params = init_one_run_analysis(run, learning_params)
+    toolbox = init_toolbox(learning_params)
 
 
     # ind_x = [] 
@@ -28,7 +28,8 @@ def cmaES_EvoAlgorithm(run, params):
     # minall= np.inf
     # best_ind = None
 
-    for gen in range(params['nb_generations']):
+    for gen in range(learning_params['nb_generations']):
+        print("Starting generation n.", gen)
 
 
 
@@ -45,13 +46,13 @@ def cmaES_EvoAlgorithm(run, params):
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
 
-        write_single_gen_data(run, gen, population, params['analysis_dir']['data'])
+        write_single_gen_data(run, gen, population, learning_params['analysis_dir']['data'])
 
         toolbox.update(population) # update the current covariance matrix strategy from the population; update the strategy with the evaluated individuals
 
         # print("")
 
-        # plot_bla_bla(params['env'][ 'env_boundaries_2D'], gen, ind_x, ind_y, params['env']['eval_function'], best_ind)
+        # plot_bla_bla(learning_params['env'][ 'env_boundaries_2D'], gen, ind_x, ind_y, learning_params['env']['eval_function'], best_ind)
                 
         # ind_x = [] 
         # ind_y = []
@@ -59,15 +60,15 @@ def cmaES_EvoAlgorithm(run, params):
 
     # print("run", run, "best", best_ind[0], best_ind[1], minall)
     time_run = time.time() - time_run
-    print("cmaES run n." + str(run) + " - Execution time:", time_run, "seconds") # kale change save time for each run
+    print("cmaES_EvoAlgorithm run n." + str(run) + " - Execution time:", time_run, "seconds") # kale change save time for each run
 
-    write_single_run_data(run, time_run, params['analysis_dir'])
+    write_single_run_data(run, time_run, learning_params['analysis_dir'])
 
     # Plot data for one single run
-    if params['plot_analysis_bool']:
-        plot_single_run_data(run, params) 
+    if learning_params['plot_analysis_bool']:
+        plot_single_run_data(run, learning_params) 
 
-    #plot(params['analysis_dir']['root'])
+    #plot(learning_params['analysis_dir']['root'])
 
     #---------------------------------------------------
     # Evolutionary Algorithm initialization
@@ -94,7 +95,7 @@ def cmaES_EvoAlgorithm(run, params):
 
 
     
-    return params
+    return learning_params
 
 
 
@@ -112,21 +113,20 @@ def cmaES_EvoAlgorithm(run, params):
 if (__name__ == "__main__"):
 
     # Initialization
-    params = get_parameters_from_json()
-    params = init_all_runs_analysis(params)
-    params = set_env(params)
+    learning_params = get_parameters_from_json()
+    learning_params = init_all_runs_analysis(learning_params)
+    learning_params = set_env(learning_params)
 
     # Launch the Evolutionary Algorithm
-    for run in range(params['nb_runs']):    
-        params = cmaES_EvoAlgorithm(run, params)
+    for run in range(learning_params['nb_runs']):    
+        learning_params = cmaES_EvoAlgorithm(run, learning_params)
 
-
-    # Save a trace of used parameters for this simulation in simulation_params.json
-    del params['env']['eval_function'] # not JSON serializable object
-    with open(params['analysis_dir']['root'] + "/simulation_params.json", "w") as f:
-        json.dump({k:v for k,v in params.items()}, f, indent=2)
+    # Save a trace of used parameters for this simulation in learning_params.json
+    del learning_params['env']['eval_function'] # not JSON serializable object
+    with open(learning_params['analysis_dir']['root']+"/learning/learning_params.json", "w") as f:
+        json.dump({k:v for k,v in learning_params.items()}, f, indent=2)
 
     # Plot data for all the runs
-    if params['plot_analysis_bool']:
-        write_all_runs_data(params['analysis_dir']['root'])
-        plot_all_runs_data(params)
+    if learning_params['plot_analysis_bool']:
+        write_all_runs_data(learning_params['analysis_dir']['root']+"/learning")
+        plot_all_runs_data(learning_params)
