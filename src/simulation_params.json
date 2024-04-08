@@ -2,10 +2,17 @@
 
     "env_name": "flag_automata",
 
-    "automata_nb_rows": 3, 
-    "automata_nb_cols": 5,
-    "flag_pattern": "2_stripes",
-    "time_steps": 10,
+    "grid_nb_rows": 9, 
+    "grid_nb_cols": 9,
+    "time_steps": 200,
+    
+    
+    
+    
+    
+    
+    
+    
     "time_window_start": 60,
     "time_window_end": 99,
 
@@ -27,5 +34,6 @@
     "plot_analysis_bool": true,
     "plot_with_animation_bool": false,
 
-    "with_parallelization_bool": false
+    "with_parallelization_bool": false,
+    "with_parallelization_nb_free_cores": 0
 }

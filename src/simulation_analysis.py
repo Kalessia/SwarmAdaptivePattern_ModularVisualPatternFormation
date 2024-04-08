@@ -1,11 +1,7 @@
 import os
-import sys
-from datetime import datetime
-import shutil
 
 import numpy as np
 import pandas as pd
-from operator import attrgetter
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -31,7 +27,7 @@ def init_all_runs_analysis(learning_params_analysis_dir_root, simulation_params)
     os.makedirs(simulation_params['analysis_dir']['root']+"/simulation/data_all_runs", exist_ok=True)
     os.makedirs(simulation_params['analysis_dir']['root']+"/simulation/plots_all_runs", exist_ok=True)
 
-    # save_data_to_csv(simulation_params['analysis_dir']['root']+"/simulation/data_all_runs/data_evo_all_runs_time.csv", [], header = ["Run", "Time"])
+    save_data_to_csv(simulation_params['analysis_dir']['root']+"/simulation/data_all_runs/data_simu_all_runs_time.csv", [], header = ["Run", "Time"])
     # save_data_to_csv(simulation_params['analysis_dir']['root']+"/simulation/data_all_runs/data_evo_all_runs_best_ind_per_run.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
     
     return simulation_params
@@ -97,6 +93,8 @@ def write_single_run_data(env, run, time_run, time_steps, flags, analysis_dir):
     # Save time information for this run
     data_sim_all_runs_time = [[str(run), str(time_run)]]
     save_data_to_csv(analysis_dir['root']+"/simulation/data_all_runs/data_evo_all_runs_time.csv", data_sim_all_runs_time)
+
+    env.plot_flag_fitnesses_from_file(data_flag_file=analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+".csv", run=run, analysis_dir_plots=analysis_dir['plots'])
 
 #---------------------------------------------------
 

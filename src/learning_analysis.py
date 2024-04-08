@@ -192,6 +192,8 @@ def plot_single_run_data(run, params):
         frames = np.stack([iio.imread(path+"/"+img) for img in images], axis = 0)
         iio.mimwrite(params['analysis_dir']['plots']+"/env/"+flag_last_best_ind_ever_dir+".gif", frames, format='GIF', duration=0.5*len(frames), subrectangles=True)
 
+    print(f"Plots for the single run {run} completed.")
+
 #---------------------------------------------------
 
 def get_gen_ind_from_file_name(file_name):
@@ -212,6 +214,8 @@ def plot_all_runs_data(params):
     # plot_flag_from_file for the target flag
     from environments import flagAutomata
     flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/learning/data_all_runs/data_env_flag_target.csv", analysis_dir_plots=params['analysis_dir']['root']+"/learning/plots_all_runs")
+
+    print(f"Plots for all the runs completed.")
 
 #---------------------------------------------------
 

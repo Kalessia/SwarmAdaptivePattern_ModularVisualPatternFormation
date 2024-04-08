@@ -149,11 +149,19 @@ class swarmGrid:
     
     def refresh_grid(self):
 
-        agents_ids = list(self.grid_map_id_pos.keys())
+        agents = self.grid_map_pos_agent.values()
+        print([agent.id for agent in agents])
 
         # Collect the neighbors of each agent (if we call 'refresh', they have likely changed)
-        for agent_id in agents_ids:
-            self.get_agent_neighbors_ids(agent=self.grid_map_pos_agent[self.grid_map_id_pos[agent_id]])
+        print("1", self.grid_map_pos_agent)
+        for agent in agents:
+            print("working on ", agent, agent.id, agent.pos)
+            print("self.grid_map_id_pos[agent.id] per", agent.id, "era", self.grid_map_id_pos[agent.id], "ora é", agent.pos)
+            self.grid_map_id_pos[agent.id] = agent.pos
+
+        for agent in agents:  
+            self.get_agent_neighbors_ids(agent=agent)
+        print("2", self.grid_map_pos_agent)
 
     #---------------------------------------------------
 
@@ -190,7 +198,7 @@ class swarmGrid:
 
         if not (os.path.exists(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+".csv")):
             os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
-            save_data_to_csv(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+".csv", [], header = ["Run", "Step", "Flags_distance", "Flag", "Individual"])
+            save_data_to_csv(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+".csv", [], header = ["Run", "Step", "Flags_distance", "Flag"])
 
         data_env_flag = []
         for step in range(time_steps):
@@ -201,109 +209,202 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    @staticmethod
-    def plot_flag_from_file(env_eval_function_params=None, data_flag_file=None, run=None, gen=None, ind=None, steps=None, analysis_dir_plots=None):
+    # def get_map_cell_neighbors_NWES(self):
 
-        automata_nb_rows = env_eval_function_params['automata_nb_rows']
-        automata_nb_cols = env_eval_function_params['automata_nb_cols']
-        map_cell_neighbors_NWES = flagAutomata.build_map_cell_neighbors(automata_nb_rows, automata_nb_cols)
+    #     map_cell_neighbors_NWES = {}
+    #     for row in range(self.grid_nb_rows):
+    #         for col in range(self.grid_nb_cols):
+    #             l_tmp = []
+    #             agent =  self.grid_map_pos_agent[(row, col)]
+    #             if agent is not None: #check
+    #                 for neighbor_id in agent.neighbors_NWES:
+    #                     l_tmp.append(self.grid_map_id_pos[neighbor_id])
+    #             map_cell_neighbors_NWES[tuple((row, col))] = l_tmp
 
-        dataset = pd.read_csv(data_flag_file)
+        # return map_cell_neighbors_NWES
 
-        if gen is not None:
-            dataset_gen = dataset.loc[(dataset.Generation==gen)]
-            dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
+    #---------------------------------------------------
 
-        if steps is None:
-            steps = dataset['Step'].unique()
+    def plot_flag(self, run=None, step=None, analysis_dir_plots=None):
 
-        for step in steps:
-            flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
-            flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
-            flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
+        # map_cell_neighbors_NWES = flagAutomata.build_map_cell_neighbors(automata_nb_rows, automata_nb_cols)
 
-            fig, ax = plt.subplots()
+        # dataset = pd.read_csv(data_flag_file)
 
-            if automata_nb_rows <= 10 and automata_nb_rows <= 10:
-                for cell, neighbors in map_cell_neighbors_NWES.items():
-                    for neighbor in neighbors:
-                        if neighbor:
-                            ax.plot([cell[1], neighbor[1]], [-cell[0], -neighbor[0]], color='black', linestyle=':', zorder=1)
+        # if steps is None:
+        #     steps = dataset['Step'].unique()
 
-                circle_radius = 0.4
+        # for step in steps:
+        #     flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
+        #     flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
+        #     flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
 
-            x = []
-            y = []
-            greys = []
+            flag_list = np.asarray(self.convert_flag_to_list(self.get_flag_from_grid()))
+            flag_list_reshaped = flag_list.reshape(self.grid_nb_rows, self.grid_nb_cols)
 
-            for p, pos in enumerate(map_cell_neighbors_NWES.keys()):
-                grey_value = flag_list[p]
+            print("\n################################################## RUN", run, "STEP", step)
+            print(flag_list_reshaped)
 
-                if automata_nb_rows > 10 or automata_nb_rows > 10:
-                    x.append(pos[1])
-                    y.append(-pos[0])
-                    greys.append(grey_value)
+            # fig, ax = plt.subplots()
 
-                else:
-                    if grey_value > 0.9: # close to white
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
-                    else:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
-                    ax.add_patch(circle)
+            # if self.grid_nb_rows <= 10 and  self.grid_nb_cols <= 10:
 
-                    if automata_nb_rows < 6 and automata_nb_rows < 6:
-                        ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(flag_list[p],2)), color='black', va='center', ha='center')
+            #     for pos, neighbors in map_cell_neighbors_NWES[step].items(): 
+            #         for neighbor_pos in neighbors:
+            #             if neighbor_pos:
+            #                 ax.plot([pos[1], neighbor_pos[1]], [-pos[0], -neighbor_pos[0]], color='black', linestyle=':', zorder=1)
+
+            #     circle_radius = 0.4
+
+            # x = []
+            # y = []
+            # greys = []
+
+            # for p, pos in enumerate(map_cell_neighbors_NWES.keys()):
+            #     grey_value = flag_list[p]
+
+            #     if automata_nb_rows > 10 or automata_nb_rows > 10:
+            #         x.append(pos[1])
+            #         y.append(-pos[0])
+            #         greys.append(grey_value)
+
+            #     else:
+            #         if grey_value > 0.9: # close to white
+            #             circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
+            #         else:
+            #             circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
+            #         ax.add_patch(circle)
+
+            #         if automata_nb_rows < 6 and automata_nb_rows < 6:
+            #             ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(flag_list[p],2)), color='black', va='center', ha='center')
                                 
-                    plt.axis('off')
+            #         plt.axis('off')
 
-            if automata_nb_rows > 10 or automata_nb_rows > 10:
-                colors = [(0, 0, 0), (0.7, 0.9, 1.0)]  # Black to light blue
-                positions = [0.0, 1.0]
-                cmap = LinearSegmentedColormap.from_list('CustomBlackToLightBlue', list(zip(positions, colors)))
-                plt.scatter(x, y, c=greys, cmap=cmap) # cmap=''grey
-                plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
-
-
-            ax.set_aspect('equal')
-            plt.xlim(-0.5, automata_nb_cols-0.5)
-            plt.ylim(-automata_nb_rows+0.5, 0.5)
+            # if automata_nb_rows > 10 or automata_nb_rows > 10:
+            #     colors = [(0, 0, 0), (0.7, 0.9, 1.0)]  # Black to light blue
+            #     positions = [0.0, 1.0]
+            #     cmap = LinearSegmentedColormap.from_list('CustomBlackToLightBlue', list(zip(positions, colors)))
+            #     plt.scatter(x, y, c=greys, cmap=cmap) # cmap=''grey
+            #     plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
 
 
-            if gen is None: # target flag
-                plt.title(f"Flag target, {automata_nb_rows} rows x {automata_nb_cols} columns", fontsize=14)
-                os.makedirs(analysis_dir_plots, exist_ok=True)
-                plt.savefig(analysis_dir_plots+"/plot_env_flag_target.png")
+            # ax.set_aspect('equal')
+            # plt.xlim(-0.5, automata_nb_cols-0.5)
+            # plt.ylim(-automata_nb_rows+0.5, 0.5)
 
-            else:
-                individuals_gen = dataset_gen['Individual'].unique()
-                nb_ind = np.where(individuals_gen==str(ind))[0][0]
-                file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
-                if int(step) == steps[0]:
-                    os.makedirs(analysis_dir_plots+"/"+file_name+"/flag", exist_ok=True)
-                    file_path = analysis_dir_plots+"/"+file_name+"/flag_individual.txt"
-                    if not os.path.exists(file_path):
-                        with open (file_path, 'w') as f:
-                            f.write(str(ind))
-                plt.title(f"Flag evolution states. Run {run}, generation {gen}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {round(dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0], 2)}", pad=20, fontsize=9)
-                plt.savefig(analysis_dir_plots+"/"+file_name+"/flag/plot_env_flag_"+file_name+"_step_"+str(step)+".png")
+            # individuals_gen = dataset_gen['Individual'].unique()
+            # nb_ind = np.where(individuals_gen==str(ind))[0][0]
+            # file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
+            # if int(step) == steps[0]:
+            #     os.makedirs(analysis_dir_plots+"/"+file_name+"/flag", exist_ok=True)
+     
+            # plt.title(f"Flag evolution states. Run {run}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {round(dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0], 2)}", pad=20, fontsize=9)
+            # plt.savefig(analysis_dir_plots+"/"+file_name+"/flag/plot_env_flag_"+file_name+"_step_"+str(step)+".png")
 
-            plt.clf()
-            plt.close()
+            # plt.clf()
+            # plt.close()
+
+    #---------------------------------------------------
+
+
+    # def plot_flag_from_file(self, data_flag_file=None, run=None, steps=None, map_cell_neighbors_NWES=None, analysis_dir_plots=None):
+
+    #     # map_cell_neighbors_NWES = flagAutomata.build_map_cell_neighbors(automata_nb_rows, automata_nb_cols)
+
+    #     dataset = pd.read_csv(data_flag_file)
+
+    #     if steps is None:
+    #         steps = dataset['Step'].unique()
+
+    #     for step in steps:
+    #         flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
+    #         flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
+    #         flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
+
+    #         fig, ax = plt.subplots()
+
+    #         if self.grid_nb_rows <= 10 and  self.grid_nb_cols <= 10:
+
+    #             for pos, neighbors in map_cell_neighbors_NWES[step].items(): 
+    #                 for neighbor_pos in neighbors:
+    #                     if neighbor_pos:
+    #                         ax.plot([pos[1], neighbor_pos[1]], [-pos[0], -neighbor_pos[0]], color='black', linestyle=':', zorder=1)
+
+    #             circle_radius = 0.4
+
+    #         x = []
+    #         y = []
+    #         greys = []
+
+    #         for p, pos in enumerate(map_cell_neighbors_NWES.keys()):
+    #             grey_value = flag_list[p]
+
+    #             if automata_nb_rows > 10 or automata_nb_rows > 10:
+    #                 x.append(pos[1])
+    #                 y.append(-pos[0])
+    #                 greys.append(grey_value)
+
+    #             else:
+    #                 if grey_value > 0.9: # close to white
+    #                     circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
+    #                 else:
+    #                     circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
+    #                 ax.add_patch(circle)
+
+    #                 if automata_nb_rows < 6 and automata_nb_rows < 6:
+    #                     ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(flag_list[p],2)), color='black', va='center', ha='center')
+                                
+    #                 plt.axis('off')
+
+    #         if automata_nb_rows > 10 or automata_nb_rows > 10:
+    #             colors = [(0, 0, 0), (0.7, 0.9, 1.0)]  # Black to light blue
+    #             positions = [0.0, 1.0]
+    #             cmap = LinearSegmentedColormap.from_list('CustomBlackToLightBlue', list(zip(positions, colors)))
+    #             plt.scatter(x, y, c=greys, cmap=cmap) # cmap=''grey
+    #             plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+
+
+    #         ax.set_aspect('equal')
+    #         plt.xlim(-0.5, automata_nb_cols-0.5)
+    #         plt.ylim(-automata_nb_rows+0.5, 0.5)
+
+
+    #         if gen is None: # target flag
+    #             plt.title(f"Flag target, {automata_nb_rows} rows x {automata_nb_cols} columns", fontsize=14)
+    #             os.makedirs(analysis_dir_plots, exist_ok=True)
+    #             plt.savefig(analysis_dir_plots+"/plot_env_flag_target.png")
+
+    #         else:
+    #             individuals_gen = dataset_gen['Individual'].unique()
+    #             nb_ind = np.where(individuals_gen==str(ind))[0][0]
+    #             file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
+    #             if int(step) == steps[0]:
+    #                 os.makedirs(analysis_dir_plots+"/"+file_name+"/flag", exist_ok=True)
+    #                 file_path = analysis_dir_plots+"/"+file_name+"/flag_individual.txt"
+    #                 if not os.path.exists(file_path):
+    #                     with open (file_path, 'w') as f:
+    #                         f.write(str(ind))
+    #             plt.title(f"Flag evolution states. Run {run}, generation {gen}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {round(dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0], 2)}", pad=20, fontsize=9)
+    #             plt.savefig(analysis_dir_plots+"/"+file_name+"/flag/plot_env_flag_"+file_name+"_step_"+str(step)+".png")
+
+    #         plt.clf()
+    #         plt.close()
 
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag_fitnesses_from_file(env_eval_function_params=None, data_flag_file=None, run=None, gen=None, ind=None, analysis_dir_plots=None):
+    def plot_flag_fitnesses_from_file(data_flag_file=None, run=None, analysis_dir_plots=None):
+    # def plot_flag_fitnesses_from_file(env_eval_function_params=None, data_flag_file=None, run=None, gen=None, ind=None, analysis_dir_plots=None):
 
-        time_window_start = env_eval_function_params['time_window_start']
-        time_window_end = env_eval_function_params['time_window_end']
-        time_window_length = time_window_end - time_window_start + 1
+        # time_window_start = env_eval_function_params['time_window_start']
+        # time_window_end = env_eval_function_params['time_window_end']
+        # time_window_length = time_window_end - time_window_start + 1
 
-        df = pd.read_csv(data_flag_file)
+        dataset = pd.read_csv(data_flag_file)
 
-        dataset_gen = df.loc[(df.Generation==gen)]
-        individuals_gen = dataset_gen['Individual'].unique()
-        dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
+        # dataset_gen = df.loc[(df.Generation==gen)]
+        # individuals_gen = dataset_gen['Individual'].unique()
+        # dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
 
         fig, ax = plt.subplots()
 
@@ -312,23 +413,43 @@ class swarmGrid:
 
         plt.plot(x, y)
 
-        rectangle = patches.Rectangle((time_window_start, 0), time_window_length, dataset['Flags_distance'].max(), linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
-        ax.add_patch(rectangle)
+        # rectangle = patches.Rectangle((time_window_start, 0), time_window_length, dataset['Flags_distance'].max(), linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
+        # ax.add_patch(rectangle)
 
-
-        nb_ind = np.where(individuals_gen==str(ind))[0][0]
-        file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
-        if not os.path.exists(analysis_dir_plots+"/"+file_name):
-            os.makedirs(analysis_dir_plots+"/"+file_name, exist_ok=True)
-            file_path = analysis_dir_plots+"/"+file_name+"/flag_individual.txt"
-            if not os.path.exists(file_path):
-                with open (file_path, 'w') as f:
-                    f.write(str(ind))
+        # nb_ind = np.where(individuals_gen==str(ind))[0][0]
+        # file_name = "run_"+str(run)+"_step_"+str(step)+"_individual_"+str(nb_ind)
+        # if not os.path.exists(analysis_dir_plots+"/"+file_name):
+        #     os.makedirs(analysis_dir_plots+"/"+file_name, exist_ok=True)
+        #     file_path = analysis_dir_plots+"/"+file_name+"/flag_individual.txt"
+        #     if not os.path.exists(file_path):
+        #         with open (file_path, 'w') as f:
+        #             f.write(str(ind))
 
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
-        plt.suptitle(f"Fitness related to the flag evolution over steps", fontsize=14)
-        plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
-        plt.savefig(analysis_dir_plots+"/run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+"/flag_fitnesses_run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+".png")
+        plt.suptitle(f"Fitness related to the flag evolution over steps run="+str(run), fontsize=14)
+        # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
+        plt.savefig(analysis_dir_plots+"/flag_fitnesses_run_"+str(run)+".png")
         plt.clf()
         plt.close()
+
+    
+    def exchange_agents(self, agent1, agent2):
+        import copy
+        print("-1", self.grid_map_pos_agent)
+
+        print("agent1_pos", agent1.pos)
+        print("agent2_pos", agent2.pos)
+        agent1_pos = agent1.pos
+        agent2_pos = agent2.pos
+
+        agent1.pos = agent2.pos
+        agent2.pos = agent1_pos
+        print("agent1_pos", agent1.pos)
+        print("agent2_pos", agent2.pos)
+
+        # a = copy.copy(agent1)
+        self.grid_map_pos_agent[agent1_pos] = agent2
+        self.grid_map_pos_agent[agent2_pos] = agent1
+
+        self.refresh_grid()

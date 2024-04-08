@@ -164,11 +164,7 @@ def init_toolbox(params):
     toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params'], params['analysis_dir'])
     # kale solve acquisition
 
-    if params['with_parallelization_bool']:
-        pool = multiprocessing.Pool()
-        toolbox.register("map", pool.map)
-    else:
-        toolbox.register("map", map)
+    toolbox.register("map", map)
 
     # strategy = cma.Strategy(centroid=numpy.random.uniform(-5, 5, N), sigma=0.5, lambda_=params['off_lambda'])
     c, s, l = params['env']['toolbox_cmaes']['centroid'], params['env']['toolbox_cmaes']['sigma'], params['env']['toolbox_cmaes']['lambda_']

@@ -6,7 +6,7 @@
     "automata_nb_cols": 5,
     "flag_pattern": "2_stripes",
     "time_steps": 100,
-    "time_window_start": 60,
+    "time_window_start": 40,
     "time_window_end": 99,
 
     "ind_size": 14,
@@ -18,8 +18,8 @@
     "mu": null,
     "off_lambda": null,
 
-    "nb_runs": 2,
-    "nb_generations": 5,
+    "nb_runs": 7,
+    "nb_generations": 10,
 
     "init_cell_state_value": null,
 
@@ -27,5 +27,6 @@
     "plot_analysis_bool": true,
     "plot_with_animation_bool": false,
 
-    "with_parallelization_bool": false
+    "with_parallelization_bool": true,
+    "with_parallelization_nb_free_cores": 0
 }

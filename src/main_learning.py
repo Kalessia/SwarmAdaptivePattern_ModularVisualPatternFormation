@@ -1,8 +1,5 @@
 import time
-
-import numpy as np
-
-from deap import tools
+from multiprocessing import Pool, cpu_count
 
 from learning_initializations import *
 from learning_analysis import *
@@ -15,13 +12,13 @@ sep = "\n################################################\n"
 
 
 def cmaES_EvoAlgorithm(run, learning_params):
+    print(f"cmaES_EvoAlgorithm run n.{run} - Starting")
 
+    # Initialization
     time_run = time.time()
-
     learning_params = init_one_run_analysis(run, learning_params)
     toolbox = init_toolbox(learning_params)
-
-
+    
     # ind_x = [] 
     # ind_y = []
 
@@ -29,7 +26,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
     # best_ind = None
 
     for gen in range(learning_params['nb_generations']):
-        print("Starting generation n.", gen)
+        # print("Starting generation n.", gen)
 
 
 
@@ -60,13 +57,13 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
     # print("run", run, "best", best_ind[0], best_ind[1], minall)
     time_run = time.time() - time_run
-    print("cmaES_EvoAlgorithm run n." + str(run) + " - Execution time:", time_run, "seconds") # kale change save time for each run
+    print(f"cmaES_EvoAlgorithm run n.{run} - Execution time: {time_run} seconds") # kale change save time for each run
 
     write_single_run_data(run, time_run, learning_params['analysis_dir'])
 
     # Plot data for one single run
     if learning_params['plot_analysis_bool']:
-        plot_single_run_data(run, learning_params) 
+        plot_single_run_data(run, learning_params)
 
     #plot(learning_params['analysis_dir']['root'])
 
@@ -92,18 +89,27 @@ def cmaES_EvoAlgorithm(run, learning_params):
     #     pbar.update(1)
 
 
-
-
-    
     return learning_params
 
+#---------------------------------------------------
 
+def worker(task):
+    run, learning_params = task
+    return cmaES_EvoAlgorithm(run, learning_params)
 
+#---------------------------------------------------
 
+def parallelize_processes(nb_runs, learning_params):
+    
+    # Create a queue of tasks to execute
+    task_queue = [(run, learning_params.copy()) for run in range(nb_runs)]
 
+    # Create a Pool with the number of available cores
+    available_cores = cpu_count() - learning_params['with_parallelization_nb_free_cores']
+    with Pool(processes=min(nb_runs, available_cores)) as pool:
+        results_list = pool.map(worker, task_queue) # results_list contains the 'learning_params' of each run, respecting the ascending order from 0 to nb_runs
 
-
-
+    return results_list[-1]
 
 
 ###########################################################################
@@ -117,9 +123,13 @@ if (__name__ == "__main__"):
     learning_params = init_all_runs_analysis(learning_params)
     learning_params = set_env(learning_params)
 
-    # Launch the Evolutionary Algorithm
-    for run in range(learning_params['nb_runs']):    
-        learning_params = cmaES_EvoAlgorithm(run, learning_params)
+    if learning_params['with_parallelization_bool']:
+        # Launch the Evolutionary Algorithm with parallelization over runs
+        learning_params = parallelize_processes(learning_params['nb_runs'], learning_params)
+    else:
+        # Launch the Evolutionary Algorithm sequentially
+        for run in range(learning_params['nb_runs']):
+            learning_params = cmaES_EvoAlgorithm(run, learning_params)
 
     # Save a trace of used parameters for this simulation in learning_params.json
     del learning_params['env']['eval_function'] # not JSON serializable object
