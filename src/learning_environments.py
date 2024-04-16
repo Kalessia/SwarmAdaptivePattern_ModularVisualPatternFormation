@@ -56,6 +56,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
     automata_nb_cols = env_eval_function_params['automata_nb_cols']
     flag_pattern = env_eval_function_params['flag_pattern']
     init_cell_state_value = env_eval_function_params['init_cell_state_value']
+    nn_controller = env_eval_function_params['controller']['nn_controller']
     time_steps = env_eval_function_params['time_steps']
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
@@ -66,7 +67,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
 
     global env
     if not env:
-        env = flagAutomata(automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value)
+        env = flagAutomata(automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller)
     
     env.set_cell_controller(weights)
 
@@ -97,7 +98,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
 ###########################################################################
 
 class flagAutomata:
-    def __init__(self, automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value=None) -> None:
+    def __init__(self, automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller) -> None:
 
         self.automata_nb_rows = automata_nb_rows
         self.automata_nb_cols = automata_nb_cols
@@ -106,11 +107,13 @@ class flagAutomata:
         self.flag_target = self.build_flag(flag_pattern)
         self.flag = self.init_flag(init_cell_state_value) # values in [0.0, 1.0]. 0.0 represents black, 1.0 represents white. NB: high value is excluded
         
+
+
         self.automata_mode = 2
         if self.automata_mode == 1:
             self.cell_controller = NeuralNetwork(nb_neuronsPerInputs=4, nb_hiddenLayers=1, nb_neuronsPerHidden=2, nb_neuronsPerOutputs=1)
         elif self.automata_mode == 2: # nb: weights ind doit etre adaptée 
-            self.cell_controller = NeuralNetwork(nb_neuronsPerInputs=4, nb_hiddenLayers=1, nb_neuronsPerHidden=2, nb_neuronsPerOutputs=2)
+            self.cell_controller = nn_controller
             self.chemical_species = self.init_flag(init_cell_state_value) # change default value kale
 
         self.default_missing_neighbor_state = 0.0
@@ -162,8 +165,8 @@ class flagAutomata:
 
         elif flag_pattern == "circle":
 
-            center = (np.floor(self.automata_nb_rows/2)-1, np.floor(self.automata_nb_cols/2)-1)
-            radius = min(self.automata_nb_rows/2, self.automata_nb_cols/2) - 1
+            center = (np.floor(self.automata_nb_rows/2), np.floor(self.automata_nb_cols/2))
+            radius = np.floor(min(self.automata_nb_rows/2, self.automata_nb_cols/2))
 
             for cell in self.map_cell_neighbors_NWES.keys():
                 if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2):
@@ -173,8 +176,8 @@ class flagAutomata:
 
         elif flag_pattern == "half_circle":
 
-            center = (np.floor(self.automata_nb_rows/2)-1, np.floor(self.automata_nb_cols/2)-1)
-            radius = min(self.automata_nb_rows/2, self.automata_nb_cols/2) - 1
+            center = (np.floor(self.automata_nb_rows/2), np.floor(self.automata_nb_cols/2))
+            radius = np.floor(min(self.automata_nb_rows/2, self.automata_nb_cols/2))
 
             for cell in self.map_cell_neighbors_NWES.keys():
 
@@ -352,7 +355,7 @@ class flagAutomata:
             for p, pos in enumerate(map_cell_neighbors_NWES.keys()):
                 grey_value = flag_list[p]
 
-                if automata_nb_rows > 10 or automata_nb_rows > 10:
+                if automata_nb_rows > 10 or automata_nb_cols > 10:
                     x.append(pos[1])
                     y.append(-pos[0])
                     greys.append(grey_value)
@@ -364,16 +367,16 @@ class flagAutomata:
                         circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
                     ax.add_patch(circle)
 
-                    if automata_nb_rows < 6 and automata_nb_rows < 6:
-                        ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(flag_list[p],2)), color='black', va='center', ha='center')
+                    if automata_nb_rows < 6 and automata_nb_cols < 6:
+                        ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(grey_value,2)), color='black', va='center', ha='center')
                                 
                     plt.axis('off')
 
-            if automata_nb_rows > 10 or automata_nb_rows > 10:
+            if automata_nb_rows > 10 or automata_nb_cols > 10:
                 colors = [(0, 0, 0), (0.7, 0.9, 1.0)]  # Black to light blue
                 positions = [0.0, 1.0]
                 cmap = LinearSegmentedColormap.from_list('CustomBlackToLightBlue', list(zip(positions, colors)))
-                plt.scatter(x, y, c=greys, cmap=cmap) # cmap=''grey
+                plt.scatter(x, y, c=greys, cmap=cmap) # cmap='grey'
                 plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
 
 
@@ -397,7 +400,7 @@ class flagAutomata:
                     if not os.path.exists(file_path):
                         with open (file_path, 'w') as f:
                             f.write(str(ind))
-                plt.title(f"Flag evolution states. Run {run}, generation {gen}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {round(dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0], 2)}", pad=20, fontsize=9)
+                plt.title(f"Flag evolution states. Run {run}, generation {gen}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]}", pad=20, fontsize=9)
                 plt.savefig(analysis_dir_plots+"/"+file_name+"/flag/plot_env_flag_"+file_name+"_step_"+str(step)+".png")
 
             plt.clf()
@@ -425,7 +428,7 @@ class flagAutomata:
 
         plt.plot(x, y)
 
-        rectangle = patches.Rectangle((time_window_start, 0), time_window_length, dataset['Flags_distance'].max(), linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
+        rectangle = patches.Rectangle((time_window_start, 0), time_window_length, 1, linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
         ax.add_patch(rectangle)
 
 
@@ -438,6 +441,7 @@ class flagAutomata:
                 with open (file_path, 'w') as f:
                     f.write(str(ind))
 
+        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
         plt.suptitle(f"Fitness related to the flag evolution over steps", fontsize=14)

@@ -163,7 +163,7 @@ def plot_single_run_data(run, params):
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # plot_flag_from_file for best individuals ever in a defined range of steps
-    from environments import flagAutomata
+    from learning_environments import flagAutomata
     save_dir = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/plots/env"
     dataset_path = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
     dataset = pd.read_csv(dataset_path)
@@ -212,7 +212,7 @@ def plot_all_runs_data(params):
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # plot_flag_from_file for the target flag
-    from environments import flagAutomata
+    from learning_environments import flagAutomata
     flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/learning/data_all_runs/data_env_flag_target.csv", analysis_dir_plots=params['analysis_dir']['root']+"/learning/plots_all_runs")
 
     print(f"Plots for all the runs completed.")

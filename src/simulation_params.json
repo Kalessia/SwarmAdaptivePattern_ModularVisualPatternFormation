@@ -1,39 +1,22 @@
 {
-
-    "env_name": "flag_automata",
-
-    "grid_nb_rows": 9, 
-    "grid_nb_cols": 9,
     "time_steps": 200,
-    
-    
-    
-    
-    
-    
-    
-    
-    "time_window_start": 60,
-    "time_window_end": 99,
-
-    "ind_size": 14,
-    "ind_min_value": -1,
-    "ind_max_value": 1,
-    "min_strategy": null,
-    "max_strategy": null,
-    "nb_gen": null,
-    "mu": null,
-    "off_lambda": null,
+    "switch_step": 50,
+    "nb_repetitions": 3,
 
     "nb_runs": 2,
     "nb_generations": 5,
 
+    "nb_agents_to_delete": 10,
+
     "init_cell_state_value": null,
+
+    "noise_ticks": [1.0e-1, 1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5],
+    "deletion_ticks": [2, 3, 7, 10],
 
     "verbose_debug": false,
     "plot_analysis_bool": true,
     "plot_with_animation_bool": false,
 
-    "with_parallelization_bool": false,
+    "with_parallelization_bool": true,
     "with_parallelization_nb_free_cores": 0
 }

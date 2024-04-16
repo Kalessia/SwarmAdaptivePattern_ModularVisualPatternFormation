@@ -2,14 +2,14 @@
 
     "env_name": "flag_automata",
 
-    "automata_nb_rows": 3, 
-    "automata_nb_cols": 5,
-    "flag_pattern": "2_stripes",
+    "flag_pattern": "circle",
+    "automata_nb_rows": 9, 
+    "automata_nb_cols": 9,
+    
     "time_steps": 100,
     "time_window_start": 40,
-    "time_window_end": 99,
+    "time_window_end": 80,
 
-    "ind_size": 14,
     "ind_min_value": -1,
     "ind_max_value": 1,
     "min_strategy": null,
@@ -18,8 +18,13 @@
     "mu": null,
     "off_lambda": null,
 
-    "nb_runs": 7,
-    "nb_generations": 10,
+    "nb_neuronsPerInputs": 4,
+    "nb_hiddenLayers": 1,
+    "nb_neuronsPerHidden": 2,
+    "nb_neuronsPerOutputs": 2,
+
+    "nb_runs": 11,
+    "nb_generations": 200,
 
     "init_cell_state_value": null,
 

@@ -10,7 +10,7 @@ from deap import cma
 import numpy as np
 import random
 
-from environments import *
+from learning_environments import *
 
 import json
 
@@ -39,6 +39,14 @@ def get_parameters_from_json(file_name=None):
 ###########################################################################
 
 def set_env(params):
+
+    if params['env_name'] == 'flag_automata':
+        nn_controller = NeuralNetwork(nb_neuronsPerInputs=params['nb_neuronsPerInputs'],
+                                      nb_hiddenLayers=params['nb_hiddenLayers'],
+                                      nb_neuronsPerHidden=params['nb_neuronsPerHidden'],
+                                      nb_neuronsPerOutputs=params['nb_neuronsPerOutputs'])
+        ind_size = len(nn_controller.getWeightsList())
+        params['ind_size'] = ind_size
 
     environments = {
                     'sphere': {
@@ -79,23 +87,23 @@ def set_env(params):
                             'automata_nb_cols': params['automata_nb_cols'],
                             'flag_pattern': params['flag_pattern'],
                             'init_cell_state_value': params['init_cell_state_value'],
+                            'controller': {
+                                'nn_controller': nn_controller,
+                                'nb_neuronsPerInputs': params['nb_neuronsPerInputs'],
+                                'nb_hiddenLayers': params['nb_hiddenLayers'],
+                                'nb_neuronsPerHidden': params['nb_neuronsPerHidden'],
+                                'nb_neuronsPerOutputs': params['nb_neuronsPerOutputs']
+                            },
                             'time_steps': params['time_steps'],
                             'time_window_start': params['time_window_start'],
                             'time_window_end': params['time_window_end']
                         },
                         'env_boundaries': None,
                         'toolbox_cmaes': {
-                            'centroid': list(np.random.uniform(params['ind_min_value'], params['ind_max_value'], params['ind_size'])),
+                            'centroid': list(np.random.uniform(params['ind_min_value'], params['ind_max_value'], ind_size)),
                             'sigma': 0.5,
-                            # 'lambda_': int(4 + 3 * np.log(params['automata_nb_rows'] * params['automata_nb_cols']))
                             'lambda_': None
-                        },
-                        'env_boundaries_2D': {
-                            'theta_space_min_x': -15,
-                            'theta_space_min_y': -15,
-                            'theta_space_max_x': 15,
-                            'theta_space_max_y': 15
-                        },
+                        }
                     }
     }
 
@@ -104,9 +112,7 @@ def set_env(params):
         return params
 
     print("gnééé") # Kale
-    exit()
-    # (params['nn_nb_neurons_per_inputs']*params['nn_nb_neurons_per_hidden'])+((params['nn_nb_hidden_layers']-1)*(params['nn_nb_neurons_per_hidden']**2))+params['automata_mode'])
- 
+    exit() 
 
 
 ###########################################################################
@@ -114,38 +120,6 @@ def set_env(params):
 # Preparation of the EA with the DEAP framework.
 # See https://deap.readthedocs.io for more details.
 ###########################################################################
-
-# Individual generator
-# def generateES(icls, scls, size, imin, imax, smin, smax):
-#     """
-#     icls: the class of individual to instantiate
-#     """
-#     print(size, imin, imax, smin, smax)
-#     ind = icls(random.uniform(imin, imax) for _ in range(size))
-#     ind.strategy = scls(random.uniform(smin, smax) for _ in range(size))
-#     return ind
-
-#---------------------------------------------------
-
-# def convert_list_to_ind(ind):
-#     return creator.Individual(ind)
-
-#---------------------------------------------------
-
-# def clip_deap_ind(ind, min_val, max_val):
-#     for i_gene, gene in enumerate(ind):
-#         ind[i_gene] = max(min(ind[i_gene], max_val), min_val)
-#         return ind
-
-#---------------------------------------------------
-
-# def update_ds_success_zone_radius(ds_success_zone_radius_step):
-#     global_params['env_DS_params']['success_zone_radius'] += ds_success_zone_radius_step
-#     global_params['eval_fit_params']['best_fitness_lim'] += ds_success_zone_radius_step
-#     toolbox.register("evaluate", global_params['eval_functiontion'], **global_params['eval_params'], **global_params['env_DS_params'], **global_params['eval_fit_params'], **global_params['noise_params'])
-#     toolbox.register("evaluate_det", global_params['eval_functiontion'], **global_params['eval_params'], **global_params['env_DS_params'], **global_params['eval_fit_params'], noise_bool=False)
-
-#---------------------------------------------------
 
 def init_toolbox(params):
 
@@ -168,9 +142,9 @@ def init_toolbox(params):
 
     # strategy = cma.Strategy(centroid=numpy.random.uniform(-5, 5, N), sigma=0.5, lambda_=params['off_lambda'])
     c, s, l = params['env']['toolbox_cmaes']['centroid'], params['env']['toolbox_cmaes']['sigma'], params['env']['toolbox_cmaes']['lambda_']
-    # strategy = cma.Strategy(centroid=c, sigma=s, lambda_=l)
+    # strategy = cma.Strategy(centroid=c, sigma=s, lambda_=l) l=none foctionne?
     strategy = cma.Strategy(centroid=c, sigma=s)
-    # default lambda_ = int(4 + 3 * log(N)) with N the individual’s size (integer).
+    # default lambda_ = int(4 + 3 * log(N)) with N the individual’s size (integer)
 
     toolbox.register("generate", strategy.generate, creator.Individual)
     toolbox.register("update", strategy.update)

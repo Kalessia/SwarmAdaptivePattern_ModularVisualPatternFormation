@@ -12,7 +12,7 @@ sep = "\n################################################\n"
 
 
 def cmaES_EvoAlgorithm(run, learning_params):
-    print(f"cmaES_EvoAlgorithm run n.{run} - Starting")
+    print(f"cmaES_EvoAlgorithm run n.{run} - Started")
 
     # Initialization
     time_run = time.time()
@@ -57,7 +57,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
     # print("run", run, "best", best_ind[0], best_ind[1], minall)
     time_run = time.time() - time_run
-    print(f"cmaES_EvoAlgorithm run n.{run} - Execution time: {time_run} seconds") # kale change save time for each run
+    print(f"cmaES_EvoAlgorithm run n.{run} - Finished. Execution time: {time_run} seconds") # kale change save time for each run
 
     write_single_run_data(run, time_run, learning_params['analysis_dir'])
 
@@ -133,6 +133,7 @@ if (__name__ == "__main__"):
 
     # Save a trace of used parameters for this simulation in learning_params.json
     del learning_params['env']['eval_function'] # not JSON serializable object
+    del learning_params['env']['eval_function_params']['controller']['nn_controller']
     with open(learning_params['analysis_dir']['root']+"/learning/learning_params.json", "w") as f:
         json.dump({k:v for k,v in learning_params.items()}, f, indent=2)
 
