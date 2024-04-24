@@ -34,7 +34,11 @@ def swarm_simulation(run, best_ind, best_ind_run, simulation_params):
     # kale on defini un step en simuparams a partir du quel on change de regime
     time_steps = simulation_params['time_steps']
     switch_step = simulation_params['switch_step']
-    
+
+    # cas 0: test de l'individu
+    for n in range(simulation_params['nb_repetitions']):
+        env.setup_test_ind(run, n, time_steps, switch_step, best_ind_run, best_ind, simulation_params)
+
     # cas 1: introduire du bruit continu de differente entité
     # param: entités de bruit souhaités
     # initialize env: init grid? ou nouvelle instance
@@ -50,11 +54,11 @@ def swarm_simulation(run, best_ind, best_ind_run, simulation_params):
     # cas 2: introduire du bruit continu de differente entité
     # pareil, mais avec noise type 2
 
-    noise_ticks = simulation_params['noise_ticks']
-    if noise_ticks:
-        for n in range(simulation_params['nb_repetitions']):
-            for tick in noise_ticks:
-                env.setup_noise2(run, n, tick, time_steps, switch_step, best_ind_run, best_ind, simulation_params)
+    # noise_ticks = simulation_params['noise_ticks']
+    # if noise_ticks:
+    #     for n in range(simulation_params['nb_repetitions']):
+    #         for tick in noise_ticks:
+    #             env.setup_noise2(run, n, tick, time_steps, switch_step, best_ind_run, best_ind, simulation_params)
            
     # cas 2: eliminer n agents
     # params: liste de nombre N de agents à eliminer, sans retirage, choisi au hazard
@@ -121,7 +125,7 @@ def get_best_ind_per_run_dict(dataset_path=None):
     for run in runs:
         ind = dataset.loc[(dataset.Run==run), 'Individual'].values.tolist()[0]
         ind = str(ind).replace('[', '').replace(']', '').strip()
-        ind = list(np.asarray(ind.split(','), dtype=np.float32))
+        ind = list(np.asarray(ind.split(','), dtype=np.float64))
         best_ind_per_run_dict[run] = ind
 
     return best_ind_per_run_dict
@@ -184,7 +188,7 @@ if (__name__ == "__main__"):
 
     # Initialization
     # analysis_dir = sys.argv[1]
-    analysis_dir = "simulationAnalysis/flag_automata_simulation_2024-04-16_02-25-46" # exemple
+    analysis_dir = "simulationAnalysis/flag_automata_simulation_2024-04-16_02-25-46_circle_9x9"
     with open(analysis_dir+"/learning/learning_params.json", "r") as f:
         learning_params = json.load(f)
 

@@ -54,7 +54,7 @@ class swarmAgent:
 ###########################################################################
 
 class swarmGrid:
-    def __init__(self, grid_nb_rows, grid_nb_cols, nb_neuronsPerInputs, nb_hiddenLayers, nb_neuronsPerHidden, nb_neuronsPerOutputs, agent_controller_weights, flag_target) -> None:
+    def __init__(self, grid_nb_rows, grid_nb_cols, init_cell_state_value, nb_neuronsPerInputs, nb_hiddenLayers, nb_neuronsPerHidden, nb_neuronsPerOutputs, agent_controller_weights, flag_target) -> None:
 
         self.grid_nb_rows = grid_nb_rows
         self.grid_nb_cols = grid_nb_cols
@@ -64,7 +64,7 @@ class swarmGrid:
 
         self.agent_controller = NeuralNetwork(nb_neuronsPerInputs=nb_neuronsPerInputs, nb_hiddenLayers=nb_hiddenLayers, nb_neuronsPerHidden=nb_neuronsPerHidden, nb_neuronsPerOutputs=nb_neuronsPerOutputs)
         self.agent_controller.setWeightsFromList(agent_controller_weights)
-
+        
         self.default_missing_neighbor_state = 0.0
 
         self.flag_target = flag_target
@@ -130,11 +130,32 @@ class swarmGrid:
             #     # print("step: The value in ", cell, "was", self.flag[cell])
             #     self.flag[cell] = self.compute_cell_state(cell)
             #     # print("step: After compute_cell_state, the value in", cell, "is", self.flag[cell], "\n")
+
+      #---------------------------------------------------
+
+    def setup_test_ind(self, run, n, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
+        setup_name = "setup_test_ind"
         
+        self.init_agents_state()
+
+        flags = []
+
+        for _ in range(time_steps):
+
+            flag = self.get_flag_from_grid()
+            flags.append(flag)
+
+            self.step()
+
+        # Save flags for this run
+        self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
+        data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
+        self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+
     #---------------------------------------------------
 
     def setup_noise1(self, run, n, tick, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
-        setup_name = "setup_noise_"+str(tick)
+        setup_name = "setup_noise1_"+str(tick)
         
         self.init_agents_state()
         agents_ids = list(self.grid_map_id_pos.keys()) # ordered update
@@ -150,9 +171,7 @@ class swarmGrid:
             
             if step >= switch_step:
 
-                if True: #Kale parametrable bool
-                    np.random.shuffle(agents_ids) # random update
-
+                np.random.shuffle(agents_ids) # random update
                 for agent_id in agents_ids:
                     self.compute_agent_state_with_noise_1(agent=self.grid_map_pos_agent[self.grid_map_id_pos[agent_id]], noise_std=tick)
 
@@ -162,14 +181,12 @@ class swarmGrid:
         # Save flags for this run
         self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
         data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-        analysis_dir_plots = simulation_params['analysis_dir']['plots']+"/best_ind_"+str(best_ind_run)+"/"+setup_name
-        os.makedirs(analysis_dir_plots, exist_ok=True)
-        self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=analysis_dir_plots)
+        self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
 
     #---------------------------------------------------
 
     def setup_noise2(self, run, n, tick, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
-        setup_name = "setup_noise_"+str(tick)
+        setup_name = "setup_noise2_"+str(tick)
         
         self.init_agents_state()
         agents_ids = list(self.grid_map_id_pos.keys()) # ordered update
@@ -197,9 +214,7 @@ class swarmGrid:
         # Save flags for this run
         self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
         data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-        analysis_dir_plots = simulation_params['analysis_dir']['plots']+"/best_ind_"+str(best_ind_run)+"/"+setup_name
-        os.makedirs(analysis_dir_plots, exist_ok=True)
-        self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=analysis_dir_plots)
+        self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
 
     #---------------------------------------------------
 
@@ -429,10 +444,9 @@ class swarmGrid:
 
         dir_name = analysis_dir['data']+"/best_ind_"+str(best_ind_run)+"/"+str(setup_name)
         file_name = "/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-        if not (os.path.exists(dir_name+file_name)):
-            # os.makedirs(analysis_dir['data']+"/best_ind_"+str(best_ind_run)+"/"+str(setup_name)+"/data_env_flag/", exist_ok=True)
+        if not (os.path.exists(dir_name)):
             os.makedirs(dir_name, exist_ok=True)
-            save_data_to_csv(dir_name+file_name, [], header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"])
+        # save_data_to_csv(dir_name+file_name, [], header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"])
 
         file_path = analysis_dir['data']+"/best_ind_"+str(best_ind_run)+"/flag_individual.txt"
         if not os.path.exists(file_path):
@@ -444,7 +458,7 @@ class swarmGrid:
             flags_distance = self.eval_flags_distance(flags[step])
             data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip()])
 
-        save_data_to_csv(dir_name+file_name, data_env_flag)
+        save_data_to_csv(dir_name+file_name, data_env_flag, header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"])
 
     #---------------------------------------------------
 
@@ -532,7 +546,7 @@ class swarmGrid:
 
             plt.title(f"Flag")     
             # plt.title(f"Flag evolution states. Run {run}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {round(dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0], 2)}", pad=20, fontsize=9)
-            plt.savefig(analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/flag/"+setup_name+"_flag_run_"+str(run)+"_best_ind_"+str(best_ind_run)+"_n_"+str(n)+"_step_"+str(step)+".png")
+            plt.savefig(dir_name+"/"+setup_name+"_flag_run_"+str(run)+"_best_ind_"+str(best_ind_run)+"_n_"+str(n)+"_step_"+str(step)+".png")
 
             plt.clf()
             plt.close()
@@ -555,33 +569,34 @@ class swarmGrid:
         plt.plot(x, y)
         plt.axvline(x=switch_step, color='r', linestyle='--')
 
-        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(-0.2, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
         plt.suptitle(f"Fitness related to the flag evolution over steps run="+str(run), fontsize=14)
         # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
-        plt.savefig(analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/fitness/"+setup_name+"_flag_fitnesses_run_"+str(run)+"_n_"+str(n)+".png")
+        plt.savefig(dir_name+"/"+setup_name+"_flag_fitnesses_run_"+str(run)+"_n_"+str(n)+".png")
+        dir_name+"/"+setup_name+"_fitness_run_"+str(run)+"_best_ind_"+str(best_ind_run)+"_n_"+str(n)+".png"
         plt.clf()
         plt.close()
 
     #---------------------------------------------------
 
-    def exchange_agents(self, agent1, agent2):
-        import copy
-        # print("-1", self.grid_map_pos_agent)
+    # def exchange_agents(self, agent1, agent2):
+    #     import copy
+    #     # print("-1", self.grid_map_pos_agent)
 
-        # print("agent1_pos", agent1.pos)
-        # print("agent2_pos", agent2.pos)
-        agent1_pos = agent1.pos
-        agent2_pos = agent2.pos
+    #     # print("agent1_pos", agent1.pos)
+    #     # print("agent2_pos", agent2.pos)
+    #     agent1_pos = agent1.pos
+    #     agent2_pos = agent2.pos
 
-        agent1.pos = agent2.pos
-        agent2.pos = agent1_pos
-        # print("agen!t1_pos", agent1.pos)
-        # print("agent2_pos", agent2.pos)
+    #     agent1.pos = agent2.pos
+    #     agent2.pos = agent1_pos
+    #     # print("agen!t1_pos", agent1.pos)
+    #     # print("agent2_pos", agent2.pos)
 
-        # a = copy.copy(agent1)
-        self.grid_map_pos_agent[agent1_pos] = agent2
-        self.grid_map_pos_agent[agent2_pos] = agent1
+    #     # a = copy.copy(agent1)
+    #     self.grid_map_pos_agent[agent1_pos] = agent2
+    #     self.grid_map_pos_agent[agent2_pos] = agent1
 
-        self.refresh_grid()
+    #     self.refresh_grid()

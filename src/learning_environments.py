@@ -441,7 +441,7 @@ class flagAutomata:
                 with open (file_path, 'w') as f:
                     f.write(str(ind))
 
-        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(-0.2, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
         plt.suptitle(f"Fitness related to the flag evolution over steps", fontsize=14)

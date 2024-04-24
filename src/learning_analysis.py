@@ -27,7 +27,7 @@ def init_all_runs_analysis(params):
 
     # Create the 'analysis_dir' folder
     params['analysis_dir'] = {}
-    params['analysis_dir']['root'] = "simulationAnalysis/"+params['env_name']+"_simulation_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    params['analysis_dir']['root'] = "simulationAnalysis/"+params['env_name']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+params['flag_pattern']+"_"+str(params['automata_nb_rows'])+"x"+str(params['automata_nb_cols'])
     os.makedirs(params['analysis_dir']['root'], exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/learning/data_all_runs", exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/learning/plots_all_runs", exist_ok=True)
@@ -234,6 +234,7 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, save_filename):
     sns.set_theme()
     sns.boxplot(x='Generation', y='Fitness', data=dataset, color='skyblue')
 
+    plt.ylim(-0.2, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.title("Fitnesses over generations\nall individuals generated", fontsize=14)
     plt.xlabel("Generation", fontsize=12)
     plt.ylabel("Fitness", fontsize=12)
@@ -261,6 +262,7 @@ def plot_best_inds_ever(dataset_path, save_filename):
 
         plt.step(generations, best_fitnesses_ever, where='post', label='run '+str(run)) # plot
 
+    plt.ylim(-0.2, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.title("Fitnesses over generations\nbest individuals ever", fontsize=14)
     plt.xlabel("Generation", fontsize=12)
     plt.ylabel("Fitness", fontsize=12)

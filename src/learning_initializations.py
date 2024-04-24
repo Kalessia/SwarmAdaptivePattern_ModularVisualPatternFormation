@@ -136,7 +136,6 @@ def init_toolbox(params):
     creator.create("Strategy", list)
     
     toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params'], params['analysis_dir'])
-    # kale solve acquisition
 
     toolbox.register("map", map)
 
