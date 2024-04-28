@@ -1,5 +1,3 @@
-import multiprocessing
-
 import warnings
 
 from deap import creator
@@ -24,14 +22,13 @@ import json
 def get_parameters_from_json(file_name=None):
 
     if file_name is None:
-        file_name = "/home/kalessia/flagAutomata/src/learning_params.json" # ???
+        file_name = os.getcwd() +"/src/learning_params.json" # ???
+        print("sta a vedere uuuh", file_name)
 
     with open(file_name, "r") as f:
         params = json.load(f)
 
     return params
-
-
 
 
 ###########################################################################

@@ -8,8 +8,8 @@ import numpy as np
 
 import json
 
-from swarm import swarmGrid
-from simulation_analysis import *
+from src.swarm_environments import swarmGrid
+from src.swarm_analysis import *
 
 sep = "\n################################################\n"
 
