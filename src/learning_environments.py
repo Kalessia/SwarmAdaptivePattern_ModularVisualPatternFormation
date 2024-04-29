@@ -12,7 +12,6 @@ from learning_analysis import save_data_to_csv
 
 
 
-
 ###########################################################################
 # Global variables
 ###########################################################################
@@ -25,33 +24,7 @@ env = None
 # Evaluation functions
 ###########################################################################
 
-def sphere_function(a):
-    """
-    a: ArrayLike
-    """
-    x = np.array(a)
-    result = np.sum(x**2)
-    # print(f"Sphere function value for {a}: {result}")
-    return (result,)
-
-#---------------------------------------------------
-
-def rastrigin_function(a):
-    """
-    a: ArrayLike
-    """
-    x = np.array(a)
-    A = 10
-    n = len(x)
-    result = A * n + np.sum(x**2 - A * np.cos(2 * np.pi * x))
-    # print(f"Rastrigin function value for {a}: {result}")
-    return (result,)
-
-#---------------------------------------------------
-
 def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
-    # time_window_end check validity
-
     automata_nb_rows = env_eval_function_params['automata_nb_rows']
     automata_nb_cols = env_eval_function_params['automata_nb_cols']
     flag_pattern = env_eval_function_params['flag_pattern']
@@ -90,7 +63,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
     env.write_flag_data(run, gen, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, analysis_dir=analysis_dir)
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
 
-    return (mean_tw_flags_distances,)
+    return (mean_tw_flags_distances,) # it is important to return a tuple
 
 
 ###########################################################################
@@ -112,7 +85,7 @@ class flagAutomata:
         self.automata_mode = 2
         if self.automata_mode == 1:
             self.cell_controller = NeuralNetwork(nb_neuronsPerInputs=4, nb_hiddenLayers=1, nb_neuronsPerHidden=2, nb_neuronsPerOutputs=1)
-        elif self.automata_mode == 2: # nb: weights ind doit etre adaptée 
+        elif self.automata_mode == 2:
             self.cell_controller = nn_controller
             self.chemical_species = self.init_flag(init_cell_state_value) # change default value kale
 
@@ -441,7 +414,7 @@ class flagAutomata:
                 with open (file_path, 'w') as f:
                     f.write(str(ind))
 
-        plt.ylim(-0.2, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
         plt.suptitle(f"Fitness related to the flag evolution over steps", fontsize=14)

@@ -7,7 +7,7 @@
 # to leave the default parameters.
 ###########################################################################
 
-analysis_dir="simulationAnalysis/flag_automata_simulation_2024-03-16_18-37-12" # relative path, ex: "simulationAnalysis/flag_automata_simulation_2024-03-14_07-32-14"
+analysis_dir="simulationAnalysis/flag_automata_simulation_2024-03-16_18-37-12" # exemple: 
 
 
 ###########################################################################
@@ -18,4 +18,4 @@ analysis_dir="simulationAnalysis/flag_automata_simulation_2024-03-16_18-37-12" #
 # the analysis.py file: 'chmod u+x analysis.py'
 ###########################################################################
 
-python3 src/analysis.py ${analysis_dir}
+python3 learning_analysis.py ${analysis_dir}

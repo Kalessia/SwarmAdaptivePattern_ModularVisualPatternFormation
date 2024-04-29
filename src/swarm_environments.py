@@ -10,12 +10,13 @@ from matplotlib.colors import LinearSegmentedColormap
 
 from nn import NeuralNetwork
 
-from simulation_analysis import save_data_to_csv
+from swarm_analysis import save_data_to_csv
 
 
 
 global count_id
 count_id = -1
+
 
 ###########################################################################
 # Environment swarm grid
@@ -569,7 +570,7 @@ class swarmGrid:
         plt.plot(x, y)
         plt.axvline(x=switch_step, color='r', linestyle='--')
 
-        plt.ylim(-0.2, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
         plt.suptitle(f"Fitness related to the flag evolution over steps run="+str(run), fontsize=14)

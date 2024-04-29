@@ -25,7 +25,7 @@
     "nb_runs": 1,
     "nb_generations": 10,
 
-    "init_cell_state_value": null,
+    "init_cell_state_value": 0.0,
 
     "verbose_debug": false,
     "plot_analysis_bool": true,
