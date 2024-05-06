@@ -21,6 +21,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
     learning_params = init_one_run_analysis(run, learning_params)
     toolbox = init_toolbox(learning_params)
 
+    # Main evolutionary loop
     for gen in range(learning_params['nb_generations']):
 
         # DEAP CMAES
@@ -39,13 +40,9 @@ def cmaES_EvoAlgorithm(run, learning_params):
         toolbox.update(population) # update the current covariance matrix strategy from the population; update the strategy with the evaluated individuals
 
     time_run = time.time() - time_run
-    print(f"cmaES_EvoAlgorithm run n.{run} - Finished. Execution time: {time_run} seconds") # kale change save time for each run
+    print(f"cmaES_EvoAlgorithm run n.{run} - Completed. Execution time: {time_run} seconds")
 
     write_single_run_data(run, time_run, learning_params['analysis_dir'])
-
-    # Plot data for one single run
-    if learning_params['plot_analysis_bool']:
-        plot_single_run_data(run, learning_params)
 
     return learning_params
 
@@ -69,8 +66,10 @@ def parallelize_processes(nb_runs, learning_params):
     available_cores = cpu_count() - learning_params['with_parallelization_nb_free_cores']
     with Pool(processes=min(nb_runs, available_cores)) as pool:
         results_list = pool.map(worker, task_queue) # results_list contains the 'learning_params' of each run, respecting the ascending order from 0 to nb_runs
+        pool.close() # no more tasks will be submitted to the pool
+        pool.join() # wait for all processes to complete
 
-    return results_list[-1]
+    return results_list[0]
 
 
 ###########################################################################
@@ -79,26 +78,26 @@ def parallelize_processes(nb_runs, learning_params):
 
 if (__name__ == "__main__"):
 
-    # Initialization
-    learning_params = get_parameters_from_json()
+    # Get parameters from config files
+    with open(os.getcwd() +"/learning_params.json", "r") as f:
+        learning_params = json.load(f)
+
+    # Initializations
     learning_params = init_all_runs_analysis(learning_params)
     learning_params = set_env(learning_params)
 
+    # Launch the Evolutionary Algorithm with parallelization over runs OR sequentially
     if learning_params['with_parallelization_bool']:
-        # Launch the Evolutionary Algorithm with parallelization over runs
         learning_params = parallelize_processes(learning_params['nb_runs'], learning_params)
     else:
-        # Launch the Evolutionary Algorithm sequentially
         for run in range(learning_params['nb_runs']):
             learning_params = cmaES_EvoAlgorithm(run, learning_params)
 
     # Save a trace of used parameters for this simulation in learning_params.json
     del learning_params['env']['eval_function'] # not JSON serializable object
-    del learning_params['env']['eval_function_params']['controller']['nn_controller'] # not JSON serializable object
-    with open(learning_params['analysis_dir']['root']+"/learning/learning_params.json", "w") as f:
+    del learning_params['env']['eval_function_params']['controller'] # not JSON serializable object
+    with open(learning_params['analysis_dir']['root']+"/learning_params.json", "w") as f:
         json.dump({k:v for k,v in learning_params.items()}, f, indent=2)
 
-    # Plot data for all the runs
-    if learning_params['plot_analysis_bool']:
-        write_all_runs_data(learning_params['analysis_dir']['root']+"/learning")
-        plot_all_runs_data(learning_params)
+    # Plots: this line allows the learning_launch.sh script to plot figures
+    print(learning_params['analysis_dir']['root'])

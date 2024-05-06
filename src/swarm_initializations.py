@@ -1,0 +1,94 @@
+import pandas as pd
+import numpy as np
+from nn import NeuralNetwork
+
+###########################################################################
+# Environment initialization
+###########################################################################
+
+def check_params_validity(params):
+
+    exit_bool = False
+
+    params['nb_runs'] = int(params['nb_runs'])
+    params['time_steps'] = int(params['time_steps'])
+    params['switch_step'] = int(params['switch_step'])
+    params['nb_repetitions'] = int(params['nb_repetitions'])
+    params['with_parallelization_nb_free_cores'] = int(params['with_parallelization_nb_free_cores'])
+
+    if params['nb_runs'] <= 0 or params['time_steps'] <= 0 or params['nb_repetitions'] <= 0:
+        print(f"Error in learning_initializations.py - Parameters nb_runs, time_steps and nb_repetitions must be > 0")
+        exit_bool = True
+
+    if params['setup_noise_bool'] and not isinstance(params['setup_noise_ticks'], list):
+        print(f"Error in learning_initializations.py - Parameter setup_noise_ticks must be a list")
+        exit_bool = True
+
+    if params['setup_deletion_bool'] and not isinstance(params['setup_deletion_ticks'], list):
+        print(f"Error in learning_initializations.py - Parameter setup_deletion_ticks must be a list")
+        exit_bool = True
+
+    if exit_bool:
+        print("learning_main stopped. Please correct the entry parameter in learning_params.json before restart.")
+        exit()
+
+#---------------------------------------------------
+
+def get_best_ind_per_run_dict(dataset_path=None):
+
+    best_ind_per_run_dict = {}
+    dataset = pd.read_csv(dataset_path)
+
+    runs = sorted(dataset['Run'].unique())
+    for run in runs:
+        ind = dataset.loc[(dataset.Run==run), 'Individual'].values.tolist()[0]
+        ind = str(ind).replace('[', '').replace(']', '').strip()
+        ind = list(np.asarray(ind.split(','), dtype=np.float64))
+        best_ind_per_run_dict[run] = ind
+
+    return best_ind_per_run_dict
+
+#---------------------------------------------------
+
+def get_best_ind_ever(dataset_path=None):
+
+    dataset = pd.read_csv(dataset_path)
+
+    best_ind_ever_fitness = dataset['Fitness'].min()
+    best_ind_ever = dataset.loc[dataset.Fitness==best_ind_ever_fitness, 'Individual'].values.tolist()[0]
+    best_ind_ever = str(best_ind_ever).replace('[', '').replace(']', '').strip()
+    best_ind_ever = list(np.asarray(best_ind_ever.split(','), dtype=np.float32))
+
+    return best_ind_ever, best_ind_ever_fitness
+
+#---------------------------------------------------
+
+def get_flag_target(dataset_path=None):
+
+    dataset = pd.read_csv(dataset_path)
+    flag_target = dataset.iloc[0]['Flag']
+    flag_target = str(flag_target).replace('[', '').replace(']', '').strip()
+    flag_target = list(np.asarray(flag_target.split(','), dtype=np.float32))
+
+    return flag_target
+
+#---------------------------------------------------
+
+def copy_params_from_learning(learning_params, swarm_params):
+    
+    swarm_params['learning_nb_runs'] = learning_params['nb_runs']
+    swarm_params['grid_nb_rows'] = learning_params['automata_nb_rows']
+    swarm_params['grid_nb_cols'] = learning_params['automata_nb_cols']
+    swarm_params['init_cell_state_value'] = learning_params['init_cell_state_value']
+
+    swarm_params['controller'] = NeuralNetwork(nb_neuronsPerInputs=learning_params['nb_neuronsPerInputs'],
+                                        nb_hiddenLayers=learning_params['nb_hiddenLayers'],
+                                        nb_neuronsPerHidden=learning_params['nb_neuronsPerHidden'],
+                                        nb_neuronsPerOutputs=learning_params['nb_neuronsPerOutputs'])
+
+    swarm_params['best_ind_ever'], swarm_params['best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
+    swarm_params['flag_target'] = get_flag_target(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")
+
+    return swarm_params
+
+#---------------------------------------------------

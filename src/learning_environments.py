@@ -5,9 +5,8 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import ListedColormap
 
-from nn import NeuralNetwork
 from learning_analysis import save_data_to_csv
 
 
@@ -29,7 +28,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
     automata_nb_cols = env_eval_function_params['automata_nb_cols']
     flag_pattern = env_eval_function_params['flag_pattern']
     init_cell_state_value = env_eval_function_params['init_cell_state_value']
-    nn_controller = env_eval_function_params['controller']['nn_controller']
+    nn_controller = env_eval_function_params['controller']
     time_steps = env_eval_function_params['time_steps']
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
@@ -42,7 +41,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
     if not env:
         env = flagAutomata(automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller)
     
-    env.set_cell_controller(weights)
+    env.cell_controller.setWeightsFromList(weights)
 
     flags_distance = None
     sum_flags_distances = 0.0
@@ -76,20 +75,17 @@ class flagAutomata:
         self.automata_nb_rows = automata_nb_rows
         self.automata_nb_cols = automata_nb_cols
         self.map_cell_neighbors_NWES = flagAutomata.build_map_cell_neighbors(self.automata_nb_rows, self.automata_nb_cols)
-
-        self.flag_target = self.build_flag(flag_pattern)
-        self.flag = self.init_flag(init_cell_state_value) # values in [0.0, 1.0]. 0.0 represents black, 1.0 represents white. NB: high value is excluded
         
+        self.flag = self.init_flag(init_cell_state_value) # flag is a dict pos:phenotype
+        self.flag_target = self.build_flag(flag_pattern) # flag_target is a dict pos:phenotype
 
-
-        self.automata_mode = 2
-        if self.automata_mode == 1:
-            self.cell_controller = NeuralNetwork(nb_neuronsPerInputs=4, nb_hiddenLayers=1, nb_neuronsPerHidden=2, nb_neuronsPerOutputs=1)
-        elif self.automata_mode == 2:
-            self.cell_controller = nn_controller
-            self.chemical_species = self.init_flag(init_cell_state_value) # change default value kale
-
+        self.cell_controller = nn_controller
         self.default_missing_neighbor_state = 0.0
+
+        # NN 1 output: the unique output is the chemical species transmitted to neighbors AND ALSO the flag phenotype (evaluated in fitness)
+        # NN 2 outputs: the 1st output is the chemical species transmitted to neighbors, the 2nd is the flag phenotype
+        if self.cell_controller.n_neuronsPerOutputs == 2:
+            self.chemical_species = self.init_flag(init_cell_state_value) # chemical_species is a dict pos:chemical_species
             
     #---------------------------------------------------
 
@@ -97,13 +93,13 @@ class flagAutomata:
 
         if init_cell_state_value is None:
             # print("Automata flag cells are initialized with random uniform distribution of values in [0,1[")
-            init_cell_state_value = np.random.uniform(0, 1, len(self.map_cell_neighbors_NWES))
+            init_cell_state_values = np.random.uniform(0, 1, len(self.map_cell_neighbors_NWES))
         else:
-            init_cell_state_value = [init_cell_state_value] * len(self.map_cell_neighbors_NWES)
+            init_cell_state_values = [init_cell_state_value] * len(self.map_cell_neighbors_NWES)
 
         flag = {}
         for i, cell in enumerate(self.map_cell_neighbors_NWES.keys()):
-            flag[cell] = init_cell_state_value[i]
+            flag[cell] = init_cell_state_values[i]
 
         return flag
 
@@ -114,7 +110,6 @@ class flagAutomata:
         flag_target = {}
 
         if flag_pattern == "2_stripes":
-
             vertical_threshold = np.floor(self.automata_nb_cols*2/5)
 
             for cell in self.map_cell_neighbors_NWES.keys():
@@ -123,8 +118,8 @@ class flagAutomata:
                 else:
                     flag_target[cell] = 1.0 # white
 
-        elif flag_pattern == "3_stripes":
 
+        elif flag_pattern == "3_stripes":
             horizontal_threshold_upper = int(self.automata_nb_rows/3)
             horizontal_threshold_lower = int(self.automata_nb_rows/3*2)
 
@@ -136,8 +131,8 @@ class flagAutomata:
                 else:
                     flag_target[cell] = 0.5 # grey
 
-        elif flag_pattern == "circle":
 
+        elif flag_pattern == "circle":
             center = (np.floor(self.automata_nb_rows/2), np.floor(self.automata_nb_cols/2))
             radius = np.floor(min(self.automata_nb_rows/2, self.automata_nb_cols/2))
 
@@ -147,58 +142,24 @@ class flagAutomata:
                 else:
                     flag_target[cell] = 1.0 # white
 
-        elif flag_pattern == "half_circle":
 
+        elif flag_pattern == "half_circle":
             center = (np.floor(self.automata_nb_rows/2), np.floor(self.automata_nb_cols/2))
             radius = np.floor(min(self.automata_nb_rows/2, self.automata_nb_cols/2))
 
             for cell in self.map_cell_neighbors_NWES.keys():
-
                 if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2): # the cell is inside the circle area
-                    if cell[1] < center[1]:
+                    if cell[1] <= center[1]:
                         flag_target[cell] = 0.0 # black
                     else:
                         flag_target[cell] = 1.0 # white
-
                 else:  # the cell is outside the circle area
                     if cell[1] < center[1]:
                         flag_target[cell] = 1.0 # white
                     else:
                         flag_target[cell] = 0.0 # black
 
-        else:
-            print("gneeeeeeeeee")
-            exit()
-
         return flag_target
-
-    #---------------------------------------------------
-
-    def step(self):
-
-        cells = list(self.flag.keys()) # ordered update
-
-        if True: #Kale parametrable bool
-            np.random.shuffle(cells) # random update
-
-        for cell in cells:
-
-            if self.automata_mode == 2:
-
-                chemical_species, phenotype = self.compute_cell_chemical_species_and_phenotype(cell)
-                self.flag[cell] = phenotype
-                self.chemical_species[cell] = chemical_species
-
-            else:    
-                # print("step: The value in ", cell, "was", self.flag[cell])
-                self.flag[cell] = self.compute_cell_state(cell)
-                # print("step: After compute_cell_state, the value in", cell, "is", self.flag[cell], "\n")
-        
-
-    #---------------------------------------------------
-
-    def set_cell_controller(self, weights):
-        self.cell_controller.setWeightsFromList(weights)
 
     #---------------------------------------------------
 
@@ -226,35 +187,44 @@ class flagAutomata:
 
     #---------------------------------------------------
 
-    def compute_cell_state(self, cell):
-        
-        neighbors_states = []
-        for neighbor in self.map_cell_neighbors_NWES[cell]:
-            if neighbor:
-                neighbors_states.append(self.flag[neighbor])
-            else:
-                neighbors_states.append(self.default_missing_neighbor_state)
-        # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
-        # print("compute_cell_state: Their neighbors states are", neighbors_states)
-        cell_state = self.cell_controller.predict(neighbors_states)[0] # forwardPropagation, stableSigmoid on the last layer
-        # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
-        return cell_state
+    def step(self):
+
+        cells = list(self.flag.keys()) # ordered update
+
+        if True: #Kale parametrable bool
+            np.random.shuffle(cells) # random update
+
+        for cell in cells:
+
+            if self.cell_controller.n_neuronsPerOutputs == 2:
+                chemical_species, phenotype = self.compute_cell_state(cell=cell, chemicals_dict=self.chemical_species)
+                self.flag[cell] = phenotype
+                self.chemical_species[cell] = chemical_species
+            else:    
+                # print("step: The value in ", cell, "was", self.flag[cell])
+                phenotype = self.compute_cell_state(cell=cell, chemicals_dict=self.flag)[0]
+                self.flag[cell] = phenotype
+                # print("step: After compute_cell_state, the value in", cell, "is", self.flag[cell], "\n")
         
     #---------------------------------------------------
 
-    def compute_cell_chemical_species_and_phenotype(self, cell):
+    def compute_cell_state(self, cell, chemicals_dict):
         
         neighbors_states = []
         for neighbor in self.map_cell_neighbors_NWES[cell]:
+            # if True: # variab en param da passare con bool
+            #     noise = np.random.normal(noise_mean, noise_std, len(self.map_cell_neighbors_NWES[cell]))
             if neighbor:
-                neighbors_states.append(self.chemical_species[neighbor])
+                neighbors_states.append(chemicals_dict[neighbor])
+                # neighbors_states.append(max(0, neighbor.chemical_species + noise[i])) # check: in che parte di codice di env usiamo chemical species
+                # clips value entre 0 et 1
             else:
                 neighbors_states.append(self.default_missing_neighbor_state)
         # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
         # print("compute_cell_state: Their neighbors states are", neighbors_states)
-        chemical_species, phenotype = self.cell_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
+        cell_state = self.cell_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
         # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
-        return chemical_species, phenotype
+        return cell_state
         
     #---------------------------------------------------
 
@@ -275,8 +245,8 @@ class flagAutomata:
     
     def write_flag_data(self, run, gen, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, analysis_dir):
 
-        if not (os.path.exists(analysis_dir['root']+"/learning/data_all_runs/data_env_flag_target.csv")):
-            save_data_to_csv(analysis_dir['root']+"/learning/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.convert_flag_to_list(self.flag_target)).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
+        if not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")):
+            save_data_to_csv(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.convert_flag_to_list(self.flag_target)).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
         
         if not (os.path.exists(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv")):
             os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
@@ -291,7 +261,7 @@ class flagAutomata:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag_from_file(env_eval_function_params=None, data_flag_file=None, run=None, gen=None, ind=None, steps=None, analysis_dir_plots=None):
+    def plot_flag_from_file(env_eval_function_params, data_flag_file, run, gen, ind, steps, analysis_dir_plots):
 
         automata_nb_rows = env_eval_function_params['automata_nb_rows']
         automata_nb_cols = env_eval_function_params['automata_nb_cols']
@@ -321,9 +291,9 @@ class flagAutomata:
 
                 circle_radius = 0.4
 
-            x = []
+            x = [] 
             y = []
-            greys = []
+            grey_values = []
 
             for p, pos in enumerate(map_cell_neighbors_NWES.keys()):
                 grey_value = flag_list[p]
@@ -331,7 +301,7 @@ class flagAutomata:
                 if automata_nb_rows > 10 or automata_nb_cols > 10:
                     x.append(pos[1])
                     y.append(-pos[0])
-                    greys.append(grey_value)
+                    grey_values.append(grey_value)
 
                 else:
                     if grey_value > 0.9: # close to white
@@ -346,12 +316,10 @@ class flagAutomata:
                     plt.axis('off')
 
             if automata_nb_rows > 10 or automata_nb_cols > 10:
-                colors = [(0, 0, 0), (0.7, 0.9, 1.0)]  # Black to light blue
-                positions = [0.0, 1.0]
-                cmap = LinearSegmentedColormap.from_list('CustomBlackToLightBlue', list(zip(positions, colors)))
-                plt.scatter(x, y, c=greys, cmap=cmap) # cmap='grey'
+                colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # Black to light blue
+                cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
+                plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
                 plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
-
 
             ax.set_aspect('equal')
             plt.xlim(-0.5, automata_nb_cols-0.5)

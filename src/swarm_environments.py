@@ -6,9 +6,7 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.colors import LinearSegmentedColormap
-
-from nn import NeuralNetwork
+from matplotlib.colors import ListedColormap
 
 from swarm_analysis import save_data_to_csv
 
@@ -19,35 +17,94 @@ count_id = -1
 
 
 ###########################################################################
-# Environment swarm grid
+# Swarm agents
 ###########################################################################
 
 class swarmAgent:
-    def __init__(self, pos, init_cell_state_value=None) -> None:
+    def __init__(self, pos, len_state, init_cell_state_value=None) -> None:
 
         global count_id
         count_id += 1
         self.id = count_id
-        self.pos = pos
 
-        #state
-        # self.state = None
+        self.pos = pos
+        self.len_state = len_state
         self.init_cell_state_value = init_cell_state_value
-        self.chemical_species = None
-        self.phenotype = None
-        self.init_state()
 
         self.neighbors_ids_NWES = None
+
+        self.state = self.init_state()
 
     #---------------------------------------------------
     
     def init_state(self):
 
         if self.init_cell_state_value is None:
-            init_cell_state_value = np.random.uniform(0, 1, 1)[0]
+            self.init_cell_state_value = np.random.uniform(0, 1, 1)[0]
+        
+        self.state = [self.init_cell_state_value]*self.len_state
+    
+    #---------------------------------------------------
 
-        self.chemical_species = init_cell_state_value
-        self.phenotype = init_cell_state_value
+    def set_state(self, vector):
+        self.state = vector
+
+    #---------------------------------------------------
+
+    def get_state(self):
+        return self.state
+    
+    #---------------------------------------------------
+    
+    def get_chemical_species(self):
+        raise NotImplementedError("Subclasses must implement this method")
+    
+    def get_phenotype(self):
+        raise NotImplementedError("Subclasses must implement this method")
+
+
+###########################################################################
+
+class agent1Output(swarmAgent):
+    def __init__(self, pos, init_cell_state_value):
+        self.len_state = 1
+        super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
+
+    def init_state(self):
+        super().init_state()
+
+    def set_state(self, vector):
+        super().set_state(vector)
+
+    def get_chemical_species(self):
+        state = super().get_state()
+        return state[0]
+
+    def get_phenotype(self):
+        state = super().get_state()
+        return state[0]
+
+
+###########################################################################
+
+class agent2Outputs(swarmAgent):
+    def __init__(self, pos, init_cell_state_value):
+        self.len_state = 2
+        super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
+
+    def init_state(self):
+        super().init_state()
+
+    def set_state(self, vector):
+        super().set_state(vector)
+
+    def get_chemical_species(self):
+        state = super().get_state()
+        return state[0]
+
+    def get_phenotype(self):
+        state = super().get_state()
+        return state[1]
 
 
 ###########################################################################
@@ -55,7 +112,7 @@ class swarmAgent:
 ###########################################################################
 
 class swarmGrid:
-    def __init__(self, grid_nb_rows, grid_nb_cols, init_cell_state_value, nb_neuronsPerInputs, nb_hiddenLayers, nb_neuronsPerHidden, nb_neuronsPerOutputs, agent_controller_weights, flag_target) -> None:
+    def __init__(self, grid_nb_rows, grid_nb_cols, init_cell_state_value, nn_controller, agent_controller_weights, flag_target) -> None:
 
         self.grid_nb_rows = grid_nb_rows
         self.grid_nb_cols = grid_nb_cols
@@ -63,29 +120,30 @@ class swarmGrid:
         self.grid_map_pos_agent = None
         self.grid_map_id_pos = None
 
-        self.agent_controller = NeuralNetwork(nb_neuronsPerInputs=nb_neuronsPerInputs, nb_hiddenLayers=nb_hiddenLayers, nb_neuronsPerHidden=nb_neuronsPerHidden, nb_neuronsPerOutputs=nb_neuronsPerOutputs)
+        self.agent_controller = nn_controller
         self.agent_controller.setWeightsFromList(agent_controller_weights)
         
-        self.default_missing_neighbor_state = 0.0
+        if nn_controller.n_neuronsPerOutputs == 1:
+            self.agent_type = agent1Output
+        elif nn_controller.n_neuronsPerOutputs == 2:
+            self.agent_type = agent2Outputs
 
+        self.default_missing_neighbor_state = 0.0
         self.flag_target = flag_target
-        self.init_grid()
+        self.init_grid(init_cell_state_value)
 
     #---------------------------------------------------
 
-    def init_grid(self): # agent creation
+    def init_grid(self, init_cell_state_value):
 
         grid_map_pos_agent = {}
         grid_map_id_pos = {}
         for row in range(self.grid_nb_rows):
             for col in range(self.grid_nb_cols):
-                agent = swarmAgent(pos=tuple((row, col)))
+                agent = self.agent_type(pos=tuple((row, col)), init_cell_state_value=init_cell_state_value) # agent creation
                 grid_map_pos_agent[tuple((row, col))] = agent
                 grid_map_id_pos[agent.id] = tuple((row, col))
         
-        # print("grid_map_pos_agent", grid_map_pos_agent)
-        # print("grid_map_id_pos", grid_map_id_pos)
-
         self.grid_map_pos_agent = grid_map_pos_agent
         self.grid_map_id_pos = grid_map_id_pos
         self.refresh_grid()
@@ -109,49 +167,26 @@ class swarmGrid:
         for agent_id in agents_ids:
             self.compute_agent_state(agent=self.grid_map_pos_agent[self.grid_map_id_pos[agent_id]])
 
-
-
-
-
-
-
-
-
-
-        # print("grid_map_pos_agent", self.grid_map_pos_agent)
-        # print("grid_map_id_pos", self.grid_map_id_pos)
-
-            # if self.automata_mode == 2:
-
-            #     chemical_species, phenotype = self.compute_cell_chemical_species_and_phenotype(cell)
-            #     self.flag[cell] = phenotype
-            #     self.chemical_species[cell] = chemical_species
-
-            # else:
-            #     # print("step: The value in ", cell, "was", self.flag[cell])
-            #     self.flag[cell] = self.compute_cell_state(cell)
-            #     # print("step: After compute_cell_state, the value in", cell, "is", self.flag[cell], "\n")
-
       #---------------------------------------------------
 
-    def setup_test_ind(self, run, n, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
-        setup_name = "setup_test_ind"
+    def setup_ind_consistency(self, run, nb_repetitions, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
+        setup_name = "setup_ind_consistency"
         
-        self.init_agents_state()
+        for n in range(nb_repetitions):
+            self.init_agents_state()
+            flags = []
+            for step in range(time_steps):
+                flag = self.get_flag_from_grid()
+                flags.append(flag)
+                if step in [0, switch_step, time_steps-1]:
+                    self.plot_flag(setup_name, run, best_ind_run, n, step, flag, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+                self.step()
 
-        flags = []
-
-        for _ in range(time_steps):
-
-            flag = self.get_flag_from_grid()
-            flags.append(flag)
-
-            self.step()
-
-        # Save flags for this run
-        self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
-        data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-        self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+            # Save flags for this run
+            self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
+        
+        data_flag_dir = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name     
+        self.plot_multi_flag_fitnesses_from_file(data_flag_dir=data_flag_dir, setup_name=setup_name, run=run, best_ind_run=best_ind_run, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
 
     #---------------------------------------------------
 
@@ -182,7 +217,7 @@ class swarmGrid:
         # Save flags for this run
         self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
         data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-        self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+        self.plot_flag_fitnesses_from_file(data_flag_dir=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
 
     #---------------------------------------------------
 
@@ -267,6 +302,46 @@ class swarmGrid:
 
     #---------------------------------------------------
 
+    def compute_agent_state(self, agent): # dividere in get neighbors states? + predict?
+        
+        # print("id", agent.id, "neighbors_ids", agent.neighbors_ids_NWES)
+
+        if agent == None: # check
+            return
+
+        neighbors_states = []
+
+        for neighbor_id in agent.neighbors_ids_NWES:
+            if neighbor_id: # si il a un id, il y a l'agent? tjr?
+                # neighbors_states.append(self.flag[neighbor])
+                neighbor = self.grid_map_pos_agent[self.grid_map_id_pos[neighbor_id]]
+                # neighbors_states.append(neighbor.chemical_species) # check: in che parte di codice di env usiamo chemical species
+                neighbors_states.append(neighbor.get_chemical_species()) # check: in che parte di codice di env usiamo chemical species
+
+            else:
+                neighbors_states.append(self.default_missing_neighbor_state)
+        
+        # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
+        # print("compute_cell_state: Their neighbors states are", neighbors_states)
+
+
+        # print("prima", agent.state, agent.get_phenotype(), agent.get_chemical_species())
+        state = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
+        agent.set_state(state)
+        # print("dopo", agent.state, agent.get_phenotype(), agent.get_chemical_species())
+
+
+        if False:
+            chemical_species, phenotype = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
+            agent.chemical_species = chemical_species
+            agent.phenotype = phenotype
+        
+            agent_state = self.agent_controller.predict(neighbors_states)[0] # forwardPropagation, stableSigmoid on the last layer
+            
+        # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
+
+    #---------------------------------------------------
+
     def compute_agent_state_with_noise_1(self, agent, noise_std): # dividere in get neighbors states? + predict?
         
         # print("id", agent.id, "neighbors_ids", agent.neighbors_ids_NWES)
@@ -287,6 +362,10 @@ class swarmGrid:
         
         # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
         # print("compute_cell_state: Their neighbors states are", neighbors_states)
+
+
+
+
         if True:
             chemical_species, phenotype = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
             agent.chemical_species = chemical_species
@@ -327,36 +406,6 @@ class swarmGrid:
         # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
 
     #---------------------------------------------------    
-
-    def compute_agent_state(self, agent): # dividere in get neighbors states? + predict?
-        
-        # print("id", agent.id, "neighbors_ids", agent.neighbors_ids_NWES)
-
-        if agent == None: # check
-            return
-
-        neighbors_states = []
-
-        for neighbor_id in agent.neighbors_ids_NWES:
-            if neighbor_id: # si il a un id, il y a l'agent? tjr?
-                # neighbors_states.append(self.flag[neighbor])
-                neighbor = self.grid_map_pos_agent[self.grid_map_id_pos[neighbor_id]]
-                neighbors_states.append(neighbor.chemical_species) # check: in che parte di codice di env usiamo chemical species
-            else:
-                neighbors_states.append(self.default_missing_neighbor_state)
-        
-        # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
-        # print("compute_cell_state: Their neighbors states are", neighbors_states)
-        if True:
-            chemical_species, phenotype = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
-            agent.chemical_species = chemical_species
-            agent.phenotype = phenotype
-        else:
-            agent_state = self.agent_controller.predict(neighbors_states)[0] # forwardPropagation, stableSigmoid on the last layer
-            
-        # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
-
-    #---------------------------------------------------
 
     def delete_agent(self, nb_deletions=None, deleted_map_pos_agent=None): # a faire kale
         
@@ -416,7 +465,7 @@ class swarmGrid:
         flag = {}
         for pos in self.grid_map_pos_agent.keys():
             if self.grid_map_pos_agent[pos]:
-                flag[pos] = self.grid_map_pos_agent[pos].phenotype
+                flag[pos] = self.grid_map_pos_agent[pos].get_phenotype()
             else:
                 flag[pos] = self.default_missing_neighbor_state # questa variabile? O direttamente 0?
 
@@ -463,22 +512,6 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    # def get_map_cell_neighbors_NWES(self):
-
-    #     map_cell_neighbors_NWES = {}
-    #     for row in range(self.grid_nb_rows):
-    #         for col in range(self.grid_nb_cols):
-    #             l_tmp = []
-    #             agent =  self.grid_map_pos_agent[(row, col)]
-    #             if agent is not None: #check
-    #                 for neighbor_id in agent.neighbors_NWES:
-    #                     l_tmp.append(self.grid_map_id_pos[neighbor_id])
-    #             map_cell_neighbors_NWES[tuple((row, col))] = l_tmp
-
-        # return map_cell_neighbors_NWES
-
-    #---------------------------------------------------
-
     def plot_flag(self, setup_name, run, best_ind_run, n, step, flag, deleted_map_pos_agent=None, analysis_dir_plots=None):
 
         dir_name = analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/flag"
@@ -498,59 +531,58 @@ class swarmGrid:
                     
             circle_radius = 0.4
 
-            x = []
-            y = []
-            greys = []
+        x = []
+        y = []
+        grey_values = []
 
-            if deleted_map_pos_agent is not None:
-                x_deleted = [pos[0] for pos in deleted_map_pos_agent.keys()]
-                y_deleted = [pos[1] for pos in deleted_map_pos_agent.keys()]
+        if deleted_map_pos_agent is not None:
+            x_deleted = [pos[0] for pos in deleted_map_pos_agent.keys()]
+            y_deleted = [pos[1] for pos in deleted_map_pos_agent.keys()]
 
-            for pos in flag:
-                grey_value = flag[pos]
-
-                if self.grid_nb_rows > 10 or self.grid_nb_cols > 10:
-                    x.append(pos[1])
-                    y.append(-pos[0])
-                    greys.append(grey_value)
-
-                else:
-                    if grey_value > 0.9: # close to white
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
-                    else:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
-
-                    if deleted_map_pos_agent is not None and pos in deleted_map_pos_agent.keys():
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
-                    
-                    ax.add_patch(circle)
-
-                    if self.grid_nb_rows < 6 and self.grid_nb_cols < 6:
-                        ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(grey_value,2)), color='black', va='center', ha='center')
-                                
-                    plt.axis('off')
+        for pos in flag:
+            grey_value = flag[pos]
 
             if self.grid_nb_rows > 10 or self.grid_nb_cols > 10:
-                colors = [(0, 0, 0), (0.7, 0.9, 1.0)]  # Black to light blue
-                positions = [0.0, 1.0]
-                cmap = LinearSegmentedColormap.from_list('CustomBlackToLightBlue', list(zip(positions, colors)))
-                plt.scatter(x, y, c=greys, cmap=cmap) # cmap='grey'
+                x.append(pos[1])
+                y.append(-pos[0])
+                grey_values.append(grey_value)
+
+            else:
+                if grey_value > 0.9: # close to white
+                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
+                else:
+                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
+
+                if deleted_map_pos_agent is not None and pos in deleted_map_pos_agent.keys():
+                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
                 
-                if deleted_map_pos_agent is not None:
-                    plt.scatter(x_deleted, y_deleted, c='tab:red') # deleted agents
-                
-                plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+                ax.add_patch(circle)
 
-            ax.set_aspect('equal')
-            plt.xlim(-0.5, self.grid_nb_cols-0.5)
-            plt.ylim(-self.grid_nb_rows+0.5, 0.5)
+                if self.grid_nb_rows < 6 and self.grid_nb_cols < 6:
+                    ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(grey_value,2)), color='black', va='center', ha='center')
+                            
+                plt.axis('off')
 
-            plt.title(f"Flag")     
-            # plt.title(f"Flag evolution states. Run {run}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {round(dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0], 2)}", pad=20, fontsize=9)
-            plt.savefig(dir_name+"/"+setup_name+"_flag_run_"+str(run)+"_best_ind_"+str(best_ind_run)+"_n_"+str(n)+"_step_"+str(step)+".png")
+        if self.grid_nb_rows > 10 or self.grid_nb_cols > 10:
+            colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # Black to light blue
+            cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
+            plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
 
-            plt.clf()
-            plt.close()
+            if deleted_map_pos_agent is not None:
+                plt.scatter(x_deleted, y_deleted, c='tab:red') # deleted agents
+            
+            plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+
+        ax.set_aspect('equal')
+        plt.xlim(-0.5, self.grid_nb_cols-0.5)
+        plt.ylim(-self.grid_nb_rows+0.5, 0.5)
+
+        plt.title(f"Flag")     
+        # plt.title(f"Flag evolution states. Run {run}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {round(dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0], 2)}", pad=20, fontsize=9)
+        plt.savefig(dir_name+"/"+setup_name+"_flag_run_"+str(run)+"_best_ind_"+str(best_ind_run)+"_n_"+str(n)+"_step_"+str(step)+".png")
+        
+        plt.clf()
+        plt.close()
 
     #---------------------------------------------------
 
@@ -563,8 +595,6 @@ class swarmGrid:
 
         dataset = pd.read_csv(data_flag_file)
 
-        fig, ax = plt.subplots()
-
         x = dataset['Step'].tolist()
         y = dataset['Flags_distance'].tolist()
         plt.plot(x, y)
@@ -576,7 +606,36 @@ class swarmGrid:
         plt.suptitle(f"Fitness related to the flag evolution over steps run="+str(run), fontsize=14)
         # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
         plt.savefig(dir_name+"/"+setup_name+"_flag_fitnesses_run_"+str(run)+"_n_"+str(n)+".png")
-        dir_name+"/"+setup_name+"_fitness_run_"+str(run)+"_best_ind_"+str(best_ind_run)+"_n_"+str(n)+".png"
+        #dir_name+"/"+setup_name+"_fitness_run_"+str(run)+"_best_ind_"+str(best_ind_run)+"_n_"+str(n)+".png"
+        plt.clf()
+        plt.close()
+
+    #---------------------------------------------------
+
+    @staticmethod
+    def plot_multi_flag_fitnesses_from_file(data_flag_dir, setup_name, run, best_ind_run, switch_step, analysis_dir_plots):
+
+        dir_name = analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/fitness"
+        if not (os.path.exists(dir_name)):
+            os.makedirs(dir_name, exist_ok=True)
+
+        data_flag_files = os.listdir(data_flag_dir)
+        for data_flag_file in data_flag_files:
+            dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
+            x = dataset['Step'].tolist()
+            y = dataset['Flags_distance'].tolist()
+            plt.plot(x, y)
+            
+        #plt.axvline(x=switch_step, color='r', linestyle='--')
+
+        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.xlabel("Steps", fontsize=12)
+        plt.ylabel("Fitness (distance to flag target)", fontsize=12)
+        plt.suptitle(f"Fitness related to the flag evolution over steps run={run}", fontsize=14)
+        plt.title(f"Nb repetitions {len(data_flag_files)}", fontsize=14)
+        # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
+        plt.savefig(f"{dir_name}/{setup_name}_flag_fitnesses_run_{run}.png")
+
         plt.clf()
         plt.close()
 

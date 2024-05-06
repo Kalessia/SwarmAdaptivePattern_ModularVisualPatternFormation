@@ -1,19 +1,20 @@
 import os
-import sys
+import time
 from datetime import datetime
+from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import pandas as pd
 from operator import attrgetter
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import seaborn as sns
 import imageio.v2 as iio
 
+import argparse
+
 import csv
 import json
-
 
 
 
@@ -27,13 +28,13 @@ def init_all_runs_analysis(params):
 
     # Create the 'analysis_dir' folder
     params['analysis_dir'] = {}
-    params['analysis_dir']['root'] = os.getcwd() +"/simulationAnalysis/"+params['env_name']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+params['flag_pattern']+"_"+str(params['automata_nb_rows'])+"x"+str(params['automata_nb_cols'])
+    params['analysis_dir']['root'] = os.getcwd() +"/simulationAnalysis/"+params['env_name']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+params['flag_pattern']+"_"+str(params['automata_nb_rows'])+"x"+str(params['automata_nb_cols'])+"/learning"
     os.makedirs(params['analysis_dir']['root'], exist_ok=True)
-    os.makedirs(params['analysis_dir']['root']+"/learning/data_all_runs", exist_ok=True)
-    os.makedirs(params['analysis_dir']['root']+"/learning/plots_all_runs", exist_ok=True)
+    os.makedirs(params['analysis_dir']['root']+"/data_all_runs", exist_ok=True)
+    os.makedirs(params['analysis_dir']['root']+"/plots_all_runs", exist_ok=True)
 
-    save_data_to_csv(params['analysis_dir']['root']+"/learning/data_all_runs/data_evo_all_runs_time.csv", [], header = ["Run", "Time"])
-    save_data_to_csv(params['analysis_dir']['root']+"/learning/data_all_runs/data_evo_all_runs_best_ind_per_run.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_time.csv", [], header = ["Run", "Time"])
+    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
     
     return params
 
@@ -42,8 +43,8 @@ def init_all_runs_analysis(params):
 def init_one_run_analysis(run, params):
 
     # Create the data and plot directories tree from the 'analysis_dir' folder
-    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/data"
-    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/learning/run_" + str(run) + "/plots"
+    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/data"
+    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_" + str(run) + "/plots"
     os.makedirs(params['analysis_dir']['data'], exist_ok=True)
     os.makedirs(params['analysis_dir']['plots'], exist_ok=True)
 
@@ -94,12 +95,12 @@ def write_single_run_data(run, time_run, analysis_dir):
     # Save best ever individual data for this single run
     dataset_path = analysis_dir['data']+"/data_evo_run_"+str(run)+"_best_inds_per_gen.csv"
     save_best_inds_ever_filename =  analysis_dir['data']+"/data_evo_run_"+str(run)+"_best_inds_ever.csv"
-    save_best_ind_per_run_filename = analysis_dir['root']+"/learning/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
+    save_best_ind_per_run_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
     write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename)
 
     # Save time information for this run
     data_evo_all_runs_time = [[str(run), str(time_run)]]
-    save_data_to_csv(analysis_dir['root']+"/learning/data_all_runs/data_evo_all_runs_time.csv", data_evo_all_runs_time)
+    save_data_to_csv(analysis_dir['root']+"/data_all_runs/data_evo_all_runs_time.csv", data_evo_all_runs_time)
 
 #---------------------------------------------------
 
@@ -149,50 +150,67 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, save_best_inds_ever_
                 
 def plot_single_run_data(run, params):
 
-    os.makedirs(params['analysis_dir']['root']+"/learning/run_"+str(run)+"/plots/evo", exist_ok=True)
+    os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo", exist_ok=True)
+    print(f"Plots for the single run n.{run} - Started")
+    time_run = time.time()
 
     # Plot_all_pop_fitnesses_boxplot
-    dataset_path = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_all_pop.csv"
-    save_filename = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/plots/evo/plot_evo_run_"+str(run)+"_all_pop_fitnesses_boxplot.png"
+    dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_all_pop.csv"
+    save_filename = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo/plot_evo_run_"+str(run)+"_all_pop_fitnesses_boxplot.png"
     plot_all_pop_fitnesses_boxplot(run, dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_best_inds_ever
-    dataset_path = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
-    save_filename = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/plots/evo/plot_evo_run_"+str(run)+"_best_inds_ever.png"
+    dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
+    save_filename = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo/plot_evo_run_"+str(run)+"_best_inds_ever.png"
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_flag_from_file for best individuals ever in a defined range of steps
     from learning_environments import flagAutomata
-    save_dir = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/plots/env"
-    dataset_path = params['analysis_dir']['root']+"/learning/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
+    save_dir = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env"
+    dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
     dataset = pd.read_csv(dataset_path)
     plot_env_step_start = params['time_window_start']
     plot_env_step_end = min(params['time_steps'], params['time_window_end'])
     steps = range(plot_env_step_start, plot_env_step_end)
 
-    for index in dataset.index[:-1]:
+    if params['with_parallelization_bool']:
+        task_queue = []
+        plot_flag_func = flagAutomata.plot_flag_from_file
+        plot_flag_fitnesses_func = flagAutomata.plot_flag_fitnesses_from_file
+
+    for index in dataset.index[:-1]: # for each best individual ever less the last one
         gen = dataset.loc[index, 'Generation']
         ind = dataset.loc[index, 'Individual']
-        flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
-        flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+        
+        if params['with_parallelization_bool']:
+            # Create a queue of tasks to execute
+            task_queue.append((plot_flag_func, plot_flag_fitnesses_func, run, gen, ind, steps, save_dir, params))
+        else:
+            flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
+            flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+
+    if params['with_parallelization_bool']:
+        parallelize_processes(task_queue, params)
 
     # Plot all the flag steps of the last best individual ever
     gen = dataset.loc[dataset.index[-1], 'Generation']
     ind = dataset.loc[dataset.index[-1], 'Individual']
-    flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=None, analysis_dir_plots=save_dir)
-    flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+    flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=None, analysis_dir_plots=save_dir)
+    flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
 
     # Animation of: plot all the flag steps of the last best individual ever
     if params['plot_with_animation_bool']:
-        flag_last_best_ind_ever_dirs = os.listdir(params['analysis_dir']['plots']+"/env")
+        dir = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env/"
+        flag_last_best_ind_ever_dirs = os.listdir(dir)
         flag_last_best_ind_ever_dir = sorted(flag_last_best_ind_ever_dirs, key=get_gen_ind_from_file_name)[-1]
-        images = sorted(os.listdir(params['analysis_dir']['plots']+"/env/"+flag_last_best_ind_ever_dir+"/flag"))
-        path = params['analysis_dir']['plots']+"/env/"+flag_last_best_ind_ever_dir+"/flag"
-        frames = np.stack([iio.imread(path+"/"+img) for img in images], axis = 0)
-        iio.mimwrite(params['analysis_dir']['plots']+"/env/"+flag_last_best_ind_ever_dir+".gif", frames, format='GIF', duration=0.5*len(frames), subrectangles=True)
+        images = sorted(os.listdir(dir+flag_last_best_ind_ever_dir+"/flag"))
+        frames = np.stack([iio.imread(dir+flag_last_best_ind_ever_dir+"/flag/"+img) for img in images], axis = 0)
+        iio.mimwrite(dir+flag_last_best_ind_ever_dir+".gif", frames, format='GIF', duration=0.5*len(frames), subrectangles=True)
+        print(f"Animation for the single run n.{run} - Saved in {dir}")
 
-    print(f"Plots for the single run {run} completed.")
-
+    time_run = time.time() - time_run
+    print(f"Plots for the single run n.{run} - Completed. Execution time: {time_run} seconds")
+    
 #---------------------------------------------------
 
 def get_gen_ind_from_file_name(file_name):
@@ -206,13 +224,13 @@ def get_gen_ind_from_file_name(file_name):
 def plot_all_runs_data(params):
 
     # Plot_best_inds_ever
-    dataset_path = params['analysis_dir']['root']+"/learning/data_all_runs/data_evo_all_runs_best_inds_ever.csv"
-    save_filename = params['analysis_dir']['root']+"/learning/plots_all_runs/plot_evo_all_runs_best_inds_ever.png"
+    dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_inds_ever.csv"
+    save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_best_inds_ever.png"
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_flag_from_file for the target flag
     from learning_environments import flagAutomata
-    flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/learning/data_all_runs/data_env_flag_target.csv", analysis_dir_plots=params['analysis_dir']['root']+"/learning/plots_all_runs")
+    flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv", run=None, gen=None, ind=None, steps=None, analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
 
     print(f"Plots for all the runs completed.")
 
@@ -230,6 +248,14 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, save_filename):
     plt.title("Fitnesses over generations\nall individuals generated", fontsize=14)
     plt.xlabel("Generation", fontsize=12)
     plt.ylabel("Fitness", fontsize=12)
+
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    generations = dataset['Generation'].unique()
+    if max(generations) > 14:
+        
+        positions = [value for value in generations if value % (int(max(generations)/14))==0]
+        plt.xticks(positions, fontsize=10)
 
     plt.savefig(save_filename)
     plt.clf()
@@ -263,13 +289,27 @@ def plot_best_inds_ever(dataset_path, save_filename):
     plt.clf()
     plt.close()
 
+
+###########################################################################
+# Parallelization
+###########################################################################
+
+def worker(task):
+
+    plot_flag_func, plot_flag_fitnesses_func, run, gen, ind, steps, save_dir, params = task
+    plot_flag_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
+    plot_flag_fitnesses_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+
 #---------------------------------------------------
 
-def build_animation(images_source_path, images_source_file_name, animation_path, animation_file_name):
-    nb_images = os.listdir(images_source_path)
-    frames = np.stack([iio.imread(images_source_path+images_source_file_name+str(i)+".png") for i in range(len(nb_images))], axis = 0)
-    os.makedirs(animation_path, exist_ok=True)
-    iio.mimwrite(animation_path+animation_file_name, frames, duration=0.5, subrectangles = True) # duration 0.5 = ~2fps gif
+def parallelize_processes(task_queue, params):
+
+    # Create a Pool with the number of available cores
+    available_cores = cpu_count() - params['with_parallelization_nb_free_cores']
+    with Pool(processes=available_cores) as pool:
+        pool.map(worker, task_queue)
+        pool.close() # no more tasks will be submitted to the pool
+        pool.join() # wait for all processes to complete
 
 
 ###########################################################################
@@ -278,14 +318,28 @@ def build_animation(images_source_path, images_source_file_name, animation_path,
 
 if (__name__ == "__main__"):
 
-    analysis_dir = sys.argv[1]
-    with open(analysis_dir+"/learning_params.json", "r") as f:
-        params = json.load(f)
+    # Get parameters from the bash launcher
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--analysis_dir", default="", type=str)
+    parser.add_argument("--with_parallelization_bool", default=False, type=lambda x:x=="True")
+    parser.add_argument("--with_parallelization_nb_free_cores", default=0, type=int)
+    parser.add_argument("--plot_with_animation_bool", default=False, type=lambda x:x=="True")
 
+    args = parser.parse_args()
+
+    # Get parameters from the learning simulation
+    with open(args.analysis_dir+"/learning_params.json", "r") as f:
+        params = json.load(f)
+    
+    params['with_parallelization_bool'] = args.with_parallelization_bool
+    params['with_parallelization_nb_free_cores'] = args.with_parallelization_nb_free_cores
+    params['plot_with_animation_bool'] = args.plot_with_animation_bool
+
+    # Launch plots
     for run in range(params['nb_runs']):
         plot_single_run_data(run, params)
 
-    write_all_runs_data(analysis_dir)
+    write_all_runs_data(args.analysis_dir)
     plot_all_runs_data(params)
     
 

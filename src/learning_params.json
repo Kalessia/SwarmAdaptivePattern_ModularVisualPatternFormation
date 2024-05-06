@@ -1,35 +1,28 @@
 {
+    "nb_runs": 5,
+    "nb_generations": 600,
+ 
     "env_name": "flag_automata",
-
-    "flag_pattern": "2_stripes",
-    "automata_nb_rows": 3, 
-    "automata_nb_cols": 5,
-    
-    "time_steps": 50,
-    "time_window_start": 30,
-    "time_window_end": 50,
-
     "ind_min_value": -1,
     "ind_max_value": 1,
-    "min_strategy": null,
-    "max_strategy": null,
-    "nb_gen": null,
-    "mu": null,
-    "off_lambda": null,
 
     "nb_neuronsPerInputs": 4,
     "nb_hiddenLayers": 1,
     "nb_neuronsPerHidden": 2,
     "nb_neuronsPerOutputs": 2,
 
-    "nb_runs": 1,
-    "nb_generations": 10,
+    "flag_pattern": "3_stripes",
+    "automata_nb_rows": 15, 
+    "automata_nb_cols": 32,
+    "init_cell_state_value": 0.0,    
+    
+    "time_steps": 50,
+    "time_window_start": 30,
+    "time_window_end": 50,
 
-    "init_cell_state_value": 0.0,
+    "with_noise_bool": false,
 
     "verbose_debug": false,
-    "plot_analysis_bool": true,
-    "plot_with_animation_bool": false,
 
     "with_parallelization_bool": true,
     "with_parallelization_nb_free_cores": 0
