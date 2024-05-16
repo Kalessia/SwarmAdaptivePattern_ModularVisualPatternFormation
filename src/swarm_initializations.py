@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from nn import NeuralNetwork
 
+
 ###########################################################################
 # Environment initialization
 ###########################################################################
@@ -29,7 +30,7 @@ def check_params_validity(params):
         exit_bool = True
 
     if exit_bool:
-        print("learning_main stopped. Please correct the entry parameter in learning_params.json before restart.")
+        print("learning_main stopped. Please correct the entry parameter in swarm_params.json before restart.")
         exit()
 
 #---------------------------------------------------

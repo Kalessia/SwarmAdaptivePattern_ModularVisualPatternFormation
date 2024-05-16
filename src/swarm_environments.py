@@ -84,7 +84,6 @@ class agent1Output(swarmAgent):
         state = super().get_state()
         return state[0]
 
-
 ###########################################################################
 
 class agent2Outputs(swarmAgent):
@@ -146,14 +145,13 @@ class swarmGrid:
         
         self.grid_map_pos_agent = grid_map_pos_agent
         self.grid_map_id_pos = grid_map_id_pos
-        self.refresh_grid()
+        self.update_grid()
 
     #---------------------------------------------------
 
     def init_agents_state(self):
-        # print(self.grid_map_pos_agent)
-        agents = [a for a in self.grid_map_pos_agent.values() if a != None] #add assert?
-        # agents = self.grid_map_pos_agent.values() # exclure none?
+
+        agents = [a for a in self.grid_map_pos_agent.values() if a != None]
         for agent in agents:
             agent.init_state()
 
@@ -162,33 +160,62 @@ class swarmGrid:
     def step(self):
 
         agents_ids = list(self.grid_map_id_pos.keys()) # ordered update
-        np.random.shuffle(agents_ids) # random update
+        # np.random.shuffle(agents_ids) # random update
 
         for agent_id in agents_ids:
             self.compute_agent_state(agent=self.grid_map_pos_agent[self.grid_map_id_pos[agent_id]])
 
-      #---------------------------------------------------
+    #---------------------------------------------------
 
-    def setup_ind_consistency(self, run, nb_repetitions, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
+    def setup_ind_consistency(self, run, nb_repetitions, time_steps, switch_step, best_ind_run, best_ind, params):
         setup_name = "setup_ind_consistency"
         
         for n in range(nb_repetitions):
             self.init_agents_state()
+            print("initialization", self.get_flag_from_grid())
             flags = []
             for step in range(time_steps):
                 flag = self.get_flag_from_grid()
+                print("flag step",step, self.get_flag_from_grid(), "\n----------------------------------")
                 flags.append(flag)
                 if step in [0, switch_step, time_steps-1]:
-                    self.plot_flag(setup_name, run, best_ind_run, n, step, flag, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+                    self.plot_flag(setup_name, run, best_ind_run, n, step, flag, analysis_dir_plots=params['analysis_dir']['plots'])
                 self.step()
+            
+            print("FFFFFFFFFFFFFFFFFFFFFIIIIIIIIIIIIIIIINNNNNNNNNNNNNNEEEEEEEEEEEEEEEE FLLLLAAAGGGGGGGGGGG\n")
 
             # Save flags for this run
-            self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
+            self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=params['analysis_dir'])
         
-        data_flag_dir = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name     
-        self.plot_multi_flag_fitnesses_from_file(data_flag_dir=data_flag_dir, setup_name=setup_name, run=run, best_ind_run=best_ind_run, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+        data_flag_dir = params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name     
+        self.plot_multi_flag_fitnesses_from_file(data_flag_dir=data_flag_dir, setup_name=setup_name, run=run, best_ind_run=best_ind_run, switch_step=switch_step, analysis_dir_plots=params['analysis_dir']['plots'])
 
     #---------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def setup_noise1(self, run, n, tick, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
         setup_name = "setup_noise1_"+str(tick)
@@ -302,43 +329,25 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def compute_agent_state(self, agent): # dividere in get neighbors states? + predict?
+    def compute_agent_state(self, agent):
         
-        # print("id", agent.id, "neighbors_ids", agent.neighbors_ids_NWES)
-
-        if agent == None: # check
+        if agent is None: # check
             return
 
         neighbors_states = []
-
         for neighbor_id in agent.neighbors_ids_NWES:
-            if neighbor_id: # si il a un id, il y a l'agent? tjr?
-                # neighbors_states.append(self.flag[neighbor])
-                neighbor = self.grid_map_pos_agent[self.grid_map_id_pos[neighbor_id]]
-                # neighbors_states.append(neighbor.chemical_species) # check: in che parte di codice di env usiamo chemical species
-                neighbors_states.append(neighbor.get_chemical_species()) # check: in che parte di codice di env usiamo chemical species
 
+            if neighbor_id is not None: # si il a un id, il y a l'agent? tjr?
+                neighbor = self.grid_map_pos_agent[self.grid_map_id_pos[neighbor_id]]
+                neighbors_states.append(neighbor.get_chemical_species())
             else:
                 neighbors_states.append(self.default_missing_neighbor_state)
         
-        # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
-        # print("compute_cell_state: Their neighbors states are", neighbors_states)
-
-
-        # print("prima", agent.state, agent.get_phenotype(), agent.get_chemical_species())
+        print("compute_agent_state: agent.id:", agent.id, ", its neighbors:", agent.neighbors_ids_NWES, "neighbors states:", neighbors_states)
+        print("prima di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
         state = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
         agent.set_state(state)
-        # print("dopo", agent.state, agent.get_phenotype(), agent.get_chemical_species())
-
-
-        if False:
-            chemical_species, phenotype = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
-            agent.chemical_species = chemical_species
-            agent.phenotype = phenotype
-        
-            agent_state = self.agent_controller.predict(neighbors_states)[0] # forwardPropagation, stableSigmoid on the last layer
-            
-        # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
+        print("dopo di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
 
     #---------------------------------------------------
 
@@ -440,7 +449,7 @@ class swarmGrid:
 
     #---------------------------------------------------
     
-    def refresh_grid(self):
+    def update_grid(self):
 
         agents = self.grid_map_pos_agent.values() # exclure none?
         # print([agent.id for agent in agents])
@@ -467,7 +476,7 @@ class swarmGrid:
             if self.grid_map_pos_agent[pos]:
                 flag[pos] = self.grid_map_pos_agent[pos].get_phenotype()
             else:
-                flag[pos] = self.default_missing_neighbor_state # questa variabile? O direttamente 0?
+                flag[pos] = self.default_missing_neighbor_state
 
         return flag
     
@@ -496,9 +505,13 @@ class swarmGrid:
         file_name = "/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
         if not (os.path.exists(dir_name)):
             os.makedirs(dir_name, exist_ok=True)
-        # save_data_to_csv(dir_name+file_name, [], header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"])
 
         file_path = analysis_dir['data']+"/best_ind_"+str(best_ind_run)+"/flag_individual.txt"
+        if not os.path.exists(file_path):
+            with open (file_path, 'w') as f:
+                f.write(str(best_ind))
+
+        file_path = analysis_dir['plots']+"/best_ind_"+str(best_ind_run)+"/flag_individual.txt"
         if not os.path.exists(file_path):
             with open (file_path, 'w') as f:
                 f.write(str(best_ind))
@@ -589,7 +602,7 @@ class swarmGrid:
     @staticmethod
     def plot_flag_fitnesses_from_file(data_flag_file, setup_name, run, best_ind_run, n, switch_step, analysis_dir_plots):
 
-        dir_name = analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/fitness"
+        dir_name = analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name
         if not (os.path.exists(dir_name)):
             os.makedirs(dir_name, exist_ok=True)
 
@@ -615,7 +628,7 @@ class swarmGrid:
     @staticmethod
     def plot_multi_flag_fitnesses_from_file(data_flag_dir, setup_name, run, best_ind_run, switch_step, analysis_dir_plots):
 
-        dir_name = analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/fitness"
+        dir_name = analysis_dir_plots+"/best_ind_"+str(best_ind_run)+"/"+setup_name
         if not (os.path.exists(dir_name)):
             os.makedirs(dir_name, exist_ok=True)
 
@@ -659,4 +672,4 @@ class swarmGrid:
     #     self.grid_map_pos_agent[agent1_pos] = agent2
     #     self.grid_map_pos_agent[agent2_pos] = agent1
 
-    #     self.refresh_grid()
+    #     self.update_grid()

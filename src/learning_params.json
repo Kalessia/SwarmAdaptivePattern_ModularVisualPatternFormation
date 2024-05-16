@@ -1,6 +1,6 @@
 {
-    "nb_runs": 5,
-    "nb_generations": 600,
+    "nb_runs": 11,
+    "nb_generations": 300,
  
     "env_name": "flag_automata",
     "ind_min_value": -1,
@@ -11,8 +11,8 @@
     "nb_neuronsPerHidden": 2,
     "nb_neuronsPerOutputs": 2,
 
-    "flag_pattern": "3_stripes",
-    "automata_nb_rows": 15, 
+    "flag_pattern": "2_stripes",
+    "automata_nb_rows": 16, 
     "automata_nb_cols": 32,
     "init_cell_state_value": 0.0,    
     

@@ -42,6 +42,8 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
         env = flagAutomata(automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller)
     
     env.cell_controller.setWeightsFromList(weights)
+    env.flag = env.init_flag(init_cell_state_value) # flag is a dict pos:phenotype
+    env.chemical_species = env.init_flag(init_cell_state_value) # chemical_species is a dict pos:chemical_species
 
     flags_distance = None
     sum_flags_distances = 0.0
@@ -50,13 +52,13 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
         in_t_window_zone_bool = False
         flags_distance = env.eval_flags_distance()
 
-        if step >= time_window_start and step <= time_window_end:   
+        if step >= time_window_start and step <= time_window_end:
             sum_flags_distances += flags_distance
             in_t_window_zone_bool = True
 
         flags_distances.append(flags_distance)
         in_t_window_zone_bools.append(in_t_window_zone_bool)
-        flags.append(env.flag)
+        flags.append(env.convert_flag_to_list(env.flag))
         env.step()
 
     env.write_flag_data(run, gen, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, analysis_dir=analysis_dir)
@@ -191,7 +193,7 @@ class flagAutomata:
 
         cells = list(self.flag.keys()) # ordered update
 
-        if True: #Kale parametrable bool
+        if False: #Kale parametrable bool
             np.random.shuffle(cells) # random update
 
         for cell in cells:
@@ -245,7 +247,7 @@ class flagAutomata:
     
     def write_flag_data(self, run, gen, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, analysis_dir):
 
-        if not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")):
+        if run == 0 and gen == 0 and not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")): # os.path.exists test is not enough with parallelization
             save_data_to_csv(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.convert_flag_to_list(self.flag_target)).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
         
         if not (os.path.exists(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv")):
@@ -254,7 +256,8 @@ class flagAutomata:
 
         data_env_flag = []
         for step in range(time_steps):
-            data_env_flag.append([str(gen), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(weights).strip()])
+            # print("ehy convert_flag_to_list", self.convert_flag_to_list(flags[step]))
+            data_env_flag.append([str(gen), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip()])
 
         save_data_to_csv(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", data_env_flag)
 

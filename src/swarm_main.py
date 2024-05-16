@@ -20,19 +20,43 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
     # Initializations
     time_run = time.time()
     swarm_params = init_one_run_analysis(run, swarm_params)
+
     env = swarmGrid(grid_nb_rows=swarm_params['grid_nb_rows'],
                     grid_nb_cols=swarm_params['grid_nb_cols'],
                     init_cell_state_value=swarm_params['init_cell_state_value'],
                     nn_controller=swarm_params['controller'],
                     agent_controller_weights=best_ind,
                     flag_target=swarm_params['flag_target'])
-    
-    # kale on defini un step en simuparams a partir du quel on change de regime
-    time_steps = swarm_params['time_steps']
-    switch_step = swarm_params['switch_step']
 
-    # cas 0: test de l'individu
-    env.setup_ind_consistency(run, swarm_params['nb_repetitions'], time_steps, switch_step, best_ind_run, best_ind, swarm_params)
+    # setup_ind_consistency: initialization of the environment and test of the current individual 'nb_repetitions' times
+    env.setup_ind_consistency(run=run,
+                              nb_repetitions=swarm_params['nb_repetitions'],
+                              time_steps=swarm_params['time_steps'],
+                              switch_step=swarm_params['switch_step'],
+                              best_ind_run=best_ind_run,
+                              best_ind=best_ind,
+                              params=swarm_params)
+
+    # enlever params superflu
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # cas 1: introduire du bruit continu de differente entité
     # param: entités de bruit souhaités
@@ -78,12 +102,26 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
             
     #         env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
 
+
+
+
+
+
+
+
+
+
+
+
     time_run = time.time() - time_run
     print(f"swarm_simulation run n.{run}, best_ind_{best_ind_run} [{best_ind[0]}, ...] - Execution time:", time_run, "seconds") # kale change save time for each run
 
     return swarm_params
 
-#---------------------------------------------------
+
+###########################################################################
+# Parallelization
+###########################################################################
 
 def worker(task):
     run, best_ind, best_ind_run, swarm_params = task

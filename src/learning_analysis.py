@@ -83,7 +83,6 @@ def write_single_gen_data(run, gen, population, analysis_dir_data):
     save_data_to_csv(analysis_dir_data+"/data_evo_run_"+str(run)+"_all_pop.csv", data_all_pop)
 
     # Save best individual data for this single gen. NB: 'max' is the best fitness, deap manages if 'max' is maximization or minimization
-    # data_best_ind = []
     best_ind = max(population, key=attrgetter("fitness"))
     data_best_ind = [[str(run), str(gen), str(best_ind.fitness.values[0]).strip(), str(best_ind).strip()]] #check
     save_data_to_csv(analysis_dir_data+"/data_evo_run_"+str(run)+"_best_inds_per_gen.csv", data_best_ind)
@@ -320,7 +319,7 @@ if (__name__ == "__main__"):
 
     # Get parameters from the bash launcher
     parser = argparse.ArgumentParser()
-    parser.add_argument("--analysis_dir", default="", type=str)
+    parser.add_argument("--learning_analysis_dir", default="", type=str)
     parser.add_argument("--with_parallelization_bool", default=False, type=lambda x:x=="True")
     parser.add_argument("--with_parallelization_nb_free_cores", default=0, type=int)
     parser.add_argument("--plot_with_animation_bool", default=False, type=lambda x:x=="True")
@@ -328,7 +327,7 @@ if (__name__ == "__main__"):
     args = parser.parse_args()
 
     # Get parameters from the learning simulation
-    with open(args.analysis_dir+"/learning_params.json", "r") as f:
+    with open(args.learning_analysis_dir+"/learning_params.json", "r") as f:
         params = json.load(f)
     
     params['with_parallelization_bool'] = args.with_parallelization_bool
@@ -339,7 +338,7 @@ if (__name__ == "__main__"):
     for run in range(params['nb_runs']):
         plot_single_run_data(run, params)
 
-    write_all_runs_data(args.analysis_dir)
+    write_all_runs_data(args.learning_analysis_dir)
     plot_all_runs_data(params)
     
 
