@@ -5,7 +5,7 @@ import numpy as np
 
 import json
 
-from swarm_environments import swarmGrid
+from swarm_environments import init_swarmGrid_env
 from swarm_initializations import *
 from swarm_analysis import *
 
@@ -19,26 +19,23 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
 
     # Initializations
     time_run = time.time()
-    swarm_params = init_one_run_analysis(run, swarm_params)
+    swarm_params = init_one_run_analysis(run, best_ind, best_ind_run, swarm_params)
 
-    env = swarmGrid(grid_nb_rows=swarm_params['grid_nb_rows'],
-                    grid_nb_cols=swarm_params['grid_nb_cols'],
-                    init_cell_state_value=swarm_params['init_cell_state_value'],
-                    nn_controller=swarm_params['controller'],
-                    agent_controller_weights=best_ind,
-                    flag_target=swarm_params['flag_target'])
+    env = init_swarmGrid_env(grid_nb_rows=swarm_params['grid_nb_rows'],
+                             grid_nb_cols=swarm_params['grid_nb_cols'],
+                             init_cell_state_value=swarm_params['init_cell_state_value'],
+                             nn_controller=swarm_params['controller'],
+                             flag_target=swarm_params['flag_target'],
+                             agent_controller_weights=best_ind)
 
     # setup_ind_consistency: initialization of the environment and test of the current individual 'nb_repetitions' times
-    env.setup_ind_consistency(run=run,
-                              nb_repetitions=swarm_params['nb_repetitions'],
-                              time_steps=swarm_params['time_steps'],
-                              switch_step=swarm_params['switch_step'],
-                              best_ind_run=best_ind_run,
-                              best_ind=best_ind,
-                              params=swarm_params)
-
-    # enlever params superflu
-
+    if swarm_params['setup_ind_consistency_bool']:
+        setup_name = "setup_ind_consistency"
+        env.setup_ind_consistency(run=run,
+                                  setup_name=setup_name,
+                                  nb_repetitions=swarm_params['nb_repetitions'],
+                                  time_steps=swarm_params['time_steps'],
+                                  analysis_dir=swarm_params['analysis_dir'])
 
 
 

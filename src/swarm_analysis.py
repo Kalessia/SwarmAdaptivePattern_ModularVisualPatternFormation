@@ -2,18 +2,15 @@ import os
 import shutil
 from multiprocessing import Pool, cpu_count
 
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-import seaborn as sns
-import imageio.v2 as iio
+import pandas as pd
+import numpy as np
 
 import argparse
 
-import csv
 import json
 
-
-
+from swarm_initializations import *
+from swarm_environments import swarmGrid
 
 
 ###########################################################################
@@ -38,45 +35,60 @@ def init_all_runs_analysis(learning_analysis_dir_root, params):
 
 #---------------------------------------------------
 
-def init_one_run_analysis(run, params):
+def init_one_run_analysis(run, best_ind, best_ind_run, params):
 
     # Create the data and plot directories tree from the 'analysis_dir' folder
-    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/data"
-    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_"+str(run)+"/plots"
+    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/data"
+    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/plots"
     os.makedirs(params['analysis_dir']['data'], exist_ok=True)
     os.makedirs(params['analysis_dir']['plots'], exist_ok=True)
 
+    file_path = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/flag_individual.txt"
+    if not os.path.exists(file_path):
+        with open (file_path, 'w') as f:
+            f.write(str(best_ind))
+
     return params
-
-
-###########################################################################
-# Save data functions
-###########################################################################
-
-def save_data_to_csv(fichier_name, data, header=None):
-    f = open(fichier_name, 'a', newline='')
-    writer = csv.writer(f)
-
-    if header:
-        writer.writerow(header)
-
-    if data:
-        writer.writerows(data)
-
-    f.close()
- 
-#---------------------------------------------------
-    
-def write_single_run_data(env, run, time_run, time_steps, flags, analysis_dir):
-    pass
 
 
 # ###########################################################################
 # Plot data functions
 # ###########################################################################
                 
-def plot_single_run_data(run, params):
-    pass
+def plot_single_run_single_ind_data(run, best_ind_run, params):
+
+    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/data"
+    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/plots"
+
+    if params['setup_ind_consistency_bool']:
+        setup_name = "setup_ind_consistency"
+        for n in range(params['nb_repetitions']):
+            data_flag_file = params['analysis_dir']['data']+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
+            dataset = pd.read_csv(data_flag_file)
+
+            for step in [0, params['switch_step'], params['time_steps']-1]:
+                flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
+                flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
+                flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
+                fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]
+
+                swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
+                                    grid_nb_cols=params['grid_nb_cols'],
+                                    setup_name=setup_name, 
+                                    run=run,
+                                    best_ind_run=best_ind_run,
+                                    n=n,
+                                    step=step,
+                                    flag=flag_list,
+                                    fitness=fitness,
+                                    deleted_pos=[],
+                                    analysis_dir_plots=params['analysis_dir']['plots'])
+
+        data_flag_dir = params['analysis_dir']['data']+"/"+setup_name     
+        swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=data_flag_dir,
+                                                      setup_name=setup_name,
+                                                      run=run,
+                                                      analysis_dir_plots=params['analysis_dir']['plots'])
 
 
 ###########################################################################
@@ -85,13 +97,12 @@ def plot_single_run_data(run, params):
 
 def worker(task):
 
-    plot_flag_func, plot_flag_fitnesses_func, run, gen, ind, steps, save_dir, params = task
-    plot_flag_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
-    plot_flag_fitnesses_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+    run, best_ind_run, params = task
+    return plot_single_run_single_ind_data(run=run, best_ind_run=best_ind_run, params=params)
 
 #---------------------------------------------------
 
-def parallelize_processes(task_queue, params):
+def parallelize_processes(task_queue):
 
     # Create a Pool with the number of available cores
     available_cores = cpu_count() - params['with_parallelization_nb_free_cores']
@@ -109,20 +120,30 @@ if (__name__ == "__main__"):
 
     # Get parameters from the bash launcher
     parser = argparse.ArgumentParser()
-    parser.add_argument("--learning_analysis_dir", default="", type=str)
+    parser.add_argument("--swarm_analysis_dir", default="", type=str)
     parser.add_argument("--with_parallelization_bool", default=False, type=lambda x:x=="True")
     parser.add_argument("--with_parallelization_nb_free_cores", default=0, type=int)
     parser.add_argument("--plot_with_animation_bool", default=False, type=lambda x:x=="True")
     args = parser.parse_args()
 
     # Get parameters from the learning simulation
-    with open(args.learning_analysis_dir+"/learning_params.json", "r") as f:
+    with open(args.swarm_analysis_dir+"/swarm_params.json", "r") as f:
         params = json.load(f)
     
     params['with_parallelization_bool'] = args.with_parallelization_bool
     params['with_parallelization_nb_free_cores'] = args.with_parallelization_nb_free_cores
     params['plot_with_animation_bool'] = args.plot_with_animation_bool
 
+    best_ind_per_run_dict = get_best_ind_per_run_dict(dataset_path=params['analysis_dir']['root'].replace("/swarm", "/learning")+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
+
     # Launch plots
-    for run in range(params['nb_runs']):
-        plot_single_run_data(run, params)
+    if params['with_parallelization_bool']:
+        task_queue = [] # create a queue of tasks to execute
+        for run in range(params['nb_runs']):
+            for best_ind_run in best_ind_per_run_dict:
+                task_queue.append((run, best_ind_run, params.copy()))
+        swarm_params = parallelize_processes(task_queue)
+    else:
+        for run in range(params['nb_runs']):
+            for best_ind_run in best_ind_per_run_dict:
+                plot_single_run_single_ind_data(run=run, best_ind_run=best_ind_run, params=params)

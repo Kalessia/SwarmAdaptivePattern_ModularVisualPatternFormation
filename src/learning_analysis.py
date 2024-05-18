@@ -149,9 +149,9 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, save_best_inds_ever_
                 
 def plot_single_run_data(run, params):
 
-    os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo", exist_ok=True)
-    print(f"Plots for the single run n.{run} - Started")
     time_run = time.time()
+    print(f"Plots for the single run n.{run} - Started")
+    os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo", exist_ok=True)
 
     # Plot_all_pop_fitnesses_boxplot
     dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_all_pop.csv"

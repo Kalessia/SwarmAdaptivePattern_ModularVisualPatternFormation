@@ -5,7 +5,7 @@
     "switch_step": 100,
     "nb_repetitions": 10,
 
-    "setup_ind_consistency": true,
+    "setup_ind_consistency_bool": true,
 
     "setup_noise_bool": true,
     "setup_noise_ticks": [1.0e-1, 1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5],

@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+
+import csv
+
 from nn import NeuralNetwork
 
 
@@ -92,4 +95,19 @@ def copy_params_from_learning(learning_params, swarm_params):
 
     return swarm_params
 
-#---------------------------------------------------
+
+###########################################################################
+# Save data functions
+###########################################################################
+
+def save_data_to_csv(fichier_name, data, header=None):
+    f = open(fichier_name, 'a', newline='')
+    writer = csv.writer(f)
+
+    if header:
+        writer.writerow(header)
+
+    if data:
+        writer.writerows(data)
+
+    f.close()
