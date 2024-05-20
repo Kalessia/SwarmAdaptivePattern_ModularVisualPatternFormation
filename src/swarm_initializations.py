@@ -21,15 +21,23 @@ def check_params_validity(params):
     params['with_parallelization_nb_free_cores'] = int(params['with_parallelization_nb_free_cores'])
 
     if params['nb_runs'] <= 0 or params['time_steps'] <= 0 or params['nb_repetitions'] <= 0:
-        print(f"Error in learning_initializations.py - Parameters nb_runs, time_steps and nb_repetitions must be > 0")
+        print(f"Error in swarm_initializations.py - Parameters nb_runs, time_steps and nb_repetitions must be > 0")
         exit_bool = True
 
-    if params['setup_noise_bool'] and not isinstance(params['setup_noise_ticks'], list):
-        print(f"Error in learning_initializations.py - Parameter setup_noise_ticks must be a list")
+    if params['setup_ind_consistency']['setup_ind_consistency_bool']:
+        setup_ind_consistency_options = []
+        if params['setup_ind_consistency']['setup_ind_consistency_random_init_states_bool']:
+            setup_ind_consistency_options.append("setup_ind_consistency_random_init_states")
+        if params['setup_ind_consistency']['setup_ind_consistency_random_update_states_bool']:
+            setup_ind_consistency_options.append("setup_ind_consistency_random_update_states")
+        params['setup_ind_consistency']['setup_ind_consistency_options'] = setup_ind_consistency_options
+
+    if params['setup_noise']['setup_noise_bool'] and not isinstance(params['setup_noise']['setup_noise_std_ticks'], list):
+        print(f"Error in swarm_initializations.py - Parameter setup_noise_std_ticks must be a list")
         exit_bool = True
 
-    if params['setup_deletion_bool'] and not isinstance(params['setup_deletion_ticks'], list):
-        print(f"Error in learning_initializations.py - Parameter setup_deletion_ticks must be a list")
+    if params['setup_deletion']['setup_deletion_bool'] and not isinstance(params['setup_deletion']['setup_deletion_ticks'], list):
+        print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks must be a list")
         exit_bool = True
 
     if exit_bool:

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
 
-from learning_analysis import save_data_to_csv
+from learning_initializations import save_data_to_csv
 
 
 

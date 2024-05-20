@@ -1,19 +1,27 @@
 {
     "nb_runs": 1,
 
+    "nb_repetitions": 3,
     "time_steps": 200,
     "switch_step": 100,
-    "nb_repetitions": 10,
+    "switch_step_with_reset_env_bool": false,
+    "switch_step_with_random_update_bool": false,
 
-    "setup_ind_consistency_bool": true,
+    "setup_ind_consistency": {
+        "setup_ind_consistency_bool": true,
+        "setup_ind_consistency_random_init_states_bool": true,
+        "setup_ind_consistency_random_update_states_bool": true
+    },
 
-    "setup_noise_bool": true,
-    "setup_noise_ticks": [1.0e-1, 1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5],
-    "setup_noise_time_steps": 200,
-    "setup_noise_switch_step": 100,
+    "setup_noise": {
+        "setup_noise_bool": true,
+        "setup_noise_std_ticks": [1.0e-1, 1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5]
+    },
 
-    "setup_deletion_bool": true,
-    "setup_deletion_ticks": [2, 3, 7, 10],
+    "setup_deletion": {
+        "setup_deletion_bool": true,
+        "setup_deletion_ticks": [0.1, 0.2, 0.3, 0.4, 0.5]
+    },
 
     "verbose_debug": false,
 

@@ -7,6 +7,8 @@ from deap import cma
 import numpy as np
 import random
 
+import csv
+
 from learning_environments import *
 from nn import NeuralNetwork
 
@@ -141,3 +143,21 @@ def init_toolbox(params):
 
     return toolbox
 
+
+###########################################################################
+# Save data functions
+###########################################################################
+
+def save_data_to_csv(fichier_name, data, header=None):
+    f = open(fichier_name, 'a', newline='')
+    writer = csv.writer(f)
+
+    if header:
+        writer.writerow(header)
+
+    if data:
+        writer.writerows(data)
+
+    f.close()
+
+#---------------------------------------------------

@@ -1,5 +1,6 @@
 import os
 
+import random
 import numpy as np
 import pandas as pd
 
@@ -50,17 +51,30 @@ class swarmAgent:
 
     #---------------------------------------------------
     
-    def init_state(self):
+    def init_state(self, random_init_bool=False):
 
-        if self.init_cell_state_value is None:
-            self.init_cell_state_value = np.random.uniform(0, 1, 1)[0]
+        if self.init_cell_state_value is None or random_init_bool:
+            value = np.random.uniform(0, 1, 1)[0]
+        else:
+            value = self.init_cell_state_value
         
-        self.state = [self.init_cell_state_value]*self.len_state
+        self.state = [value] * self.len_state
     
     #---------------------------------------------------
 
-    def set_state(self, vector):
+    def set_state(self, vector, with_noise_bool, noise_std):
+
+        if with_noise_bool:
+            state = vector.copy()
+            noise = np.random.normal(0, noise_std, self.len_state) 
+            vector = [self.clip(state[i]+noise[i]) for i in range(self.len_state)] # check  
+
         self.state = vector
+
+    #---------------------------------------------------
+
+    def clip(self, value):
+        return max(0, min(value, 1))
 
     #---------------------------------------------------
 
@@ -83,11 +97,11 @@ class agent1Output(swarmAgent):
         self.len_state = 1
         super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
 
-    def init_state(self):
-        super().init_state()
+    def init_state(self, random_init_bool=False):
+        super().init_state(random_init_bool)
 
-    def set_state(self, vector):
-        super().set_state(vector)
+    def set_state(self, vector, with_noise_bool, noise_std):
+        super().set_state(vector, with_noise_bool, noise_std)
 
     def get_chemical_species(self):
         state = super().get_state()
@@ -104,11 +118,11 @@ class agent2Outputs(swarmAgent):
         self.len_state = 2
         super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
 
-    def init_state(self):
-        super().init_state()
+    def init_state(self, random_init_bool=False):
+        super().init_state(random_init_bool)
 
-    def set_state(self, vector):
-        super().set_state(vector)
+    def set_state(self, vector, with_noise_bool, noise_std):
+        super().set_state(vector, with_noise_bool, noise_std)
 
     def get_chemical_species(self):
         state = super().get_state()
@@ -162,160 +176,151 @@ class swarmGrid:
     #---------------------------------------------------
 
     def get_agents(self):
-        agents = [a for a in self.grid_map_pos_agent.values() if a != None]
-        return agents
+        return [a for a in self.grid_map_pos_agent.values() if a != None]
 
     #---------------------------------------------------
 
-    def init_agents_state(self):
+    def init_agents_state(self, random_init_bool=False):
 
         agents = self.get_agents()
         for agent in agents:
-            agent.init_state()
+            agent.init_state(random_init_bool)
 
     #---------------------------------------------------
 
-    def step(self):
+    def step(self, switch_step_with_random_update_bool=False, with_noise_bool=False, noise_std=None):
 
         agents = self.get_agents() # ordered update
-        # np.random.shuffle(agents_ids) # random update
+
+        if switch_step_with_random_update_bool:
+            np.random.shuffle(agents) # random update
 
         for agent in agents:
-            self.compute_agent_state(agent=agent)
+            state = self.compute_agent_state(agent=agent)
+            agent.set_state(state, with_noise_bool, noise_std)
 
     #---------------------------------------------------
 
-    def setup_ind_consistency(self, run, setup_name, nb_repetitions, time_steps, analysis_dir):
+    def setup_ind_consistency(self, run, setup_name, nb_repetitions, time_steps, switch_step, switch_step_with_reset_env_bool, analysis_dir):
         
         for n in range(nb_repetitions):
+            switch_step_with_random_update_bool = False
             self.init_agents_state()
             flags = []
-            for _ in range(time_steps):
+            for step in range(time_steps):
                 flag = self.get_flag_from_grid()
                 flags.append(flag)
-                self.step()
+
+                if step == switch_step-1:
+                
+                    if setup_name == "setup_ind_consistency_random_init_states":
+                        self.init_agents_state(random_init_bool=True)
+                        continue
+
+                    if setup_name == "setup_ind_consistency_random_update_states":
+                        switch_step_with_random_update_bool=True
+                        if switch_step_with_reset_env_bool:
+                            self.init_agents_state()
+                            continue
+
+                self.step(switch_step_with_random_update_bool=switch_step_with_random_update_bool)
             
             # Save flags for this run
-            self.write_flag_data(setup_name, run, n, time_steps, flags, analysis_dir=analysis_dir)
+            self.write_flag_data(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, analysis_dir=analysis_dir)
 
     #---------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # def setup_noise1(self, run, n, tick, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
-    #     setup_name = "setup_noise1_"+str(tick)
+    def setup_noise(self, run, setup_name, nb_repetitions, setup_noise_std_ticks, time_steps, switch_step, switch_step_with_reset_env_bool, switch_step_with_random_update_bool, analysis_dir):
         
-    #     self.init_agents_state()
-    #     agents_ids = list(self.grid_map_id_pos.keys()) # ordered update
+        for n in range(nb_repetitions):
+            for tick in setup_noise_std_ticks:
+                setup_name_tick = setup_name+"_"+str(tick)
+                with_noise_bool=False
+                self.init_agents_state()
+                flags = []
 
-    #     flags = []
+                for step in range(time_steps):
+                    flag = self.get_flag_from_grid()
+                    flags.append(flag)
 
-    #     for step in range(time_steps):
+                    if step == switch_step-1:
+                        with_noise_bool = True
+                        if switch_step_with_reset_env_bool:
+                            self.init_agents_state()
+                            continue
 
-    #         flag = self.get_flag_from_grid()
-    #         flags.append(flag)
-    #         if step in [0, switch_step, time_steps-1]:
-    #             self.plot_flag(setup_name, run, best_ind_run, n, step, flag, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
-            
-    #         if step >= switch_step:
+                    self.step(switch_step_with_random_update_bool=switch_step_with_random_update_bool,
+                              with_noise_bool=with_noise_bool,
+                              noise_std=tick)
+                
+                # Save flags for this run
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, analysis_dir=analysis_dir)
 
-    #             np.random.shuffle(agents_ids) # random update
-    #             for agent_id in agents_ids:
-    #                 self.compute_agent_state_with_noise_1(agent=self.grid_map_pos_agent[self.grid_map_id_pos[agent_id]], noise_std=tick)
+    #---------------------------------------------------
 
-    #         else:
-    #             self.step()
-
-    #     # Save flags for this run
-    #     self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
-    #     data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-    #     self.plot_flag_fitnesses_from_file(data_flag_dir=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
-
-    # #---------------------------------------------------
-
-    # def setup_noise2(self, run, n, tick, time_steps, switch_step, best_ind_run, best_ind, simulation_params):
-    #     setup_name = "setup_noise2_"+str(tick)
+    def setup_deletion(self, run, setup_name, nb_repetitions, deletion_ticks, time_steps, switch_step, switch_step_with_reset_env_bool, switch_step_with_random_update_bool, analysis_dir):
         
-    #     self.init_agents_state()
-    #     agents_ids = list(self.grid_map_id_pos.keys()) # ordered update
+        for n in range(nb_repetitions):
+            deleted_map_pos_agent = {}
 
-    #     flags = []
+            for tick in deletion_ticks:
+                setup_name_tick = setup_name+"_"+str(tick)
+                self.init_agents_state()
+                flags = []
 
-    #     for step in range(time_steps):
+                for step in range(time_steps):
+                    flag = self.get_flag_from_grid()
+                    flags.append(flag)
 
-    #         flag = self.get_flag_from_grid()
-    #         flags.append(flag)
-    #         if step in [0, switch_step, time_steps-1]:
-    #             self.plot_flag(setup_name, run, best_ind_run, n, step, flag, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+                    if step == switch_step-1:
+                        agents = self.get_agents()
+                        nb_deletions = tick - len(deleted_map_pos_agent)
+                        agents_to_delete = list(deleted_map_pos_agent.values()) + random.sample(agents, nb_deletions) # old + new chosen agents
+                        deleted_map_pos_agent = self.delete_agent(agents_to_delete=agents_to_delete)
+
+                        if switch_step_with_reset_env_bool:
+                            self.init_agents_state()
+                            continue
+
+                    self.step(switch_step_with_random_update_bool=switch_step_with_random_update_bool)
+                
+                # Save flags for this run
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, analysis_dir=analysis_dir)
             
-    #         if step >= switch_step:
+                # Restore original grid
+                self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
 
-    #             if True: #Kale parametrable bool
-    #                 np.random.shuffle(agents_ids) # random update
+    #---------------------------------------------------
 
-    #             for agent_id in agents_ids:
-    #                 self.compute_agent_state_with_noise_2(agent=self.grid_map_pos_agent[self.grid_map_id_pos[agent_id]], noise_std=tick)
-
-    #         else:
-    #             self.step()
-
-    #     # Save flags for this run
-    #     self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
-    #     data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-    #     self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
-
-    # #---------------------------------------------------
-
-    # def setup_deletion(self, run, n, tick, time_steps, switch_step, best_ind_run, best_ind, deleted_map_pos_agent, simulation_params):
-
-    #     setup_name = "setup_deletion_"+str(tick)
-    #     self.init_agents_state()
-
-    #     flags = []
-    #     for step in range(time_steps):
-
-    #         flag = self.get_flag_from_grid()
-    #         flags.append(flag)
-    #         if step in [0, switch_step, time_steps-1]:
-    #             self.plot_flag(setup_name, run, best_ind_run, n, step, flag, deleted_map_pos_agent, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
-            
-    #         # elimination progressive kale
-    #         if step == switch_step:
-    #             nb_deletions = tick - len(deleted_map_pos_agent)
-    #             deleted_map_pos_agent = self.delete_agent(nb_deletions=nb_deletions, deleted_map_pos_agent=deleted_map_pos_agent)
-
-    #         self.step()
-
-    #     # Save flags for this run
-    #     self.write_flag_data(setup_name, run, best_ind_run, best_ind, n, time_steps, flags, analysis_dir=simulation_params['analysis_dir'])
-    #     data_flag_file = simulation_params['analysis_dir']['data']+"/best_ind_"+str(best_ind_run)+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
-    #     self.plot_flag_fitnesses_from_file(data_flag_file=data_flag_file, setup_name=setup_name, run=run, best_ind_run=best_ind_run, n=n, switch_step=switch_step, analysis_dir_plots=simulation_params['analysis_dir']['plots'])
+    def delete_agent(self, agents_to_delete=None):
         
-    #     return deleted_map_pos_agent
-    
+        deleted_map_pos_agent = {}
+        for agent in agents_to_delete:
+            deleted_map_pos_agent[agent.pos] = agent # save agent
+            self.grid_map_pos_agent[agent.pos] = None # eliminate agent from grid
+
+        # Update the neighbors list of each agent
+        agents = self.get_agents()
+        for agent in agents:
+            l_tmp = self.get_neighbors(agent=agent)
+            agent.neighbors_NWES = l_tmp
+
+        return deleted_map_pos_agent
+
+    #---------------------------------------------------
+
+    def restore_deleted_agents(self, deleted_map_pos_agent=None):
+        for pos in deleted_map_pos_agent:
+            self.grid_map_pos_agent[pos] = deleted_map_pos_agent[pos]
+
+        # Update the neighbors list of each agent
+        agents = self.get_agents()
+        assert len(agents) == self.grid_size, f"\nrestore_deleted_agents {len(agents)} != {self.grid_size}"
+
+        for agent in agents:
+            l_tmp = self.get_neighbors(agent=agent)
+            agent.neighbors_NWES = l_tmp
+
     #---------------------------------------------------
 
     @staticmethod
@@ -351,111 +356,14 @@ class swarmGrid:
             else:
                 neighbors_states.append(self.default_missing_neighbor_state)
         
-        print("compute_agent_state: agent.pos:", agent.pos, ", its neighbors:", agent.neighbors_NWES, "neighbors states:", neighbors_states)
-        print("prima di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
-        state = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
-        agent.set_state(state)
-        print("dopo di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
-
-    # #---------------------------------------------------
-
-    # def compute_agent_state_with_noise_1(self, agent, noise_std): # dividere in get neighbors states? + predict?
+        # print("compute_agent_state: agent.pos:", agent.pos, ", its neighbors:", agent.neighbors_NWES, "neighbors states:", neighbors_states)
+        # print("prima di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
+        state = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer               
+        return state
         
-    #     # print("id", agent.id, "neighbors_ids", agent.neighbors_NWES)
-
-    #     # Gaussian noise distribution
-    #     noise_mean = 0.5
-        
-    #     neighbors_states = []
-    #     for i, neighbor_id in enumerate(agent.neighbors_NWES):
-    #         noise = np.random.normal(noise_mean, noise_std, len(agent.neighbors_NWES))
-    #         if neighbor_id: # si il a un id, il y a l'agent? tjr?
-    #             # neighbors_states.append(self.flag[neighbor])
-    #             neighbor = self.grid_map_pos_agent[self.grid_map_id_pos[neighbor_id]]
-    #             neighbors_states.append(max(0, neighbor.chemical_species + noise[i])) # check: in che parte di codice di env usiamo chemical species
-    #             #print originals and noisy to check, check if valeur bruité>0 toujours
-    #         else:
-    #             neighbors_states.append(self.default_missing_neighbor_state)
-        
-    #     # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
-    #     # print("compute_cell_state: Their neighbors states are", neighbors_states)
-
-
-
-
-    #     if True:
-    #         chemical_species, phenotype = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
-    #         agent.chemical_species = chemical_species
-    #         agent.phenotype = phenotype
-    #     else:
-    #         agent_state = self.agent_controller.predict(neighbors_states)[0] # forwardPropagation, stableSigmoid on the last layer
-            
-    #     # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
-
-    # #---------------------------------------------------
-
-    # def compute_agent_state_with_noise_2(self, agent, noise_std): # dividere in get neighbors states? + predict?
-        
-    #     # print("id", agent.id, "neighbors_ids", agent.neighbors_NWES)
-
-    #    # Gaussian noise distribution
-    #     noise_mean = 0.5
-
-    #     neighbors_states = []
-    #     for neighbor_id in agent.neighbors_NWES:
-    #         if neighbor_id: # si il a un id, il y a l'agent? tjr?
-    #             # neighbors_states.append(self.flag[neighbor])
-    #             neighbor = self.grid_map_pos_agent[self.grid_map_id_pos[neighbor_id]]
-    #             neighbors_states.append(neighbor.chemical_species) # check: in che parte di codice di env usiamo chemical species
-    #         else:
-    #             neighbors_states.append(self.default_missing_neighbor_state)
-        
-    #     # print("compute_cell_state: The neighbors of ", cell, "are", self.map_cell_neighbors_NWES[cell])
-    #     # print("compute_cell_state: Their neighbors states are", neighbors_states)
-    #     if True:
-    #         noise = np.random.normal(noise_mean, noise_std, 2)
-    #         chemical_species, phenotype = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer
-    #         agent.chemical_species = chemical_species + noise[0]
-    #         agent.phenotype = phenotype + noise[1]
-    #     else:
-    #         agent_state = self.agent_controller.predict(neighbors_states)[0] # forwardPropagation, stableSigmoid on the last layer
-            
-    #     # print("compute_cell_state: The predicted state for", cell, "is", cell_state)
+        # print("dopo di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
 
     # #---------------------------------------------------    
-
-    # def delete_agent(self, nb_deletions=None, deleted_map_pos_agent=None): # a faire kale
-        
-    #     agents = [a for a in self.grid_map_pos_agent.values() if a != None]
-    #     agents_to_delete = random.sample(agents, nb_deletions)
-
-    #     for agent in agents_to_delete:
-    #         deleted_map_pos_agent[agent.pos] = agent #save
-    #         self.grid_map_pos_agent[agent.pos] = None #elimination
-
-    #     # Collect the neighbors of each agent (if we call 'refresh', they have likely changed)
-    #     for agent in agents:
-    #         l_tmp = self.get_neighbors_ids(agent=agent)
-    #         agent.neighbors_NWES = l_tmp
-
-    #     # check all
-    #     return deleted_map_pos_agent
-
-    # #---------------------------------------------------
-
-    # def restore_deleted_agents(self, deleted_map_pos_agent=None):
-    #     for pos in deleted_map_pos_agent:
-    #         self.grid_map_pos_agent[pos] = deleted_map_pos_agent[pos]
-
-    #     # Collect the neighbors of each agent (if we call 'refresh', they have likely changed)
-    #     agents = [a for a in self.grid_map_pos_agent.values() if a != None]
-    #     assert len(agents) == self.grid_size, f"{len(agents)} != {self.grid_size}"
-
-    #     for agent in agents:  
-    #         l_tmp = self.get_neighbors_ids(agent=agent)
-    #         agent.neighbors_NWES = l_tmp
-
-    # #---------------------------------------------------
     
     def update_grid(self):
 
@@ -581,7 +489,7 @@ class swarmGrid:
         plt.xlim(-0.5, grid_nb_cols-0.5)
         plt.ylim(-grid_nb_rows+0.5, 0.5)
 
-        plt.title(f"Flag evolution states. Run {run}, setup name {setup_name}, best individual {best_ind_run}, step {step}.\nFitness (distance to flag target) = {fitness}", pad=20, fontsize=9)
+        plt.title(f"{setup_name} Flag evolution states. Run {run}, setup name {setup_name}, best individual {best_ind_run}, step {step}.\nFitness (distance to flag target) = {fitness}", pad=20, fontsize=9)
         
         dir_name = analysis_dir_plots+"/"+setup_name+"/flag"
         if not os.path.exists(dir_name):
@@ -608,6 +516,7 @@ class swarmGrid:
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
         plt.suptitle(f"Fitness related to the flag evolution over steps run="+str(run), fontsize=14)
+        plt.title(setup_name)
         # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
         
         dir_name = analysis_dir_plots+"/"+setup_name
@@ -621,7 +530,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_multi_flag_fitnesses_from_file(data_flag_dir, setup_name, run, analysis_dir_plots):
+    def plot_multi_flag_fitnesses_from_file(data_flag_dir, setup_name, run, switch_step, analysis_dir_plots):
 
         data_flag_files = os.listdir(data_flag_dir)
         for data_flag_file in data_flag_files:
@@ -629,12 +538,13 @@ class swarmGrid:
             x = dataset['Step'].tolist()
             y = dataset['Flags_distance'].tolist()
             plt.plot(x, y)
+            plt.axvline(x=switch_step, color='r', linestyle='--')
 
         plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
         plt.suptitle(f"Fitness related to the flag evolution over steps run={run}", fontsize=14)
-        plt.title(f"Nb repetitions {len(data_flag_files)}", fontsize=14)
+        plt.title(f"{setup_name} Nb repetitions {len(data_flag_files)}", fontsize=14)
         # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
         
         dir_name = analysis_dir_plots+"/"+setup_name

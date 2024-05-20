@@ -13,9 +13,10 @@ import imageio.v2 as iio
 
 import argparse
 
-import csv
 import json
 
+from learning_initializations import save_data_to_csv
+from learning_environments import flagAutomata
 
 
 
@@ -59,20 +60,6 @@ def init_one_run_analysis(run, params):
 ###########################################################################
 # Save data functions
 ###########################################################################
-
-def save_data_to_csv(fichier_name, data, header=None):
-    f = open(fichier_name, 'a', newline='')
-    writer = csv.writer(f)
-
-    if header:
-        writer.writerow(header)
-
-    if data:
-        writer.writerows(data)
-
-    f.close()
-
-#---------------------------------------------------
 
 def write_single_gen_data(run, gen, population, analysis_dir_data):
 
@@ -150,7 +137,7 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, save_best_inds_ever_
 def plot_single_run_data(run, params):
 
     time_run = time.time()
-    print(f"Plots for the single run n.{run} - Started")
+    print(f"learning_analysis plots for the single run n.{run} - Started")
     os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo", exist_ok=True)
 
     # Plot_all_pop_fitnesses_boxplot
@@ -164,7 +151,6 @@ def plot_single_run_data(run, params):
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_flag_from_file for best individuals ever in a defined range of steps
-    from learning_environments import flagAutomata
     save_dir = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env"
     dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
     dataset = pd.read_csv(dataset_path)
@@ -208,7 +194,7 @@ def plot_single_run_data(run, params):
         print(f"Animation for the single run n.{run} - Saved in {dir}")
 
     time_run = time.time() - time_run
-    print(f"Plots for the single run n.{run} - Completed. Execution time: {time_run} seconds")
+    print(f"learning_analysis plots for the single run n.{run} - Completed. Execution time: {time_run} seconds")
     
 #---------------------------------------------------
 
@@ -228,7 +214,6 @@ def plot_all_runs_data(params):
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_flag_from_file for the target flag
-    from learning_environments import flagAutomata
     flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv", run=None, gen=None, ind=None, steps=None, analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
 
     print(f"Plots for all the runs completed.")

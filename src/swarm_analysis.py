@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 from multiprocessing import Pool, cpu_count
 
@@ -57,16 +58,18 @@ def init_one_run_analysis(run, best_ind, best_ind_run, params):
                 
 def plot_single_run_single_ind_data(run, best_ind_run, params):
 
+    time_run_ind = time.time()
+    print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Starting")
+
     params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/data"
     params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/plots"
 
-    if params['setup_ind_consistency_bool']:
-        setup_name = "setup_ind_consistency"
+    for setup_name in params['setups']:
         for n in range(params['nb_repetitions']):
             data_flag_file = params['analysis_dir']['data']+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
             dataset = pd.read_csv(data_flag_file)
 
-            for step in [0, params['switch_step'], params['time_steps']-1]:
+            for step in [0, params['switch_step']-1, params['switch_step'], params['time_steps']-1]:
                 flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
                 flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
                 flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
@@ -88,7 +91,11 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
         swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=data_flag_dir,
                                                       setup_name=setup_name,
                                                       run=run,
+                                                      switch_step=params['switch_step'],
                                                       analysis_dir_plots=params['analysis_dir']['plots'])
+
+    time_run = time.time() - time_run_ind
+    print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Completed. Execution time: {time_run} seconds")
 
 
 ###########################################################################

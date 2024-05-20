@@ -59,6 +59,7 @@ plot_with_animation_bool=False
 
 # Comment the following line if you DON'T want to launch a new swarm simulation
 # python3 swarm_main.py --learning_analysis_dir ${learning_analysis_dir} > simu.txt
+python3 swarm_main.py --learning_analysis_dir ${learning_analysis_dir}
 
 
 ###########################################################################

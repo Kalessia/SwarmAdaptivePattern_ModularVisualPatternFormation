@@ -20,6 +20,7 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
     # Initializations
     time_run = time.time()
     swarm_params = init_one_run_analysis(run, best_ind, best_ind_run, swarm_params)
+    setups = []
 
     env = init_swarmGrid_env(grid_nb_rows=swarm_params['grid_nb_rows'],
                              grid_nb_cols=swarm_params['grid_nb_cols'],
@@ -28,87 +29,47 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
                              flag_target=swarm_params['flag_target'],
                              agent_controller_weights=best_ind)
 
-    # setup_ind_consistency: initialization of the environment and test of the current individual 'nb_repetitions' times
-    if swarm_params['setup_ind_consistency_bool']:
-        setup_name = "setup_ind_consistency"
-        env.setup_ind_consistency(run=run,
-                                  setup_name=setup_name,
-                                  nb_repetitions=swarm_params['nb_repetitions'],
-                                  time_steps=swarm_params['time_steps'],
-                                  analysis_dir=swarm_params['analysis_dir'])
+    # # setup_ind_consistency
+    # setups += swarm_params['setup_ind_consistency']['setup_ind_consistency_options']
+    # for setup_name in swarm_params['setup_ind_consistency']['setup_ind_consistency_options']:
+    #     env.setup_ind_consistency(run=run,
+    #                               setup_name=setup_name,
+    #                               nb_repetitions=swarm_params['nb_repetitions'],
+    #                               time_steps=swarm_params['time_steps'],
+    #                               switch_step=swarm_params['switch_step'],
+    #                               switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+    #                               analysis_dir=swarm_params['analysis_dir'])
+    
+    # # setup_noise
+    # if swarm_params['setup_noise']['setup_noise_bool']:
+    #     setup_name = "setup_noise"
+    #     setups += [setup_name+"_"+str(tick) for tick in swarm_params['setup_noise']['setup_noise_std_ticks']]
+    #     env.setup_noise(run=run,
+    #                     setup_name=setup_name,
+    #                     nb_repetitions=swarm_params['nb_repetitions'],
+    #                     setup_noise_std_ticks=swarm_params['setup_noise']['setup_noise_std_ticks'],
+    #                     time_steps=swarm_params['time_steps'],
+    #                     switch_step=swarm_params['switch_step'],
+    #                     switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+    #                     switch_step_with_random_update_bool=swarm_params['switch_step_with_random_update_bool'],
+    #                     analysis_dir=swarm_params['analysis_dir'])
 
+    # setup_deletion
+    if swarm_params['setup_deletion']['setup_deletion_bool']:
+        setup_name = "setup_deletion"
+        deletion_ticks = [int(env.grid_size*tick) for tick in swarm_params['setup_deletion']['setup_deletion_ticks']] # init params check ticks
+        setups += [setup_name+"_"+str(tick) for tick in deletion_ticks]
+        env.setup_deletion(run=run,
+                           setup_name=setup_name,
+                           nb_repetitions=swarm_params['nb_repetitions'],
+                           deletion_ticks=deletion_ticks,
+                           time_steps=swarm_params['time_steps'],
+                           switch_step=swarm_params['switch_step'],
+                           switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+                           switch_step_with_random_update_bool=swarm_params['switch_step_with_random_update_bool'],
+                           analysis_dir=swarm_params['analysis_dir'])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # cas 1: introduire du bruit continu de differente entité
-    # param: entités de bruit souhaités
-    # initialize env: init grid? ou nouvelle instance
-    # quand on calcule les entrées du reseau in compute_agent_state(self, agent), add bruit selon l entite demandée en parametre
-    # repeter le procedé N fois, un plot par N avec barre au 'step de changement regime' et un plot complexive box plot, du coup data "Run, step, fitness"
-
-    # noise_ticks = swarm_params['noise_ticks']
-    # if noise_ticks:
-    #     for n in range(swarm_params['nb_repetitions']):
-    #         for tick in noise_ticks:
-    #             env.setup_noise1(run, n, tick, time_steps, switch_step, best_ind_run, best_ind, swarm_params)
-
-    # # cas 2: introduire du bruit continu de differente entité
-    # # pareil, mais avec noise type 2
-
-    # # noise_ticks = swarm_params['noise_ticks']
-    # # if noise_ticks:
-    # #     for n in range(swarm_params['nb_repetitions']):
-    # #         for tick in noise_ticks:
-    # #             env.setup_noise2(run, n, tick, time_steps, switch_step, best_ind_run, best_ind, swarm_params)
-           
-    # # cas 2: eliminer n agents
-    # # params: liste de nombre N de agents à eliminer, sans retirage, choisi au hazard
-    # # initialize env: init grid? ou nouvelle instance
-    # # on elimine 2 agents des listes, on refrech les voisins
-    # # repeter le procedé N fois, un plot par N avec barre au 'step de changement regime' et un plot complexive box plot, du coup data "Run, step, fitness"
-    # # les agents enleves seront reinseres
-
-    # deletion_ticks = swarm_params['deletion_ticks']
-    # if deletion_ticks:
-    #     for n in range(swarm_params['nb_repetitions']):
-
-    #         # deletion_ticks = random.sample(range(env.size-1), swarm_params['nb_agents_to_delete']) # random.sample choose elements without replacement (don't allow duplicates)
-
-    #         # if swarm_params['nb_agents_to_delete'] >= env.grid_size:
-    #         #     print("gneee conlacca")
-    #         #     exit()
-
-    #         deleted_map_pos_agent = {}
-    #         for tick in deletion_ticks:
-    #             deleted_map_pos_agent = env.setup_deletion(run, n, tick, time_steps, switch_step, best_ind_run, best_ind, deleted_map_pos_agent, swarm_params)
-            
-    #         env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
-
-
-
-
-
-
-
-
-
-
-
+    swarm_params['setups'] = setups
 
     time_run = time.time() - time_run
     print(f"swarm_simulation run n.{run}, best_ind_{best_ind_run} [{best_ind[0]}, ...] - Execution time:", time_run, "seconds") # kale change save time for each run
@@ -122,7 +83,6 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
 
 def worker(task):
     run, best_ind, best_ind_run, swarm_params = task
-    # print("launching with ", run, best_ind, swarm_params, "\n")
     return swarm_simulation(run=run, best_ind=best_ind, best_ind_run=best_ind_run, swarm_params=swarm_params)
 
 #---------------------------------------------------
