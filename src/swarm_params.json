@@ -4,8 +4,8 @@
     "nb_repetitions": 3,
     "time_steps": 200,
     "switch_step": 100,
-    "switch_step_with_reset_env_bool": false,
-    "switch_step_with_random_update_bool": false,
+    "switch_step_with_reset_env_bool": true,
+    "switch_step_with_random_update_bool": true,
 
     "setup_ind_consistency": {
         "setup_ind_consistency_bool": true,

@@ -14,7 +14,7 @@
 
 # If you want to plot figures for a specific learning simulation, write the corresponding path in the following line
 # exemple: "simulationAnalysis/flag_automata_2024-04-29_21-44-08_circle_9x9/learning"
-learning_analysis_dir="simulationAnalysis/flag_automata_2024-05-15_21-27-11_2_stripes_16x32/learning"
+learning_analysis_dir="simulationAnalysis/flag_automata_2024-05-22_16-04-24_circle_11x20/learning"
 
 # Plot parameters
 with_parallelization_bool=True
@@ -27,16 +27,16 @@ plot_with_animation_bool=False
 ###########################################################################
 
 # Comment this line if you DON'T want to launch a new learning simulation
-# output=$(python3 learning_main.py); echo "$output"| head -n -1; learning_analysis_dir=$(echo "$output" | tail -n 1)
+output=$(python3 learning_main.py); echo "$output"| head -n -1; learning_analysis_dir=$(echo "$output" | tail -n 1)
 
 
 ###########################################################################
 # Launch learning plots
 ###########################################################################
 
-# python3 learning_analysis.py    --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-#                                 --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-#                                 --plot_with_animation_bool ${plot_with_animation_bool}
+python3 learning_analysis.py    --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+                                --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+                                --plot_with_animation_bool ${plot_with_animation_bool}
 
 
 ###########################################################################
@@ -45,7 +45,7 @@ plot_with_animation_bool=False
 
 # If you want to plot figures for a specific swarm simulation, write the corresponding path in the following line
 # example: "simulationAnalysis/flag_automata_2024-05-02_05-45-47_circle_65x65/swarm"
-swarm_analysis_dir="simulationAnalysis/flag_automata_2024-05-15_21-27-11_2_stripes_16x32/swarm"
+swarm_analysis_dir="simulationAnalysis/flag_automata_2024-05-22_17-43-26_circle_11x11/swarm"
 
 # Plot parameters
 with_parallelization_bool=True
@@ -59,13 +59,14 @@ plot_with_animation_bool=False
 
 # Comment the following line if you DON'T want to launch a new swarm simulation
 # python3 swarm_main.py --learning_analysis_dir ${learning_analysis_dir} > simu.txt
-python3 swarm_main.py --learning_analysis_dir ${learning_analysis_dir}
+# python3 swarm_main.py --learning_analysis_dir ${learning_analysis_dir}
+# output=$(python3 swarm_main.py --learning_analysis_dir ${learning_analysis_dir}); echo "$output"| head -n -1; swarm_analysis_dir=$(echo "$output" | tail -n 1)
 
 
 ###########################################################################
 # Launch swarm plots
 ###########################################################################
 
-python3 swarm_analysis.py    --swarm_analysis_dir ${swarm_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-                             --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-                             --plot_with_animation_bool ${plot_with_animation_bool}
+# python3 swarm_analysis.py    --swarm_analysis_dir ${swarm_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+#                              --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+#                              --plot_with_animation_bool ${plot_with_animation_bool}

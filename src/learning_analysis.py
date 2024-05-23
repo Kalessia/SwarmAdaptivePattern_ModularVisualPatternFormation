@@ -158,24 +158,12 @@ def plot_single_run_data(run, params):
     plot_env_step_end = min(params['time_steps'], params['time_window_end'])
     steps = range(plot_env_step_start, plot_env_step_end)
 
-    if params['with_parallelization_bool']:
-        task_queue = []
-        plot_flag_func = flagAutomata.plot_flag_from_file
-        plot_flag_fitnesses_func = flagAutomata.plot_flag_fitnesses_from_file
-
     for index in dataset.index[:-1]: # for each best individual ever less the last one
         gen = dataset.loc[index, 'Generation']
         ind = dataset.loc[index, 'Individual']
         
-        if params['with_parallelization_bool']:
-            # Create a queue of tasks to execute
-            task_queue.append((plot_flag_func, plot_flag_fitnesses_func, run, gen, ind, steps, save_dir, params))
-        else:
-            flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
-            flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
-
-    if params['with_parallelization_bool']:
-        parallelize_processes(task_queue, params)
+        flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
+        flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
 
     # Plot all the flag steps of the last best individual ever
     gen = dataset.loc[dataset.index[-1], 'Generation']
@@ -295,6 +283,24 @@ def parallelize_processes(task_queue, params):
         pool.close() # no more tasks will be submitted to the pool
         pool.join() # wait for all processes to complete
 
+#---------------------------------------------------
+
+def worker2(task):
+
+    run, params = task
+    plot_single_run_data(run, params)
+
+#---------------------------------------------------
+
+def parallelize_processes2(task_queue, with_parallelization_nb_free_cores):
+
+    # Create a Pool with the number of available cores
+    available_cores = cpu_count() - with_parallelization_nb_free_cores
+    with Pool(processes=available_cores) as pool:
+        pool.map(worker2, task_queue)
+        pool.close() # no more tasks will be submitted to the pool
+        pool.join() # wait for all processes to complete
+
 
 ###########################################################################
 # MAIN
@@ -320,12 +326,14 @@ if (__name__ == "__main__"):
     params['plot_with_animation_bool'] = args.plot_with_animation_bool
 
     # Launch plots
-    for run in range(params['nb_runs']):
-        plot_single_run_data(run, params)
+    if params['with_parallelization_bool']:
+        task_queue = [] # create a queue of tasks to execute
+        for run in range(params['nb_runs']):
+            task_queue.append((run, params.copy()))
+        parallelize_processes2(task_queue, params['with_parallelization_nb_free_cores'])
+    else:
+        for run in range(params['nb_runs']):
+            plot_single_run_data(run, params)
 
     write_all_runs_data(args.learning_analysis_dir)
     plot_all_runs_data(params)
-    
-
-
- 

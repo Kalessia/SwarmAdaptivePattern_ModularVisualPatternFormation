@@ -7,9 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
 
-from learning_initializations import save_data_to_csv
-
-
 
 ###########################################################################
 # Global variables
@@ -19,16 +16,34 @@ global env
 env = None
 
 
+def init_flagAutomata_env(automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller, learning_mode, noise_std, agent_controller_weights):
+    global env
+    if env is None:
+        env = flagAutomata(automata_nb_rows=automata_nb_rows,
+                           automata_nb_cols=automata_nb_cols,
+                           flag_pattern=flag_pattern,
+                           init_cell_state_value=init_cell_state_value,
+                           nn_controller=nn_controller,
+                           learning_mode=learning_mode,
+                           noise_std=noise_std)
+    
+    env.cell_controller.setWeightsFromList(agent_controller_weights)
+
+    # reset
+    cell_state_value = init_cell_state_value
+    if "learning_random_init_states_bool" in learning_mode:
+        cell_state_value = None
+    env.flag = env.init_flag(cell_state_value) # flag is a dict pos:phenotype
+    env.chemical_species = env.init_flag(cell_state_value) # chemical_species is a dict pos:chemical_species
+
+    return env
+
+
 ###########################################################################
 # Evaluation functions
 ###########################################################################
 
 def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
-    automata_nb_rows = env_eval_function_params['automata_nb_rows']
-    automata_nb_cols = env_eval_function_params['automata_nb_cols']
-    flag_pattern = env_eval_function_params['flag_pattern']
-    init_cell_state_value = env_eval_function_params['init_cell_state_value']
-    nn_controller = env_eval_function_params['controller']
     time_steps = env_eval_function_params['time_steps']
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
@@ -37,13 +52,14 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
     in_t_window_zone_bools = []
     flags = []
 
-    global env
-    if not env:
-        env = flagAutomata(automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller)
-    
-    env.cell_controller.setWeightsFromList(weights)
-    env.flag = env.init_flag(init_cell_state_value) # flag is a dict pos:phenotype
-    env.chemical_species = env.init_flag(init_cell_state_value) # chemical_species is a dict pos:chemical_species
+    env = init_flagAutomata_env(automata_nb_rows=env_eval_function_params['automata_nb_rows'],
+                                automata_nb_cols=env_eval_function_params['automata_nb_cols'],
+                                flag_pattern=env_eval_function_params['flag_pattern'],
+                                init_cell_state_value=env_eval_function_params['init_cell_state_value'],
+                                nn_controller=env_eval_function_params['controller'],
+                                learning_mode=env_eval_function_params['learning_mode'],
+                                noise_std=env_eval_function_params['noise_std'],
+                                agent_controller_weights=weights)
 
     flags_distance = None
     sum_flags_distances = 0.0
@@ -72,13 +88,19 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
 ###########################################################################
 
 class flagAutomata:
-    def __init__(self, automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller) -> None:
+    def __init__(self, automata_nb_rows, automata_nb_cols, flag_pattern, init_cell_state_value, nn_controller, learning_mode, noise_std=None) -> None:
 
         self.automata_nb_rows = automata_nb_rows
         self.automata_nb_cols = automata_nb_cols
         self.map_cell_neighbors_NWES = flagAutomata.build_map_cell_neighbors(self.automata_nb_rows, self.automata_nb_cols)
         
-        self.flag = self.init_flag(init_cell_state_value) # flag is a dict pos:phenotype
+        self.learning_mode = learning_mode
+        self.noise_std = noise_std
+        self.init_cell_state_value = init_cell_state_value
+        if "learning_random_init_states_bool" in self.learning_mode:
+            self.init_cell_state_value = None
+
+        self.flag = self.init_flag(self.init_cell_state_value) # flag is a dict pos:phenotype
         self.flag_target = self.build_flag(flag_pattern) # flag_target is a dict pos:phenotype
 
         self.cell_controller = nn_controller
@@ -87,7 +109,7 @@ class flagAutomata:
         # NN 1 output: the unique output is the chemical species transmitted to neighbors AND ALSO the flag phenotype (evaluated in fitness)
         # NN 2 outputs: the 1st output is the chemical species transmitted to neighbors, the 2nd is the flag phenotype
         if self.cell_controller.n_neuronsPerOutputs == 2:
-            self.chemical_species = self.init_flag(init_cell_state_value) # chemical_species is a dict pos:chemical_species
+            self.chemical_species = self.init_flag(self.init_cell_state_value) # chemical_species is a dict pos:chemical_species
             
     #---------------------------------------------------
 
@@ -193,21 +215,32 @@ class flagAutomata:
 
         cells = list(self.flag.keys()) # ordered update
 
-        if False: #Kale parametrable bool
+        if "learning_random_update_states_bool" in self.learning_mode:
             np.random.shuffle(cells) # random update
 
         for cell in cells:
 
             if self.cell_controller.n_neuronsPerOutputs == 2:
-                chemical_species, phenotype = self.compute_cell_state(cell=cell, chemicals_dict=self.chemical_species)
-                self.flag[cell] = phenotype
-                self.chemical_species[cell] = chemical_species
+                vector = self.compute_cell_state(cell=cell, chemicals_dict=self.chemical_species)
+
+                if "learning_with_noise_bool" in self.learning_mode:
+                    state = vector.copy()
+                    noise = np.random.normal(0, self.noise_std, len(vector)) 
+                    vector = [self.clip(state[i]+noise[i]) for i in range(len(vector))] # check  
+
+                self.chemical_species[cell] = vector[0]
+                self.flag[cell] = vector[1]
             else:    
                 # print("step: The value in ", cell, "was", self.flag[cell])
                 phenotype = self.compute_cell_state(cell=cell, chemicals_dict=self.flag)[0]
                 self.flag[cell] = phenotype
                 # print("step: After compute_cell_state, the value in", cell, "is", self.flag[cell], "\n")
         
+    #---------------------------------------------------
+
+    def clip(self, value):
+        return max(0, min(value, 1))
+
     #---------------------------------------------------
 
     def compute_cell_state(self, cell, chemicals_dict):
@@ -247,6 +280,8 @@ class flagAutomata:
     
     def write_flag_data(self, run, gen, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, analysis_dir):
 
+        from learning_initializations import save_data_to_csv
+
         if run == 0 and gen == 0 and not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")): # os.path.exists test is not enough with parallelization
             save_data_to_csv(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.convert_flag_to_list(self.flag_target)).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
         
@@ -256,7 +291,6 @@ class flagAutomata:
 
         data_env_flag = []
         for step in range(time_steps):
-            # print("ehy convert_flag_to_list", self.convert_flag_to_list(flags[step]))
             data_env_flag.append([str(gen), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip()])
 
         save_data_to_csv(analysis_dir['data']+"/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", data_env_flag)

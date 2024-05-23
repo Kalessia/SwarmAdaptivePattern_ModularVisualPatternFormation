@@ -29,30 +29,30 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
                              flag_target=swarm_params['flag_target'],
                              agent_controller_weights=best_ind)
 
-    # # setup_ind_consistency
-    # setups += swarm_params['setup_ind_consistency']['setup_ind_consistency_options']
-    # for setup_name in swarm_params['setup_ind_consistency']['setup_ind_consistency_options']:
-    #     env.setup_ind_consistency(run=run,
-    #                               setup_name=setup_name,
-    #                               nb_repetitions=swarm_params['nb_repetitions'],
-    #                               time_steps=swarm_params['time_steps'],
-    #                               switch_step=swarm_params['switch_step'],
-    #                               switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
-    #                               analysis_dir=swarm_params['analysis_dir'])
+    # setup_ind_consistency
+    setups += swarm_params['setup_ind_consistency']['setup_ind_consistency_options']
+    for setup_name in swarm_params['setup_ind_consistency']['setup_ind_consistency_options']:
+        env.setup_ind_consistency(run=run,
+                                  setup_name=setup_name,
+                                  nb_repetitions=swarm_params['nb_repetitions'],
+                                  time_steps=swarm_params['time_steps'],
+                                  switch_step=swarm_params['switch_step'],
+                                  switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+                                  analysis_dir=swarm_params['analysis_dir'])
     
-    # # setup_noise
-    # if swarm_params['setup_noise']['setup_noise_bool']:
-    #     setup_name = "setup_noise"
-    #     setups += [setup_name+"_"+str(tick) for tick in swarm_params['setup_noise']['setup_noise_std_ticks']]
-    #     env.setup_noise(run=run,
-    #                     setup_name=setup_name,
-    #                     nb_repetitions=swarm_params['nb_repetitions'],
-    #                     setup_noise_std_ticks=swarm_params['setup_noise']['setup_noise_std_ticks'],
-    #                     time_steps=swarm_params['time_steps'],
-    #                     switch_step=swarm_params['switch_step'],
-    #                     switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
-    #                     switch_step_with_random_update_bool=swarm_params['switch_step_with_random_update_bool'],
-    #                     analysis_dir=swarm_params['analysis_dir'])
+    # setup_noise
+    if swarm_params['setup_noise']['setup_noise_bool']:
+        setup_name = "setup_noise"
+        setups += [setup_name+"_"+str(tick) for tick in swarm_params['setup_noise']['setup_noise_std_ticks']]
+        env.setup_noise(run=run,
+                        setup_name=setup_name,
+                        nb_repetitions=swarm_params['nb_repetitions'],
+                        setup_noise_std_ticks=swarm_params['setup_noise']['setup_noise_std_ticks'],
+                        time_steps=swarm_params['time_steps'],
+                        switch_step=swarm_params['switch_step'],
+                        switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+                        switch_step_with_random_update_bool=swarm_params['switch_step_with_random_update_bool'],
+                        analysis_dir=swarm_params['analysis_dir'])
 
     # setup_deletion
     if swarm_params['setup_deletion']['setup_deletion_bool']:

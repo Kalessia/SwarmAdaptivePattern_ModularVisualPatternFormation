@@ -9,10 +9,8 @@ import random
 
 import csv
 
-from learning_environments import *
+from learning_environments import flag_automata
 from nn import NeuralNetwork
-
-
 
 
 ###########################################################################
@@ -36,6 +34,12 @@ def check_params_validity(params):
     params['nb_neuronsPerHidden'] = int(params['nb_neuronsPerHidden'])
     params['nb_neuronsPerOutputs'] = int(params['nb_neuronsPerOutputs'])
     params['with_parallelization_nb_free_cores'] = int(params['with_parallelization_nb_free_cores'])
+
+    learning_modes = ["learning_random_update_states_bool", "learning_random_init_states_bool", "learning_with_noise_bool"]
+    params['learning_mode'] = [learning_mode for learning_mode in learning_modes if params[learning_mode] == True]
+
+    if "learning_with_noise_bool" not in params['learning_mode']: # add check on noise_std
+        params['learning_with_noise_std'] = None
 
     if params['nb_runs'] <= 0 or params['nb_generations'] <= 0 or params['automata_nb_rows'] <= 0 or params['automata_nb_cols'] <= 0 \
         or params['nb_neuronsPerInputs'] <= 0 or params['nb_neuronsPerHidden'] <= 0 or params['nb_neuronsPerOutputs'] <= 0 or params['time_steps'] <= 0:
@@ -96,7 +100,9 @@ def set_env(params):
                 'controller': nn_controller,
                 'time_steps': params['time_steps'],
                 'time_window_start': params['time_window_start'],
-                'time_window_end': params['time_window_end']
+                'time_window_end': params['time_window_end'],
+                'learning_mode': params['learning_mode'],
+                'noise_std': params['learning_with_noise_std']
             },
             'env_boundaries': None,
             'toolbox_cmaes': {

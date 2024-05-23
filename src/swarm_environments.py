@@ -171,7 +171,11 @@ class swarmGrid:
                 grid_map_pos_agent[tuple((row, col))] = agent
         
         self.grid_map_pos_agent = grid_map_pos_agent
-        self.update_grid() # check
+
+        agents = self.get_agents() # factorize set_neighbors
+        for agent in agents:
+            l_tmp = self.get_neighbors(agent=agent)
+            agent.neighbors_NWES = l_tmp
 
     #---------------------------------------------------
 
@@ -226,7 +230,7 @@ class swarmGrid:
                 self.step(switch_step_with_random_update_bool=switch_step_with_random_update_bool)
             
             # Save flags for this run
-            self.write_flag_data(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, analysis_dir=analysis_dir)
+            self.write_flag_data(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=[], analysis_dir=analysis_dir)
 
     #---------------------------------------------------
 
@@ -254,7 +258,7 @@ class swarmGrid:
                               noise_std=tick)
                 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, analysis_dir=analysis_dir)
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=[], analysis_dir=analysis_dir)
 
     #---------------------------------------------------
 
@@ -267,6 +271,7 @@ class swarmGrid:
                 setup_name_tick = setup_name+"_"+str(tick)
                 self.init_agents_state()
                 flags = []
+                agents_to_delete = []
 
                 for step in range(time_steps):
                     flag = self.get_flag_from_grid()
@@ -285,7 +290,7 @@ class swarmGrid:
                     self.step(switch_step_with_random_update_bool=switch_step_with_random_update_bool)
                 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, analysis_dir=analysis_dir)
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=agents_to_delete, analysis_dir=analysis_dir)
             
                 # Restore original grid
                 self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
@@ -364,20 +369,6 @@ class swarmGrid:
         # print("dopo di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
 
     # #---------------------------------------------------    
-    
-    def update_grid(self):
-
-        agents = self.grid_map_pos_agent.values() # exclure none?
-        # print([agent.id for agent in agents])
-        # agents_ids = list(self.grid_map_id_pos.keys())
-
-        # Collect the neighbors of each agent (if we call 'refresh', they have likely changed)
-        for agent in agents:
-            l_tmp = self.get_neighbors(agent=agent)
-            agent.neighbors_NWES = l_tmp
-        # print("2", self.grid_map_pos_agent)
-
-    #---------------------------------------------------
 
     def get_flag_from_grid(self):
 
@@ -409,7 +400,7 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def write_flag_data(self, setup_name, run, n, time_steps, flags, analysis_dir):
+    def write_flag_data(self, setup_name, run, n, time_steps, flags, deleted_agents, analysis_dir):
 
         dir_name = analysis_dir['data']+"/"+str(setup_name)
         file_name = "/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
@@ -419,15 +410,22 @@ class swarmGrid:
         data_env_flag = []
         for step in range(time_steps):
             flags_distance = self.eval_flags_distance(flags[step])
-            data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip()])
 
-        save_data_to_csv(dir_name+file_name, data_env_flag, header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"])
+            if deleted_agents:
+                deleted_agents_positions = [agent.pos for agent in deleted_agents]
+                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(deleted_agents_positions).strip()])
+                header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Deleted_agents_positions"]
+            else:
+                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip()])
+                header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"]
+
+        save_data_to_csv(dir_name+file_name, data_env_flag, header=header)
 
     #---------------------------------------------------
 
     @staticmethod
     def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, best_ind_run, n, step, flag, fitness, deleted_pos=[], analysis_dir_plots=None):
-
+        
         fig, ax = plt.subplots()
 
         grid_pos = []
@@ -435,14 +433,14 @@ class swarmGrid:
             for col in range(grid_nb_cols):
                 grid_pos.append(tuple((row, col)))
 
-        if deleted_pos: # works?
-            x_deleted = [pos[0] for pos in deleted_pos]
-            y_deleted = [pos[1] for pos in deleted_pos]
+        if deleted_pos:
+            x_deleted = [pos[1] for pos in deleted_pos]
+            y_deleted = [-pos[0] for pos in deleted_pos]
 
         if grid_nb_rows <= 10 and grid_nb_cols <= 10:
             for row, col in [pos for pos in grid_pos if pos not in deleted_pos]: # works?
                 for neighbor_pos in [(row-1, col), (row, col-1), (row, col+1), (row+1, col)]:
-                    if swarmGrid.is_pos_valid(grid_nb_rows, grid_nb_cols, pos):
+                    if swarmGrid.is_pos_valid(grid_nb_rows, grid_nb_cols, neighbor_pos) and neighbor_pos not in deleted_pos:
                         ax.plot([col, neighbor_pos[1]], [-row, -neighbor_pos[0]], color='black', linestyle=':', zorder=1)
                     
             circle_radius = 0.4
@@ -482,7 +480,7 @@ class swarmGrid:
 
             if deleted_pos:
                 plt.scatter(x_deleted, y_deleted, c='tab:red') # deleted agents
-            
+                                      
             plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
 
         ax.set_aspect('equal')

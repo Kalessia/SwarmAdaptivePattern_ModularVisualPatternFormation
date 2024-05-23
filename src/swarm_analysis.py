@@ -75,16 +75,21 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                 flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
                 fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]
 
+                deleted_pos = []
+                if setup_name.startswith("setup_deletion"):
+                    deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
+                    deleted_pos = eval(deleted_pos)
+
                 swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
                                     grid_nb_cols=params['grid_nb_cols'],
-                                    setup_name=setup_name, 
+                                    setup_name=setup_name,
                                     run=run,
                                     best_ind_run=best_ind_run,
                                     n=n,
                                     step=step,
                                     flag=flag_list,
                                     fitness=fitness,
-                                    deleted_pos=[],
+                                    deleted_pos=deleted_pos,
                                     analysis_dir_plots=params['analysis_dir']['plots'])
 
         data_flag_dir = params['analysis_dir']['data']+"/"+setup_name     
@@ -109,10 +114,10 @@ def worker(task):
 
 #---------------------------------------------------
 
-def parallelize_processes(task_queue):
+def parallelize_processes(task_queue, with_parallelization_nb_free_cores):
 
     # Create a Pool with the number of available cores
-    available_cores = cpu_count() - params['with_parallelization_nb_free_cores']
+    available_cores = cpu_count() - with_parallelization_nb_free_cores
     with Pool(processes=available_cores) as pool:
         pool.map(worker, task_queue)
         pool.close() # no more tasks will be submitted to the pool
@@ -149,7 +154,7 @@ if (__name__ == "__main__"):
         for run in range(params['nb_runs']):
             for best_ind_run in best_ind_per_run_dict:
                 task_queue.append((run, best_ind_run, params.copy()))
-        swarm_params = parallelize_processes(task_queue)
+        swarm_params = parallelize_processes(task_queue, params['with_parallelization_nb_free_cores'])
     else:
         for run in range(params['nb_runs']):
             for best_ind_run in best_ind_per_run_dict:
