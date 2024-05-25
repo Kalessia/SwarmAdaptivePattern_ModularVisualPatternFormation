@@ -16,9 +16,7 @@ import argparse
 import json
 
 from learning_initializations import save_data_to_csv
-from learning_environments import flagAutomata
-
-
+from environments import swarmGrid
 
 
 ###########################################################################
@@ -29,7 +27,7 @@ def init_all_runs_analysis(params):
 
     # Create the 'analysis_dir' folder
     params['analysis_dir'] = {}
-    params['analysis_dir']['root'] = os.getcwd() +"/simulationAnalysis/"+params['env_name']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+params['flag_pattern']+"_"+str(params['automata_nb_rows'])+"x"+str(params['automata_nb_cols'])+"/learning"
+    params['analysis_dir']['root'] = os.getcwd() +"/simulationAnalysis/"+params['env_name']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+params['flag_pattern']+"_"+str(params['grid_nb_rows'])+"x"+str(params['grid_nb_cols'])+"/learning"
     os.makedirs(params['analysis_dir']['root'], exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/data_all_runs", exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/plots_all_runs", exist_ok=True)
@@ -151,25 +149,64 @@ def plot_single_run_data(run, params):
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_flag_from_file for best individuals ever in a defined range of steps
-    save_dir = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env"
     dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
-    dataset = pd.read_csv(dataset_path)
+    best_inds_ever_dataset = pd.read_csv(dataset_path)
     plot_env_step_start = params['time_window_start']
     plot_env_step_end = min(params['time_steps'], params['time_window_end'])
     steps = range(plot_env_step_start, plot_env_step_end)
 
-    for index in dataset.index[:-1]: # for each best individual ever less the last one
-        gen = dataset.loc[index, 'Generation']
-        ind = dataset.loc[index, 'Individual']
-        
-        flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
-        flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+    for index in best_inds_ever_dataset.index: # for each best individual ever less the last one
+        gen = best_inds_ever_dataset.loc[index, 'Generation']
+        ind = best_inds_ever_dataset.loc[index, 'Individual']
+        dataset = pd.read_csv(params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv")
 
-    # Plot all the flag steps of the last best individual ever
-    gen = dataset.loc[dataset.index[-1], 'Generation']
-    ind = dataset.loc[dataset.index[-1], 'Individual']
-    flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=None, analysis_dir_plots=save_dir)
-    flagAutomata.plot_flag_fitnesses_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+        if index == best_inds_ever_dataset.index[-1]:
+            steps = dataset['Step'].unique()
+
+        if gen is not None:
+            dataset_gen = dataset.loc[(dataset.Generation==gen)]
+            dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
+
+        for step in steps:
+            flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
+            flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
+            flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
+            fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]
+
+            individuals_gen = dataset_gen['Individual'].unique()
+            nb_ind = np.where(individuals_gen==str(ind))[0][0]
+            
+            swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
+                                grid_nb_cols=params['grid_nb_cols'],
+                                setup_name=None,
+                                run=run,
+                                nb_ind=nb_ind,
+                                gen=gen,
+                                n="",
+                                step=step,
+                                flag=flag_list,
+                                fitness=fitness,
+                                deleted_pos=[],
+                                analysis_dir_plots=params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env")
+
+        swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv",
+                                                setup_name=None,
+                                                time_window_start=plot_env_step_start,
+                                                time_window_length=plot_env_step_end - plot_env_step_start + 1,
+                                                run=run,
+                                                nb_ind=nb_ind,
+                                                ind=ind,
+                                                n="",
+                                                gen=gen,
+                                                switch_step=None,
+                                                analysis_dir_plots=params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env")
+
+            # if step == 0:
+            #     file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
+            #     file_path = params['analysis_dir']['root']+"/"+file_name+"/flag_individual.txt"
+            #     if not os.path.exists(file_path):
+            #         with open (file_path, 'w') as f:
+            #             f.write(str(ind))
 
     # Animation of: plot all the flag steps of the last best individual ever
     if params['plot_with_animation_bool']:
@@ -201,8 +238,21 @@ def plot_all_runs_data(params):
     save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_best_inds_ever.png"
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
-    # Plot_flag_from_file for the target flag
-    flagAutomata.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv", run=None, gen=None, ind=None, steps=None, analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
+    # swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
+    #                     grid_nb_cols=params['grid_nb_cols'],
+    #                     setup_name=None,
+    #                     run=run,
+    #                     nb_ind=nb_ind,
+    #                     gen=gen,
+    #                     n="",
+    #                     step=step,
+    #                     flag=flag_list,
+    #                     fitness=fitness,
+    #                     deleted_pos=[],
+    #                     analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
+    
+    # # Plot_flag_from_file for the target flag
+    # swarmGrid.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv", run=None, gen=None, ind=None, steps=None, analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
 
     print(f"Plots for all the runs completed.")
 
@@ -225,7 +275,6 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, save_filename):
     plt.yticks(fontsize=10)
     generations = dataset['Generation'].unique()
     if max(generations) > 14:
-        
         positions = [value for value in generations if value % (int(max(generations)/14))==0]
         plt.xticks(positions, fontsize=10)
 
@@ -266,38 +315,38 @@ def plot_best_inds_ever(dataset_path, save_filename):
 # Parallelization
 ###########################################################################
 
+# def worker(task):
+
+#     plot_flag_func, plot_flag_fitnesses_func, run, gen, ind, steps, save_dir, params = task
+#     plot_flag_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
+#     plot_flag_fitnesses_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
+
+# #---------------------------------------------------
+
+# def parallelize_processes(task_queue, params):
+
+#     # Create a Pool with the number of available cores
+#     available_cores = cpu_count() - params['with_parallelization_nb_free_cores']
+#     with Pool(processes=available_cores) as pool:
+#         pool.map(worker, task_queue)
+#         pool.close() # no more tasks will be submitted to the pool
+#         pool.join() # wait for all processes to complete
+
+#---------------------------------------------------
+
 def worker(task):
-
-    plot_flag_func, plot_flag_fitnesses_func, run, gen, ind, steps, save_dir, params = task
-    plot_flag_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
-    plot_flag_fitnesses_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
-
-#---------------------------------------------------
-
-def parallelize_processes(task_queue, params):
-
-    # Create a Pool with the number of available cores
-    available_cores = cpu_count() - params['with_parallelization_nb_free_cores']
-    with Pool(processes=available_cores) as pool:
-        pool.map(worker, task_queue)
-        pool.close() # no more tasks will be submitted to the pool
-        pool.join() # wait for all processes to complete
-
-#---------------------------------------------------
-
-def worker2(task):
 
     run, params = task
     plot_single_run_data(run, params)
 
 #---------------------------------------------------
 
-def parallelize_processes2(task_queue, with_parallelization_nb_free_cores):
+def parallelize_processes(task_queue, with_parallelization_nb_free_cores):
 
     # Create a Pool with the number of available cores
     available_cores = cpu_count() - with_parallelization_nb_free_cores
     with Pool(processes=available_cores) as pool:
-        pool.map(worker2, task_queue)
+        pool.map(worker, task_queue)
         pool.close() # no more tasks will be submitted to the pool
         pool.join() # wait for all processes to complete
 
@@ -330,7 +379,7 @@ if (__name__ == "__main__"):
         task_queue = [] # create a queue of tasks to execute
         for run in range(params['nb_runs']):
             task_queue.append((run, params.copy()))
-        parallelize_processes2(task_queue, params['with_parallelization_nb_free_cores'])
+        parallelize_processes(task_queue, params['with_parallelization_nb_free_cores'])
     else:
         for run in range(params['nb_runs']):
             plot_single_run_data(run, params)

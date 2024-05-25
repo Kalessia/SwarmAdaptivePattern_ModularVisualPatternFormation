@@ -9,7 +9,7 @@ import random
 
 import csv
 
-from learning_environments import flag_automata
+from environments import flag_automata
 from nn import NeuralNetwork
 
 
@@ -23,8 +23,8 @@ def check_params_validity(params):
 
     params['nb_runs'] = int(params['nb_runs'])
     params['nb_generations'] = int(params['nb_generations'])
-    params['automata_nb_rows'] = int(params['automata_nb_rows'])
-    params['automata_nb_cols'] = int(params['automata_nb_cols'])
+    params['grid_nb_rows'] = int(params['grid_nb_rows'])
+    params['grid_nb_cols'] = int(params['grid_nb_cols'])
     params['init_cell_state_value'] = float(params['init_cell_state_value'])
     params['time_steps'] = int(params['time_steps'])
     params['time_window_start'] = int(params['time_window_start'])
@@ -41,9 +41,9 @@ def check_params_validity(params):
     if "learning_with_noise_bool" not in params['learning_mode']: # add check on noise_std
         params['learning_with_noise_std'] = None
 
-    if params['nb_runs'] <= 0 or params['nb_generations'] <= 0 or params['automata_nb_rows'] <= 0 or params['automata_nb_cols'] <= 0 \
+    if params['nb_runs'] <= 0 or params['nb_generations'] <= 0 or params['grid_nb_rows'] <= 0 or params['grid_nb_cols'] <= 0 \
         or params['nb_neuronsPerInputs'] <= 0 or params['nb_neuronsPerHidden'] <= 0 or params['nb_neuronsPerOutputs'] <= 0 or params['time_steps'] <= 0:
-        print(f"Error in learning_initializations.py - Parameters nb_runs, nb_generations, automata_nb_rows, automata_nb_cols, nb_neuronsPerInputs, nb_neuronsPerHidden, nb_neuronsPerOutputs and time_steps must be > 0")
+        print(f"Error in learning_initializations.py - Parameters nb_runs, nb_generations, grid_nb_rows, grid_nb_cols, nb_neuronsPerInputs, nb_neuronsPerHidden, nb_neuronsPerOutputs and time_steps must be > 0")
         exit_bool = True
 
     if params['nb_hiddenLayers'] < 0 or params['with_parallelization_nb_free_cores'] < 0:
@@ -93,9 +93,10 @@ def set_env(params):
         'flag_automata': {
             'eval_function': flag_automata, 
             'eval_function_params': {
-                'automata_nb_rows': params['automata_nb_rows'], 
-                'automata_nb_cols': params['automata_nb_cols'],
+                'grid_nb_rows': params['grid_nb_rows'], 
+                'grid_nb_cols': params['grid_nb_cols'],
                 'flag_pattern': params['flag_pattern'],
+                'flag_target': None,
                 'init_cell_state_value': params['init_cell_state_value'],
                 'controller': nn_controller,
                 'time_steps': params['time_steps'],

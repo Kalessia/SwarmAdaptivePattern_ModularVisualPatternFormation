@@ -1,6 +1,6 @@
 {
-    "nb_runs": 1,
-    "nb_generations": 100,
+    "nb_runs": 11,
+    "nb_generations": 3000,
  
     "env_name": "flag_automata",
 
@@ -13,8 +13,8 @@
     "nb_neuronsPerOutputs": 2,
 
     "flag_pattern": "circle",
-    "automata_nb_rows": 5, 
-    "automata_nb_cols": 5,   
+    "grid_nb_rows": 65, 
+    "grid_nb_cols": 65,   
     
     "time_steps": 50,
     "time_window_start": 30,
@@ -22,9 +22,9 @@
 
     "init_cell_state_value": 0.0,
 
-    "learning_random_update_states_bool": true,
-    "learning_random_init_states_bool": true,
-    "learning_with_noise_bool": true,
+    "learning_random_update_states_bool": false,
+    "learning_random_init_states_bool": false,
+    "learning_with_noise_bool": false,
     "learning_with_noise_std": 1.0e-5,
 
     "verbose_debug": false,

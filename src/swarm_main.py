@@ -5,7 +5,7 @@ import numpy as np
 
 import json
 
-from swarm_environments import init_swarmGrid_env
+from environments import init_swarmGrid_env
 from swarm_initializations import *
 from swarm_analysis import *
 
@@ -24,9 +24,10 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
 
     env = init_swarmGrid_env(grid_nb_rows=swarm_params['grid_nb_rows'],
                              grid_nb_cols=swarm_params['grid_nb_cols'],
+                             flag_pattern=None,
+                             flag_target=swarm_params['flag_target'],
                              init_cell_state_value=swarm_params['init_cell_state_value'],
                              nn_controller=swarm_params['controller'],
-                             flag_target=swarm_params['flag_target'],
                              agent_controller_weights=best_ind)
 
     # setup_ind_consistency

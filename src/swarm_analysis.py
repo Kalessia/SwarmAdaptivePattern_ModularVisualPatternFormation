@@ -11,7 +11,7 @@ import argparse
 import json
 
 from swarm_initializations import *
-from swarm_environments import swarmGrid
+from environments import swarmGrid
 
 
 ###########################################################################
@@ -84,7 +84,8 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                                     grid_nb_cols=params['grid_nb_cols'],
                                     setup_name=setup_name,
                                     run=run,
-                                    best_ind_run=best_ind_run,
+                                    nb_ind=best_ind_run,
+                                    gen=None,
                                     n=n,
                                     step=step,
                                     flag=flag_list,

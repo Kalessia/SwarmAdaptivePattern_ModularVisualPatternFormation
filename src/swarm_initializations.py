@@ -89,8 +89,8 @@ def get_flag_target(dataset_path=None):
 def copy_params_from_learning(learning_params, swarm_params):
     
     swarm_params['learning_nb_runs'] = learning_params['nb_runs']
-    swarm_params['grid_nb_rows'] = learning_params['automata_nb_rows']
-    swarm_params['grid_nb_cols'] = learning_params['automata_nb_cols']
+    swarm_params['grid_nb_rows'] = learning_params['grid_nb_rows']
+    swarm_params['grid_nb_cols'] = learning_params['grid_nb_cols']
     swarm_params['init_cell_state_value'] = learning_params['init_cell_state_value']
 
     swarm_params['controller'] = NeuralNetwork(nb_neuronsPerInputs=learning_params['nb_neuronsPerInputs'],
