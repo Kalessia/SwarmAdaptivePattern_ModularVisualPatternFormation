@@ -93,8 +93,7 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                                     deleted_pos=deleted_pos,
                                     analysis_dir_plots=params['analysis_dir']['plots'])
 
-        data_flag_dir = params['analysis_dir']['data']+"/"+setup_name     
-        swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=data_flag_dir,
+        swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
                                                       setup_name=setup_name,
                                                       run=run,
                                                       switch_step=params['switch_step'],

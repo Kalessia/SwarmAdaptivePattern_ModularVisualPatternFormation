@@ -12,7 +12,9 @@ from swarm_analysis import *
 sep = "\n################################################\n"
 
 
-
+###########################################################################
+# Swarm simulation
+###########################################################################
 
 def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
     print(f"swarm_simulation run n.{run}, best_ind_{best_ind_run} [{best_ind[0]}, ...] - Starting")
@@ -98,7 +100,7 @@ def parallelize_processes(nb_runs, best_ind_per_run_dict, swarm_params):
 
     # Create a Pool with the number of available cores
     available_cores = cpu_count() - swarm_params['with_parallelization_nb_free_cores']
-    with Pool(processes=min(nb_runs, available_cores)) as pool:
+    with Pool(processes=available_cores) as pool:
         results_list = pool.map(worker, task_queue) # results_list contains the 'swarm_params' of each run, respecting the ascending order from 0 to nb_runs
 
     return results_list[-1]

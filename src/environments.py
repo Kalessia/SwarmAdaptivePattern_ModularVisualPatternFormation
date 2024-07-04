@@ -28,8 +28,7 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, flag_pattern, flag_target, in
                         nn_controller=nn_controller)
     
     env.set_agent_controller_weights(agent_controller_weights=agent_controller_weights)
-
-    # reset
+    env.init_agents_state()
 
     return env
 
@@ -46,7 +45,6 @@ class swarmAgent:
         self.init_cell_state_value = init_cell_state_value
         self.neighbors_NWES = None
         self.state = None
-
         self.init_state()
 
     #---------------------------------------------------
@@ -137,7 +135,7 @@ class agent2Outputs(swarmAgent):
 # Evaluation functions
 ###########################################################################
 
-def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
+def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, weights):
     time_steps = env_eval_function_params['time_steps']
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
@@ -187,9 +185,10 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, weights):
         env.step(random_update_bool=random_update_bool,
                  with_noise_bool=with_noise_bool,
                  noise_std=noise_std)
-
-    env.write_flag_data_learning(run=run, gen=gen, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, analysis_dir=analysis_dir)
+        
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
+    if mean_tw_flags_distances < best_fit:
+        env.write_flag_data_learning(run=run, gen=gen, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, analysis_dir=analysis_dir)
 
     return (mean_tw_flags_distances,) # it is important to return a tuple
 
@@ -236,17 +235,21 @@ class swarmGrid:
                 grid_map_pos_agent[tuple((row, col))] = agent
         
         self.grid_map_pos_agent = grid_map_pos_agent
-
-        agents = self.get_agents() # factorize set_neighbors
-        for agent in agents:
-            l_tmp = self.get_neighbors(agent=agent)
-            agent.neighbors_NWES = l_tmp
+        self.update_agent_neighbors()
 
     #---------------------------------------------------
     
     def get_agents(self):
         return [a for a in self.grid_map_pos_agent.values() if a != None]
 
+    #---------------------------------------------------
+
+    def update_agent_neighbors(self):
+        agents = self.get_agents()
+        for agent in agents:
+            l_tmp = self.get_neighbors(agent=agent)
+            agent.neighbors_NWES = l_tmp
+    
     #---------------------------------------------------
 
     def init_agents_state(self, random_init_bool=False):
@@ -283,15 +286,27 @@ class swarmGrid:
                     flag_target[cell] = 0.5 # grey
 
 
-        elif flag_pattern == "circle":
+        elif flag_pattern == "centered_circle" or flag_pattern == "not_centered_circle":
             center = (np.floor(self.grid_nb_rows/2), np.floor(self.grid_nb_cols/2))
-            radius = np.floor(min(self.grid_nb_rows/2, self.grid_nb_cols/2))
+            if flag_pattern == "not_centered_circle":
+                center = (center[0]+1, center[1]+1)
 
             for cell in self.grid_map_pos_agent.keys():
-                if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2):
-                    flag_target[cell] = 0.0 # black
+                if self.grid_nb_rows%2 == 0 or self.grid_nb_cols%2 == 0:
+                    radius = np.floor(min((self.grid_nb_rows/2)-1, (self.grid_nb_cols/2)-1))
+                    if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1])**2 <= radius**2) \
+                    or ((cell[0] - center[0])**2 + (cell[1] - center[1]+1)**2 <= radius**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1]+1)**2 <= radius**2):
+                        flag_target[cell] = 0.0 # black
+                    else:
+                        flag_target[cell] = 1.0 # white
                 else:
-                    flag_target[cell] = 1.0 # white
+                    radius = np.floor(min((self.grid_nb_rows/2), (self.grid_nb_cols/2)))
+                    if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2):
+                        flag_target[cell] = 0.0 # black
+                    else:
+                        flag_target[cell] = 1.0 # white
 
 
         elif flag_pattern == "half_circle":
@@ -309,6 +324,41 @@ class swarmGrid:
                         flag_target[cell] = 1.0 # white
                     else:
                         flag_target[cell] = 0.0 # black
+
+
+        elif flag_pattern == "centered_half_circle" or flag_pattern == "not_centered_half_circle":
+            center = (np.floor(self.grid_nb_rows/2), np.floor(self.grid_nb_cols/2))
+            if flag_pattern == "not_centered_half_circle":
+                center = (center[0]+1, center[1]+1)
+
+            for cell in self.grid_map_pos_agent.keys():
+                if self.grid_nb_rows%2 == 0 or self.grid_nb_cols%2 == 0:
+                    radius = np.floor(min((self.grid_nb_rows/2)-1, (self.grid_nb_cols/2)-1))
+                    if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1])**2 <= radius**2) \
+                    or ((cell[0] - center[0])**2 + (cell[1] - center[1]+1)**2 <= radius**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1]+1)**2 <= radius**2):
+                        if cell[1] < center[1]:
+                            flag_target[cell] = 0.0 # black
+                        else:
+                            flag_target[cell] = 1.0 # white
+                    else:  # the cell is outside the circle area
+                        if cell[1] < center[1]+1:
+                            flag_target[cell] = 1.0 # white
+                        else:
+                            flag_target[cell] = 0.0 # black
+                else:
+                    radius = np.floor(min((self.grid_nb_rows/2), (self.grid_nb_cols/2)))
+                    if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2):
+                        if cell[1] <= center[1]:
+                            flag_target[cell] = 0.0 # black
+                        else:
+                            flag_target[cell] = 1.0 # white
+                    else:  # the cell is outside the circle area
+                        if cell[1] < center[1]:
+                            flag_target[cell] = 1.0 # white
+                        else:
+                            flag_target[cell] = 0.0 # black
 
         return self.convert_flag_to_list(flag_target)
 
@@ -452,11 +502,13 @@ class swarmGrid:
                 setup_name_tick = setup_name+"_"+str(tick)
                 self.init_agents_state()
                 flags = []
+                deleted_agents = []
                 agents_to_delete = []
 
                 for step in range(time_steps):
                     flag = self.get_flag_from_grid()
                     flags.append(flag)
+                    deleted_agents.append(agents_to_delete)
 
                     if step == switch_step-1:
                         agents = self.get_agents()
@@ -466,12 +518,13 @@ class swarmGrid:
 
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
+                            deleted_agents.append(agents_to_delete)
                             continue
 
                     self.step(random_update_bool=switch_step_with_random_update_bool)
                 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=agents_to_delete, analysis_dir=analysis_dir)
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=deleted_agents, analysis_dir=analysis_dir)
             
                 # Restore original grid
                 self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
@@ -486,10 +539,7 @@ class swarmGrid:
             self.grid_map_pos_agent[agent.pos] = None # eliminate agent from grid
 
         # Update the neighbors list of each agent
-        agents = self.get_agents()
-        for agent in agents:
-            l_tmp = self.get_neighbors(agent=agent)
-            agent.neighbors_NWES = l_tmp
+        self.update_agent_neighbors()
 
         return deleted_map_pos_agent
 
@@ -502,10 +552,7 @@ class swarmGrid:
         # Update the neighbors list of each agent
         agents = self.get_agents()
         assert len(agents) == self.grid_size, f"\nrestore_deleted_agents {len(agents)} != {self.grid_size}"
-
-        for agent in agents:
-            l_tmp = self.get_neighbors(agent=agent)
-            agent.neighbors_NWES = l_tmp
+        self.update_agent_neighbors()
 
     #---------------------------------------------------
 
@@ -563,6 +610,8 @@ class swarmGrid:
 
         dir_name = analysis_dir['data']+"/"+str(setup_name)
         file_name = "/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
+        if os.path.exists(dir_name+file_name):
+            return
         if not (os.path.exists(dir_name)):
             os.makedirs(dir_name, exist_ok=True)
 
@@ -571,7 +620,7 @@ class swarmGrid:
             flags_distance = self.eval_flags_distance(flags[step])
 
             if deleted_agents:
-                deleted_agents_positions = [agent.pos for agent in deleted_agents]
+                deleted_agents_positions = [agent.pos for agent in deleted_agents[step]]
                 data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(deleted_agents_positions).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Deleted_agents_positions"]
             else:
@@ -647,18 +696,22 @@ class swarmGrid:
         plt.ylim(-grid_nb_rows+0.5, 0.5)
         
         if setup_name:
-            plt.title(f"{setup_name} Flag evolution states. Run {run}, setup name {setup_name}, best individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {fitness}", pad=20, fontsize=9)
+            plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {fitness}", fontsize=12)
             dir_name = analysis_dir_plots+"/"+setup_name+"/flag"
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name, exist_ok=True)
-            plt.savefig(dir_name+"/"+setup_name+"_flag_run_"+str(run)+"_best_ind_"+str(nb_ind)+"_n_"+str(n)+"_step_"+str(step)+".png")
+            plt.savefig(f"{dir_name}/{setup_name}_flag_run_{run}_best_ind_{nb_ind}_n_{n}_step_{step}.png")
         else:
-            plt.title(f"Flag evolution states. Run {run}, generation {gen}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {fitness}", pad=20, fontsize=9)
-            file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
-            dir_name = analysis_dir_plots+"/"+file_name+"/flag"
-            if not os.path.exists(dir_name):
-                os.makedirs(dir_name, exist_ok=True)
-            plt.savefig(dir_name+"/plot_env_flag_"+file_name+"_step_"+str(step)+".png")
+            if nb_ind is not None:
+                plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {fitness}", fontsize=12)       
+                file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
+                dir_name = analysis_dir_plots+"/"+file_name+"/flag"
+                if not os.path.exists(dir_name):
+                    os.makedirs(dir_name, exist_ok=True)
+                plt.savefig(f"{dir_name}/plot_env_flag_{file_name}_step_{step}.png")
+            else:
+                plt.suptitle(f"Flag target {grid_nb_rows}x{grid_nb_cols}", fontsize=12)
+                plt.savefig(f"{analysis_dir_plots}/plot_env_flag_target.png")
 
         plt.clf()
         plt.close()
@@ -686,23 +739,20 @@ class swarmGrid:
             rectangle = patches.Rectangle((time_window_start, 0), time_window_length, 1, linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
             ax.add_patch(rectangle)
 
-        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
-        plt.suptitle(f"Fitness related to the flag evolution over steps run="+str(run), fontsize=14)
-        # plt.title(setup_name)
-        # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
-        
+
         if setup_name:
+            plt.title(f"Fitness related to the flag evolution over steps\n{setup_name}, {n} repetitions", fontsize=12)
             dir_name = analysis_dir_plots+"/"+setup_name
             if not (os.path.exists(dir_name)):
                 os.makedirs(dir_name, exist_ok=True)
-            plt.savefig(dir_name+"/"+setup_name+"_flag_fitnesses_run_"+str(run)+"_n_"+str(n)+".png")
+            plt.savefig(f"{dir_name}/{setup_name}_flag_fitnesses_run_{run}_n_{n}.png")
         else:
-            plt.suptitle(f"Fitness related to the flag evolution over steps", fontsize=14)
-            # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
-            plt.savefig(analysis_dir_plots+"/run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+"/flag_fitnesses_run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+".png")
-        
+            plt.title(f"Fitness related to the flag evolution over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=12)
+            plt.savefig(f"{analysis_dir_plots}/run_{run}_gen_{gen}_individual_{nb_ind}/flag_fitnesses_run_{run}_gen_{gen}_individual_{nb_ind}.png")
+
         plt.clf()
         plt.close()
 
@@ -719,12 +769,10 @@ class swarmGrid:
             plt.plot(x, y)
             plt.axvline(x=switch_step, color='r', linestyle='--')
 
-        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Fitness (distance to flag target)", fontsize=12)
-        plt.suptitle(f"Fitness related to the flag evolution over steps run={run}", fontsize=14)
-        plt.title(f"{setup_name} Nb repetitions {len(data_flag_files)}", fontsize=14)
-        # plt.title(f"Generation {gen}, individual {nb_ind}, {env_eval_function_params['time_steps']} steps. Time window zone from step {time_window_start} to step {time_window_end} (included).", fontsize=9)
+        plt.title(f"Fitness related to the flag evolution over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
         
         dir_name = analysis_dir_plots+"/"+setup_name
         if not (os.path.exists(dir_name)):

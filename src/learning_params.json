@@ -1,20 +1,21 @@
 {
-    "nb_runs": 11,
-    "nb_generations": 3000,
+    "nb_runs": 7,
+    "nb_generations": 900,
  
     "env_name": "flag_automata",
 
-    "ind_min_value": -1,
-    "ind_max_value": 1,
+    "ind_min_value": -5,
+    "ind_max_value": 5,
 
     "nb_neuronsPerInputs": 4,
-    "nb_hiddenLayers": 1,
-    "nb_neuronsPerHidden": 2,
+    "nb_hiddenLayers": 2,
+    "nb_neuronsPerHidden": 7,
     "nb_neuronsPerOutputs": 2,
 
-    "flag_pattern": "circle",
-    "grid_nb_rows": 65, 
-    "grid_nb_cols": 65,   
+    "info": "available flag_patterns are ['2_stripes', '3_stripes', 'centered_circle', 'not_centered_circle', 'centered_half_circle', 'not_centered_half_circle']",
+    "flag_pattern": "centered_half_circle",
+    "grid_nb_rows": 32,
+    "grid_nb_cols": 32,
     
     "time_steps": 50,
     "time_window_start": 30,
@@ -22,8 +23,8 @@
 
     "init_cell_state_value": 0.0,
 
-    "learning_random_update_states_bool": false,
-    "learning_random_init_states_bool": false,
+    "learning_random_update_states_bool": true,
+    "learning_random_init_states_bool": true,
     "learning_with_noise_bool": false,
     "learning_with_noise_std": 1.0e-5,
 

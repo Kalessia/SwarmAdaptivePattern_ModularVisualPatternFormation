@@ -67,7 +67,7 @@ def check_params_validity(params):
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
 
-    patterns = ['2_stripes', '3_stripes', 'circle', 'half_circle']
+    patterns = ['2_stripes', '3_stripes', 'centered_circle', 'not_centered_circle', 'centered_half_circle', 'not_centered_half_circle']
     if params['flag_pattern'] not in patterns:
         print(f"Error in learning_initializations.py - The flag_pattern parameter must be one of the following: {patterns}")
         exit_bool = True
@@ -139,7 +139,6 @@ def init_toolbox(params):
     creator.create("Strategy", list)
     
     toolbox.register("evaluate", params['env']['eval_function'], params['env']['eval_function_params'], params['analysis_dir'])
-
     toolbox.register("map", map)
 
     c, s = params['env']['toolbox_cmaes']['centroid'], params['env']['toolbox_cmaes']['sigma']

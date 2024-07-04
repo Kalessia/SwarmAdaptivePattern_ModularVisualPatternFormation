@@ -20,6 +20,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
     time_run = time.time()
     learning_params = init_one_run_analysis(run, learning_params)
     toolbox = init_toolbox(learning_params)
+    best_fit = np.inf
 
     # Main evolutionary loop
     for gen in range(learning_params['nb_generations']):
@@ -31,9 +32,13 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
 
-        eval_results = toolbox.map(toolbox.evaluate, [run]*len(population), [gen]*len(population), population)
+        eval_results = toolbox.map(toolbox.evaluate, [run]*len(population), [gen]*len(population), [best_fit]*len(population), population)
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
+
+            # In the 'flag_automata' env, save the best flags only (memory optimization)
+            if fit[0] < best_fit:
+                best_fit = fit[0]
 
         write_single_gen_data(run, gen, population, learning_params['analysis_dir']['data'])
 
@@ -53,6 +58,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
 def worker(task):
     run, learning_params = task
+    time.sleep(random.random()) # sleep between 0.0 and 1.0 seconds, avoid identical initial conditions
     return cmaES_EvoAlgorithm(run, learning_params)
 
 #---------------------------------------------------
@@ -64,7 +70,7 @@ def parallelize_processes(nb_runs, learning_params):
 
     # Create a Pool with the number of available cores
     available_cores = cpu_count() - learning_params['with_parallelization_nb_free_cores']
-    with Pool(processes=min(nb_runs, available_cores)) as pool:
+    with Pool(processes=available_cores) as pool:
         results_list = pool.map(worker, task_queue) # results_list contains the 'learning_params' of each run, respecting the ascending order from 0 to nb_runs
         pool.close() # no more tasks will be submitted to the pool
         pool.join() # wait for all processes to complete

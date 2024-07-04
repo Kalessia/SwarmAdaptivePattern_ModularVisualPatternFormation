@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 
@@ -64,7 +65,7 @@ def write_single_gen_data(run, gen, population, analysis_dir_data):
     # Save data of all individuals in the population for this single gen
     data_all_pop = []
     for ind in population:
-        data_all_pop.append([str(run), str(gen), str(ind.fitness.values[0]).strip(), str(ind).strip()]) # [0]: en fonction de len fitness Kale
+        data_all_pop.append([str(run), str(gen), str(ind.fitness.values[0]).strip(), str(ind).strip()])
     save_data_to_csv(analysis_dir_data+"/data_evo_run_"+str(run)+"_all_pop.csv", data_all_pop)
 
     # Save best individual data for this single gen. NB: 'max' is the best fitness, deap manages if 'max' is maximization or minimization
@@ -137,6 +138,7 @@ def plot_single_run_data(run, params):
     time_run = time.time()
     print(f"learning_analysis plots for the single run n.{run} - Started")
     os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo", exist_ok=True)
+    os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/data/flags_best_inds_ever", exist_ok=True)
 
     # Plot_all_pop_fitnesses_boxplot
     dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_all_pop.csv"
@@ -150,49 +152,61 @@ def plot_single_run_data(run, params):
 
     # Plot_flag_from_file for best individuals ever in a defined range of steps
     dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
+    # best_inds_ever_dataset = pd.read_csv(dataset_path)[-10:] # plot only the last 10 best_individuals performances
     best_inds_ever_dataset = pd.read_csv(dataset_path)
-    plot_env_step_start = params['time_window_start']
-    plot_env_step_end = min(params['time_steps'], params['time_window_end'])
-    steps = range(plot_env_step_start, plot_env_step_end)
+    time_steps = params['time_steps']
+    time_window_start = params['time_window_start']
+    time_window_end = params['time_window_end'] # check min(params['time_steps'], params['time_window_end']) # check in initialization
+    steps = range(time_window_start, time_window_end)
 
     for index in best_inds_ever_dataset.index: # for each best individual ever less the last one
         gen = best_inds_ever_dataset.loc[index, 'Generation']
         ind = best_inds_ever_dataset.loc[index, 'Individual']
         dataset = pd.read_csv(params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv")
 
+        dataset_gen = dataset.loc[(dataset.Generation==gen)]
+        dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
+        
+        individuals_gen = dataset_gen['Individual'].unique()
+        nb_ind = np.where(individuals_gen==str(ind))[0][0]
+
         if index == best_inds_ever_dataset.index[-1]:
             steps = dataset['Step'].unique()
 
-        if gen is not None:
-            dataset_gen = dataset.loc[(dataset.Generation==gen)]
-            dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
-
-        for step in steps:
-            flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
-            flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
-            flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
+        data_env_flag = []
+        for step in range(time_steps):
+            flag_list = get_flag_list_from_dataset_step(dataset, step)
             fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]
-
-            individuals_gen = dataset_gen['Individual'].unique()
-            nb_ind = np.where(individuals_gen==str(ind))[0][0]
+            time_window_zone = dataset.loc[(dataset.Step==step),['Time_window_zone']].values.tolist()[0][0]
             
-            swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
-                                grid_nb_cols=params['grid_nb_cols'],
-                                setup_name=None,
-                                run=run,
-                                nb_ind=nb_ind,
-                                gen=gen,
-                                n="",
-                                step=step,
-                                flag=flag_list,
-                                fitness=fitness,
-                                deleted_pos=[],
-                                analysis_dir_plots=params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env")
+            if step in steps:
+                swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
+                                    grid_nb_cols=params['grid_nb_cols'],
+                                    setup_name=None,
+                                    run=run,
+                                    nb_ind=nb_ind,
+                                    gen=gen,
+                                    n="",
+                                    step=step,
+                                    flag=flag_list,
+                                    fitness=fitness,
+                                    deleted_pos=[],
+                                    analysis_dir_plots=params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env")
+            
+                if step == steps[0]:
+                    file_path = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env/run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+"/flag_individual.txt"
+                    if not os.path.exists(file_path):
+                        with open (file_path, 'w') as f:
+                            f.write(str(ind))
+
+            data_env_flag.append([str(gen), str(step), str(fitness).strip(), str(time_window_zone).strip(), str(flag_list.tolist()).strip(), str(ind).strip()])
+
+        save_data_to_csv(params['analysis_dir']['root']+"/run_"+str(run)+"/data/flags_best_inds_ever/run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+".csv", data_env_flag, header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
 
         swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv",
                                                 setup_name=None,
-                                                time_window_start=plot_env_step_start,
-                                                time_window_length=plot_env_step_end - plot_env_step_start + 1,
+                                                time_window_start=time_window_start,
+                                                time_window_length=time_window_end - time_window_start + 1,
                                                 run=run,
                                                 nb_ind=nb_ind,
                                                 ind=ind,
@@ -200,13 +214,6 @@ def plot_single_run_data(run, params):
                                                 gen=gen,
                                                 switch_step=None,
                                                 analysis_dir_plots=params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env")
-
-            # if step == 0:
-            #     file_name = "run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)
-            #     file_path = params['analysis_dir']['root']+"/"+file_name+"/flag_individual.txt"
-            #     if not os.path.exists(file_path):
-            #         with open (file_path, 'w') as f:
-            #             f.write(str(ind))
 
     # Animation of: plot all the flag steps of the last best individual ever
     if params['plot_with_animation_bool']:
@@ -218,6 +225,7 @@ def plot_single_run_data(run, params):
         iio.mimwrite(dir+flag_last_best_ind_ever_dir+".gif", frames, format='GIF', duration=0.5*len(frames), subrectangles=True)
         print(f"Animation for the single run n.{run} - Saved in {dir}")
 
+    # shutil.rmtree(params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag")
     time_run = time.time() - time_run
     print(f"learning_analysis plots for the single run n.{run} - Completed. Execution time: {time_run} seconds")
     
@@ -231,6 +239,15 @@ def get_gen_ind_from_file_name(file_name):
 
 #---------------------------------------------------
 
+def get_flag_list_from_dataset_step(dataset, step):
+    flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
+    flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
+    flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
+
+    return flag_list
+
+#---------------------------------------------------
+
 def plot_all_runs_data(params):
 
     # Plot_best_inds_ever
@@ -238,22 +255,22 @@ def plot_all_runs_data(params):
     save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_best_inds_ever.png"
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
-    # swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
-    #                     grid_nb_cols=params['grid_nb_cols'],
-    #                     setup_name=None,
-    #                     run=run,
-    #                     nb_ind=nb_ind,
-    #                     gen=gen,
-    #                     n="",
-    #                     step=step,
-    #                     flag=flag_list,
-    #                     fitness=fitness,
-    #                     deleted_pos=[],
-    #                     analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
-    
-    # # Plot_flag_from_file for the target flag
-    # swarmGrid.plot_flag_from_file(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv", run=None, gen=None, ind=None, steps=None, analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
+    dataset = pd.read_csv(params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")
+    flag_list = get_flag_list_from_dataset_step(dataset, 0)
 
+    swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
+                    grid_nb_cols=params['grid_nb_cols'],
+                    setup_name=None,
+                    run=run,
+                    nb_ind=None,
+                    gen=0,
+                    n="",
+                    step=0,
+                    flag=flag_list,
+                    fitness=0,
+                    deleted_pos=[],
+                    analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
+    
     print(f"Plots for all the runs completed.")
 
 #---------------------------------------------------
@@ -266,7 +283,7 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, save_filename):
     sns.set_theme()
     sns.boxplot(x='Generation', y='Fitness', data=dataset, color='skyblue')
 
-    plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.title("Fitnesses over generations\nall individuals generated", fontsize=14)
     plt.xlabel("Generation", fontsize=12)
     plt.ylabel("Fitness", fontsize=12)
@@ -300,7 +317,7 @@ def plot_best_inds_ever(dataset_path, save_filename):
 
         plt.step(generations, best_fitnesses_ever, where='post', label='run '+str(run)) # plot
 
-    plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.title("Fitnesses over generations\nbest individuals ever", fontsize=14)
     plt.xlabel("Generation", fontsize=12)
     plt.ylabel("Fitness", fontsize=12)
@@ -314,25 +331,6 @@ def plot_best_inds_ever(dataset_path, save_filename):
 ###########################################################################
 # Parallelization
 ###########################################################################
-
-# def worker(task):
-
-#     plot_flag_func, plot_flag_fitnesses_func, run, gen, ind, steps, save_dir, params = task
-#     plot_flag_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, steps=steps, analysis_dir_plots=save_dir)
-#     plot_flag_fitnesses_func(env_eval_function_params=params['env']['eval_function_params'], data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv", run=run, gen=gen, ind=ind, analysis_dir_plots=save_dir)
-
-# #---------------------------------------------------
-
-# def parallelize_processes(task_queue, params):
-
-#     # Create a Pool with the number of available cores
-#     available_cores = cpu_count() - params['with_parallelization_nb_free_cores']
-#     with Pool(processes=available_cores) as pool:
-#         pool.map(worker, task_queue)
-#         pool.close() # no more tasks will be submitted to the pool
-#         pool.join() # wait for all processes to complete
-
-#---------------------------------------------------
 
 def worker(task):
 
