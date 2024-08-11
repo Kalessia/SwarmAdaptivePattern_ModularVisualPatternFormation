@@ -25,7 +25,6 @@ def check_params_validity(params):
     params['nb_generations'] = int(params['nb_generations'])
     params['grid_nb_rows'] = int(params['grid_nb_rows'])
     params['grid_nb_cols'] = int(params['grid_nb_cols'])
-    params['init_cell_state_value'] = float(params['init_cell_state_value'])
     params['time_steps'] = int(params['time_steps'])
     params['time_window_start'] = int(params['time_window_start'])
     params['time_window_end'] = int(params['time_window_end'])
@@ -35,7 +34,7 @@ def check_params_validity(params):
     params['nb_neuronsPerOutputs'] = int(params['nb_neuronsPerOutputs'])
     params['with_parallelization_nb_free_cores'] = int(params['with_parallelization_nb_free_cores'])
 
-    learning_modes = ["learning_random_update_states_bool", "learning_random_init_states_bool", "learning_with_noise_bool"]
+    learning_modes = ["learning_random_async_update_states_bool", "learning_random_init_states_bool", "learning_with_noise_bool"]
     params['learning_mode'] = [learning_mode for learning_mode in learning_modes if params[learning_mode] == True]
 
     if "learning_with_noise_bool" not in params['learning_mode']: # add check on noise_std
@@ -50,9 +49,11 @@ def check_params_validity(params):
         print(f"Error in learning_initializations.py - Parameters nb_hiddenLayers and with_parallelization_nb_free_cores must be >= 0")
         exit_bool = True
 
-    if params['init_cell_state_value'] < 0.0 or params['init_cell_state_value'] > 1.0:
-        print(f"Error in learning_initializations.py - Parameter init_cell_state_value must be in [0.0, 1.0]")
-        exit_bool = True
+    if params['init_cell_state_value'] is not None:
+        params['init_cell_state_value'] = float(params['init_cell_state_value'])
+        if params['init_cell_state_value'] < 0.0 or params['init_cell_state_value'] > 1.0:
+            print(f"Error in learning_initializations.py - Parameter init_cell_state_value must be in [0.0, 1.0]")
+            exit_bool = True
 
     if params['time_window_start'] < 0 or params['time_window_start'] >= params['time_steps']:
         print(f"Error in learning_initializations.py - The time_window_start parameter value must be in [0,{params['time_steps']}[")
@@ -103,7 +104,9 @@ def set_env(params):
                 'time_window_start': params['time_window_start'],
                 'time_window_end': params['time_window_end'],
                 'learning_mode': params['learning_mode'],
-                'noise_std': params['learning_with_noise_std']
+                'noise_std': params['learning_with_noise_std'],
+                'verbose_debug': params['verbose_debug'],
+                'analysis_dir': params['analysis_dir']
             },
             'env_boundaries': None,
             'toolbox_cmaes': {

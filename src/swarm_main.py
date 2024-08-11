@@ -26,22 +26,27 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
 
     env = init_swarmGrid_env(grid_nb_rows=swarm_params['grid_nb_rows'],
                              grid_nb_cols=swarm_params['grid_nb_cols'],
+                             learning_mode=swarm_params['learning_mode'],
+                             learning_with_noise_std=swarm_params['learning_with_noise_std'],
                              flag_pattern=None,
                              flag_target=swarm_params['flag_target'],
                              init_cell_state_value=swarm_params['init_cell_state_value'],
                              nn_controller=swarm_params['controller'],
-                             agent_controller_weights=best_ind)
+                             agent_controller_weights=best_ind,
+                             verbose_debug_bool=swarm_params['verbose_debug'],
+                             analysis_dir=swarm_params['analysis_dir'])
 
     # setup_ind_consistency
-    setups += swarm_params['setup_ind_consistency']['setup_ind_consistency_options']
-    for setup_name in swarm_params['setup_ind_consistency']['setup_ind_consistency_options']:
-        env.setup_ind_consistency(run=run,
-                                  setup_name=setup_name,
-                                  nb_repetitions=swarm_params['nb_repetitions'],
-                                  time_steps=swarm_params['time_steps'],
-                                  switch_step=swarm_params['switch_step'],
-                                  switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
-                                  analysis_dir=swarm_params['analysis_dir'])
+    if swarm_params['setup_ind_consistency']['setup_ind_consistency_bool']:
+        setups += swarm_params['setup_ind_consistency']['setup_ind_consistency_options']
+        for setup_name in swarm_params['setup_ind_consistency']['setup_ind_consistency_options']:
+            env.setup_ind_consistency(run=run,
+                                    setup_name=setup_name,
+                                    nb_repetitions=swarm_params['nb_repetitions'],
+                                    time_steps=swarm_params['time_steps'],
+                                    switch_step=swarm_params['switch_step'],
+                                    switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+                                    analysis_dir=swarm_params['analysis_dir'])
     
     # setup_noise
     if swarm_params['setup_noise']['setup_noise_bool']:
@@ -54,13 +59,29 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
                         time_steps=swarm_params['time_steps'],
                         switch_step=swarm_params['switch_step'],
                         switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
-                        switch_step_with_random_update_bool=swarm_params['switch_step_with_random_update_bool'],
+                        switch_step_with_random_async_update_bool=swarm_params['switch_step_with_random_async_update_bool'],
                         analysis_dir=swarm_params['analysis_dir'])
+        
+    # setup_permutation
+    if swarm_params['setup_permutation']['setup_permutation_bool']:
+        setup_name = "setup_permutation"
+        permutation_ticks = [int(env.grid_size*tick_percent/100) for tick_percent in swarm_params['setup_permutation']['setup_permutation_ticks_percent']]
+        permutation_ticks = [val if val % 2 == 0 else val - 1 for val in permutation_ticks] # permutation_ticks must be even
+        setups += [setup_name+"_"+str(tick) for tick in permutation_ticks]
+        env.setup_permutation(run=run,
+                              setup_name=setup_name,
+                              nb_repetitions=swarm_params['nb_repetitions'],
+                              setup_permutation_ticks=permutation_ticks,
+                              time_steps=swarm_params['time_steps'],
+                              switch_step=swarm_params['switch_step'],
+                              switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+                              switch_step_with_random_async_update_bool=swarm_params['switch_step_with_random_async_update_bool'],
+                              analysis_dir=swarm_params['analysis_dir'])
 
     # setup_deletion
     if swarm_params['setup_deletion']['setup_deletion_bool']:
         setup_name = "setup_deletion"
-        deletion_ticks = [int(env.grid_size*tick) for tick in swarm_params['setup_deletion']['setup_deletion_ticks']] # init params check ticks
+        deletion_ticks = [int(env.grid_size*tick_percent/100) for tick_percent in swarm_params['setup_deletion']['setup_deletion_ticks_percent']]
         setups += [setup_name+"_"+str(tick) for tick in deletion_ticks]
         env.setup_deletion(run=run,
                            setup_name=setup_name,
@@ -69,7 +90,7 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
                            time_steps=swarm_params['time_steps'],
                            switch_step=swarm_params['switch_step'],
                            switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
-                           switch_step_with_random_update_bool=swarm_params['switch_step_with_random_update_bool'],
+                           switch_step_with_random_async_update_bool=swarm_params['switch_step_with_random_async_update_bool'],
                            analysis_dir=swarm_params['analysis_dir'])
 
     swarm_params['setups'] = setups

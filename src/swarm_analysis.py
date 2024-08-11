@@ -75,6 +75,11 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                 flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
                 fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]
 
+                permutated_pos = []
+                if setup_name.startswith("setup_permutation"):
+                    permutated_pos = dataset.loc[(dataset.Step==step),['Permutated_agents_positions']].values.tolist()[0][0]
+                    permutated_pos = eval(permutated_pos)
+
                 deleted_pos = []
                 if setup_name.startswith("setup_deletion"):
                     deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
@@ -90,6 +95,7 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                                     step=step,
                                     flag=flag_list,
                                     fitness=fitness,
+                                    permutated_pos=permutated_pos,
                                     deleted_pos=deleted_pos,
                                     analysis_dir_plots=params['analysis_dir']['plots'])
 

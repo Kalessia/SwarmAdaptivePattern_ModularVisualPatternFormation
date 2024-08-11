@@ -36,7 +36,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
 
-            # In the 'flag_automata' env, save the best flags only (memory optimization)
+            # In the 'flag_automata' env (see set_env in learning_initializations.py), save the best flags only (memory optimization)
             if fit[0] < best_fit:
                 best_fit = fit[0]
 

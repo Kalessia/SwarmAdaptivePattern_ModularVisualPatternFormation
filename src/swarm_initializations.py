@@ -28,16 +28,20 @@ def check_params_validity(params):
         setup_ind_consistency_options = []
         if params['setup_ind_consistency']['setup_ind_consistency_random_init_states_bool']:
             setup_ind_consistency_options.append("setup_ind_consistency_random_init_states")
-        if params['setup_ind_consistency']['setup_ind_consistency_random_update_states_bool']:
-            setup_ind_consistency_options.append("setup_ind_consistency_random_update_states")
+        if params['setup_ind_consistency']['setup_ind_consistency_random_async_update_states_bool']:
+            setup_ind_consistency_options.append("setup_ind_consistency_random_async_update_states")
         params['setup_ind_consistency']['setup_ind_consistency_options'] = setup_ind_consistency_options
 
     if params['setup_noise']['setup_noise_bool'] and not isinstance(params['setup_noise']['setup_noise_std_ticks'], list):
         print(f"Error in swarm_initializations.py - Parameter setup_noise_std_ticks must be a list")
         exit_bool = True
 
-    if params['setup_deletion']['setup_deletion_bool'] and not isinstance(params['setup_deletion']['setup_deletion_ticks'], list):
-        print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks must be a list")
+    if params['setup_permutation']['setup_permutation_bool'] and not isinstance(params['setup_permutation']['setup_permutation_ticks_percent'], list):
+        print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_percent must be a list")
+        exit_bool = True
+
+    if params['setup_deletion']['setup_deletion_bool'] and not isinstance(params['setup_deletion']['setup_deletion_ticks_percent'], list):
+        print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_percent must be a list")
         exit_bool = True
 
     if exit_bool:
@@ -97,6 +101,9 @@ def copy_params_from_learning(learning_params, swarm_params):
                                         nb_hiddenLayers=learning_params['nb_hiddenLayers'],
                                         nb_neuronsPerHidden=learning_params['nb_neuronsPerHidden'],
                                         nb_neuronsPerOutputs=learning_params['nb_neuronsPerOutputs'])
+    
+    swarm_params['learning_mode'] = learning_params['learning_mode']
+    swarm_params['learning_with_noise_std'] = learning_params['learning_with_noise_std']
 
     swarm_params['best_ind_ever'], swarm_params['best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
     swarm_params['flag_target'] = get_flag_target(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")

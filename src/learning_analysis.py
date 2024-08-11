@@ -104,7 +104,11 @@ def write_all_runs_data(analysis_dir):
                 if i != 0:
                     next(single_run_file) # ignore the csv headers, keep just the 1st one
                 all_runs_file.write(single_run_file.read())
-                
+
+    # Save mean and std of the best fitnesses per run
+    dataset = pd.read_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
+    save_data_to_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_mean_std.csv", [str(dataset['Fitness'].mean()), str(dataset['Fitness'].std())], header = ["Mean", "Std"])
+
 #---------------------------------------------------
 
 def write_best_inds_ever_and_best_ind_per_run(dataset_path, save_best_inds_ever_filename, save_best_ind_per_run_filename):

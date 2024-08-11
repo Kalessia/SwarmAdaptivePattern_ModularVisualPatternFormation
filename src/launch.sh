@@ -18,7 +18,7 @@ plot_with_animation_bool=False
 
 # If you want to launch a swarm simulation or to plot learning figures for a specific learning simulation, write the corresponding path in the following line
 # exemple path: "simulationAnalysis/flag_automata_2024-04-29_21-44-08_circle_9x9/learning"
-learning_analysis_dir="simulationAnalysis/flag_automata_2024-06-19_14-40-05_centered_half_circle_32x32/learning"
+learning_analysis_dir="simulationAnalysis/flag_automata_2024-08-11_01-30-22_centered_half_circle_9x9/learning"
 
 # If you want to plot figures for a specific swarm simulation, write the corresponding path in the following line
 # example path: "simulationAnalysis/flag_automata_2024-05-02_05-45-47_circle_65x65/swarm"
@@ -30,7 +30,7 @@ swarm_analysis_dir="simulationAnalysis/flag_automata_2024-06-19_14-40-05_centere
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new learning simulation. NB: this line modifies the "learning_analysis_dir" parameter
-output=$(mktemp); python3 learning_main.py | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
@@ -38,14 +38,15 @@ output=$(mktemp); python3 learning_main.py | tee ${output}; learning_analysis_di
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new swarm simulation. NB: this line modifies the "swarm_analysis_dir" parameter
-output=$(mktemp); python3 swarm_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; swarm_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u swarm_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; swarm_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
 # Launch learning plots
 ###########################################################################
 
-python3 learning_analysis.py    --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+# COMMENT the following lines if you DON'T want to plot the learning data
+python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
                                 --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
                                 --plot_with_animation_bool ${plot_with_animation_bool}
 
@@ -54,6 +55,7 @@ python3 learning_analysis.py    --learning_analysis_dir ${learning_analysis_dir}
 # Launch swarm plots
 ###########################################################################
 
-python3 swarm_analysis.py    --swarm_analysis_dir ${swarm_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+# COMMENT the following lines if you DON'T want to plot the swarm data
+python3 -u swarm_analysis.py --swarm_analysis_dir ${swarm_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
                              --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
                              --plot_with_animation_bool ${plot_with_animation_bool}

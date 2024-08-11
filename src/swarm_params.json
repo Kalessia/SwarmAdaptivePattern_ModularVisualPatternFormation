@@ -5,25 +5,34 @@
     "time_steps": 200,
     "switch_step": 100,
     "switch_step_with_reset_env_bool": true,
-    "switch_step_with_random_update_bool": true,
+    "switch_step_with_random_async_update_bool": false,
 
+    "setup_ind_consistency info": "",
     "setup_ind_consistency": {
         "setup_ind_consistency_bool": true,
         "setup_ind_consistency_random_init_states_bool": true,
-        "setup_ind_consistency_random_update_states_bool": true
+        "setup_ind_consistency_random_async_update_states_bool": true
     },
 
+    "setup_noise info": "",
     "setup_noise": {
         "setup_noise_bool": true,
         "setup_noise_std_ticks": [1.0e-1, 1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5]
     },
 
-    "setup_deletion": {
-        "setup_deletion_bool": true,
-        "setup_deletion_ticks": [0.01, 0.02, 0.03, 0.04, 0.05, 0.1]
+    "setup_permutation info": "percent",
+    "setup_permutation": {
+        "setup_permutation_bool": true,
+        "setup_permutation_ticks_percent": [20, 50]
     },
 
-    "verbose_debug": false,
+    "setup_deletion info": "",
+    "setup_deletion": {
+        "setup_deletion_bool": true,
+        "setup_deletion_ticks_percent": [1, 2, 3, 4, 5, 10]
+    },
+
+    "verbose_debug": true,
 
     "with_parallelization_bool": true,
     "with_parallelization_nb_free_cores": 0

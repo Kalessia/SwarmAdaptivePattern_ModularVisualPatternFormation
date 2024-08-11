@@ -13,15 +13,24 @@ from matplotlib.colors import ListedColormap
 # Global variables
 ###########################################################################
 
-global env
 env = None
+verbose_debug = False
+verbose_str = ""
 
 
-def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights):
-    global env
+def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, verbose_debug_bool, analysis_dir):
+    
+    global env, verbose_debug
+
+    verbose_debug = verbose_debug_bool
+    with open(analysis_dir['root']+"/verbose_debug.txt", 'w') as f: # to replace or erase eventual previous existing content in verbose_debug.txt
+        f.write(verbose_str)
+
     if env is None:
         env = swarmGrid(grid_nb_rows=grid_nb_rows,
                         grid_nb_cols=grid_nb_cols,
+                        learning_mode=learning_mode,
+                        learning_with_noise_std=learning_with_noise_std,
                         flag_pattern=flag_pattern,
                         flag_target=flag_target,
                         init_cell_state_value=init_cell_state_value,
@@ -52,11 +61,9 @@ class swarmAgent:
     def init_state(self, random_init_bool=False):
 
         if self.init_cell_state_value is None or random_init_bool:
-            value = np.random.uniform(0, 1, 1)[0]
+            self.state = np.random.uniform(0, 1, self.len_state)
         else:
-            value = self.init_cell_state_value
-        
-        self.state = [value] * self.len_state
+            self.state = [self.init_cell_state_value] * self.len_state
     
     #---------------------------------------------------
 
@@ -64,7 +71,7 @@ class swarmAgent:
 
         if with_noise_bool:
             state = vector.copy()
-            noise = np.random.normal(0, noise_std, self.len_state) 
+            noise = np.random.normal(0, noise_std, self.len_state)
             vector = [self.clip(state[i]+noise[i]) for i in range(self.len_state)] # check  
 
         self.state = vector
@@ -146,11 +153,11 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
 
     init_cell_state_value = env_eval_function_params['init_cell_state_value']
     if "learning_random_init_states_bool" in env_eval_function_params['learning_mode']:
-        init_cell_state_value = None
+        init_cell_state_value = None # None = random state initialization
 
-    random_update_bool = False
-    if "learning_random_update_states_bool" in env_eval_function_params['learning_mode']:
-        random_update_bool = True
+    random_async_update_bool = False
+    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_mode']:
+        random_async_update_bool = True
 
     with_noise_bool = False
     noise_std = None
@@ -160,11 +167,15 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
 
     env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
                              grid_nb_cols=env_eval_function_params['grid_nb_cols'],
+                             learning_mode=[],
+                             learning_with_noise_std=None,
                              flag_pattern=env_eval_function_params['flag_pattern'],
                              flag_target=env_eval_function_params['flag_target'],
                              init_cell_state_value=init_cell_state_value,
                              nn_controller=env_eval_function_params['controller'],
-                             agent_controller_weights=weights)
+                             agent_controller_weights=weights,
+                             verbose_debug_bool=env_eval_function_params['verbose_debug'],
+                             analysis_dir=env_eval_function_params['analysis_dir'])
 
     flags_distance = 0.0
     sum_flags_distances = 0.0
@@ -182,7 +193,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
         flags_distances.append(flags_distance)
         in_t_window_zone_bools.append(in_t_window_zone_bool)
 
-        env.step(random_update_bool=random_update_bool,
+        env.step(random_async_update_bool=random_async_update_bool,
                  with_noise_bool=with_noise_bool,
                  noise_std=noise_std)
         
@@ -198,7 +209,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
 ###########################################################################
 
 class swarmGrid:
-    def __init__(self, grid_nb_rows, grid_nb_cols, flag_pattern, flag_target, init_cell_state_value, nn_controller) -> None:
+    def __init__(self, grid_nb_rows, grid_nb_cols, learning_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller) -> None:
       
         self.grid_nb_rows = grid_nb_rows
         self.grid_nb_cols = grid_nb_cols
@@ -210,6 +221,11 @@ class swarmGrid:
         elif nn_controller.n_neuronsPerOutputs == 2:
             self.agent_type = agent2Outputs
 
+        # parameters useful in the swarm application, to restore learning initialization parameters 
+        self.learning_random_async_update_states_bool = True if "learning_random_async_update_states_bool" in learning_mode else False
+        self.learning_with_noise_bool = True if "learning_with_noise_bool" in learning_mode else False
+        self.learning_with_noise_std = learning_with_noise_std
+        
         self.default_missing_neighbor_state = 0.0
         self.grid_map_pos_agent = None
         self.init_grid(init_cell_state_value)
@@ -371,7 +387,6 @@ class swarmGrid:
     #---------------------------------------------------
 
     def get_neighbors(self, agent):
-
         l_tmp = []
         row, col = agent.pos
         for pos in [(row-1, col), (row, col-1), (row, col+1), (row+1, col)]:
@@ -402,16 +417,32 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def step(self, random_update_bool=False, with_noise_bool=False, noise_std=None):
-
+    def step(self, random_async_update_bool=False, with_noise_bool=False, noise_std=None):
+        global verbose_str
         agents = self.get_agents() # ordered update
 
-        if random_update_bool:
+        if random_async_update_bool:
             np.random.shuffle(agents) # random update
 
-        for agent in agents:
-            state = self.compute_agent_state(agent=agent)
-            agent.set_state(state, with_noise_bool, noise_std)
+            for agent in agents:
+                state = self.compute_agent_state(agent=agent)
+                agent.set_state(state, with_noise_bool, noise_std)
+
+        else: # sync_update
+            grid_map_agent_state_tmp = {}
+            for agent in agents:
+                state = self.compute_agent_state(agent=agent)
+                grid_map_agent_state_tmp[agent] = state
+
+            if verbose_debug:
+                verbose_str += f"\n<step> sync update. Grid states at t-1: {self.get_flag_from_grid()}"
+                verbose_str += f"\n<step> sync update. Temporary grid states at t: {grid_map_agent_state_tmp.values()}"
+
+            for agent in agents:
+                agent.set_state(grid_map_agent_state_tmp[agent], with_noise_bool, noise_std)
+
+            if verbose_debug:
+                verbose_str += f"\n<step> sync update. Grid states at t+1: {self.get_flag_from_grid()}"
 
     #---------------------------------------------------
 
@@ -421,7 +452,7 @@ class swarmGrid:
             return
 
         neighbors_states = []
-        for neighbor in agent.neighbors_NWES: # est il à jour?
+        for neighbor in agent.neighbors_NWES: # est il à jour? calcolarlo ora?
 
             if neighbor is not None: # si il a un id, il y a l'agent? tjr?
                 neighbors_states.append(neighbor.get_chemical_species())
@@ -437,40 +468,51 @@ class swarmGrid:
     #---------------------------------------------------
 
     def setup_ind_consistency(self, run, setup_name, nb_repetitions, time_steps, switch_step, switch_step_with_reset_env_bool, analysis_dir):
-        
+        global verbose_str
         for n in range(nb_repetitions):
-            switch_step_with_random_update_bool = False
+            switch_step_with_random_async_update_bool = self.learning_random_async_update_states_bool
+            with_noise_bool = self.learning_with_noise_bool
+            noise_std = self.learning_with_noise_std
             self.init_agents_state()
             flags = []
+
             for step in range(time_steps):
                 flag = self.get_flag_from_grid()
                 flags.append(flag)
 
                 if step == switch_step-1:
                 
-                    if setup_name == "setup_ind_consistency_random_init_states":
+                    if setup_name == "setup_ind_consistency_random_init_states": # this setup represents noisy perturbation on initialization
                         self.init_agents_state(random_init_bool=True)
-                        continue
+                        continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
-                    if setup_name == "setup_ind_consistency_random_update_states":
-                        switch_step_with_random_update_bool = True
+                    if setup_name == "setup_ind_consistency_random_async_update_states": # this setup represents perturbation on the update order
+                        switch_step_with_random_async_update_bool = True
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
-                            continue
+                            continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
-                self.step(random_update_bool=switch_step_with_random_update_bool)
+                self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
+                          with_noise_bool=with_noise_bool,
+                          noise_std=noise_std)
             
             # Save flags for this run
-            self.write_flag_data(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=[], analysis_dir=analysis_dir)
+            self.write_flag_data(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
+
+        with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+            f.write(verbose_str)
+            verbose_str = ""
 
     #---------------------------------------------------
 
-    def setup_noise(self, run, setup_name, nb_repetitions, setup_noise_std_ticks, time_steps, switch_step, switch_step_with_reset_env_bool, switch_step_with_random_update_bool, analysis_dir):
-        
+    def setup_noise(self, run, setup_name, nb_repetitions, setup_noise_std_ticks, time_steps, switch_step, switch_step_with_reset_env_bool, switch_step_with_random_async_update_bool, analysis_dir):
+        global verbose_str
         for n in range(nb_repetitions):
             for tick in setup_noise_std_ticks:
                 setup_name_tick = setup_name+"_"+str(tick)
-                with_noise_bool=False
+                switch_step_with_random_async_update_bool = self.learning_random_async_update_states_bool
+                with_noise_bool = self.learning_with_noise_bool
+                noise_std = self.learning_with_noise_std
                 self.init_agents_state()
                 flags = []
 
@@ -480,35 +522,91 @@ class swarmGrid:
 
                     if step == switch_step-1:
                         with_noise_bool = True
+                        noise_std = tick
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
-                            continue
+                            continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
-                    self.step(random_update_bool=switch_step_with_random_update_bool,
+                    self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
                               with_noise_bool=with_noise_bool,
-                              noise_std=tick)
+                              noise_std=noise_std)
                 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=[], analysis_dir=analysis_dir)
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
+        
+        with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+            f.write(verbose_str)
+            verbose_str = ""
 
     #---------------------------------------------------
 
-    def setup_deletion(self, run, setup_name, nb_repetitions, deletion_ticks, time_steps, switch_step, switch_step_with_reset_env_bool, switch_step_with_random_update_bool, analysis_dir):
-        
+    def setup_permutation(self, run, setup_name, nb_repetitions, setup_permutation_ticks, time_steps, switch_step, switch_step_with_reset_env_bool, switch_step_with_random_async_update_bool, analysis_dir):
+        global verbose_str
+        for n in range(nb_repetitions):
+            for tick in setup_permutation_ticks:
+                setup_name_tick = setup_name+"_"+str(tick)
+                switch_step_with_random_async_update_bool = self.learning_random_async_update_states_bool
+                with_noise_bool = self.learning_with_noise_bool
+                noise_std = self.learning_with_noise_std
+                self.init_agents_state()
+                flags = []
+                agents_to_permutate = []
+                permutated_agents_per_step = []
+
+                if verbose_debug:
+                    verbose_str += f"\nStarting setup_permutation n={n} tick={tick}"
+
+                for step in range(time_steps):
+                    flag = self.get_flag_from_grid()
+                    flags.append(flag)
+                    permutated_agents_per_step.append(agents_to_permutate)
+
+                    if step == switch_step-1:
+                        agents = self.get_agents()
+                        agents_to_permutate = random.sample(agents, tick) # random.sample returns a list in selection order
+                        self.permutate_agents(agents_to_permutate=agents_to_permutate)
+
+                        if verbose_debug:
+                            verbose_str += f"\nStep {step}. Check the content of the permutated agents list in the last column of the data_setup_permutation file. Ex path: swarm/run_0/best_ind_0/data/setup_permutation_6/data_setup_permutation_6_flag_run_0_n_0.csv"
+                        
+                        if switch_step_with_reset_env_bool:
+                            self.init_agents_state()
+                            # permutated_agents_per_step.append(permutated_agents)
+                        
+                        continue # don't execute the following self.step update line, as we just updated the grid with the permutation and eventually the reset_env
+
+                    self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
+                              with_noise_bool=with_noise_bool,
+                              noise_std=noise_std)
+
+                # Save flags for this run
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=permutated_agents_per_step, deleted_agents_per_step=[], analysis_dir=analysis_dir)
+
+        with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+            f.write(verbose_str)
+            verbose_str = ""
+
+    #---------------------------------------------------
+
+    def setup_deletion(self, run, setup_name, nb_repetitions, deletion_ticks, time_steps, switch_step, switch_step_with_reset_env_bool, switch_step_with_random_async_update_bool, analysis_dir):
+        global verbose_str
         for n in range(nb_repetitions):
             deleted_map_pos_agent = {}
 
             for tick in deletion_ticks:
                 setup_name_tick = setup_name+"_"+str(tick)
+                switch_step_with_random_async_update_bool = self.learning_random_async_update_states_bool
+                with_noise_bool = self.learning_with_noise_bool
+                noise_std = self.learning_with_noise_std
                 self.init_agents_state()
                 flags = []
-                deleted_agents = []
                 agents_to_delete = []
+                deleted_agents_per_step = []
 
                 for step in range(time_steps):
                     flag = self.get_flag_from_grid()
                     flags.append(flag)
-                    deleted_agents.append(agents_to_delete)
+                    deleted_agents_per_step.append(agents_to_delete)
 
                     if step == switch_step-1:
                         agents = self.get_agents()
@@ -518,16 +616,48 @@ class swarmGrid:
 
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
-                            deleted_agents.append(agents_to_delete)
-                            continue
+                            deleted_agents_per_step.append(agents_to_delete)
+                            continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
-                    self.step(random_update_bool=switch_step_with_random_update_bool)
+                    self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
+                              with_noise_bool=with_noise_bool,
+                              noise_std=noise_std)
                 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, deleted_agents=deleted_agents, analysis_dir=analysis_dir)
+                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
             
                 # Restore original grid
                 self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
+
+        with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+            f.write(verbose_str)
+            verbose_str = ""
+
+    #---------------------------------------------------
+
+    def permutate_agents(self, agents_to_permutate):
+        global verbose_str
+        for i in range(0, len(agents_to_permutate), 2): # agents_to_permutate is a list of agents in shuffled order, even size
+
+            if verbose_debug:
+                verbose_str += f"\nPermutating the positions of 2 agents: agent1={agents_to_permutate[i]} (agent1.pos={agents_to_permutate[i].pos}) and agent2={agents_to_permutate[i+1]} (agent2.pos={agents_to_permutate[i+1].pos})"
+                verbose_str += f"\ngrid_map_pos_agent before permutation: {self.grid_map_pos_agent}"
+            
+            # Permutation at the grid level
+            self.grid_map_pos_agent[agents_to_permutate[i].pos] = agents_to_permutate[i+1]
+            self.grid_map_pos_agent[agents_to_permutate[i+1].pos] = agents_to_permutate[i]
+            
+            # Permutation at the agent level (agent.pos)
+            agent1_pos = agents_to_permutate[i].pos
+            agents_to_permutate[i].pos = agents_to_permutate[i+1].pos
+            agents_to_permutate[i+1].pos = agent1_pos
+            
+            if verbose_debug:
+                verbose_str += f"\npermutated positions: agent1={agents_to_permutate[i]} (agent1.pos={agents_to_permutate[i].pos}) and agent2={agents_to_permutate[i+1]} (agent2.pos={agents_to_permutate[i+1].pos})"
+                verbose_str += f"\ngrid_map_pos_agent after permutation: {self.grid_map_pos_agent}"
+
+        # Update the neighbors list of each agent
+        self.update_agent_neighbors()
 
     #---------------------------------------------------
 
@@ -604,7 +734,7 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def write_flag_data(self, setup_name, run, n, time_steps, flags, deleted_agents, analysis_dir):
+    def write_flag_data(self, setup_name, run, n, time_steps, flags, permutated_agents_per_step, deleted_agents_per_step, analysis_dir):
 
         from learning_initializations import save_data_to_csv
 
@@ -619,8 +749,12 @@ class swarmGrid:
         for step in range(time_steps):
             flags_distance = self.eval_flags_distance(flags[step])
 
-            if deleted_agents:
-                deleted_agents_positions = [agent.pos for agent in deleted_agents[step]]
+            if permutated_agents_per_step:
+                permutated_agents_positions = [agent.pos for agent in permutated_agents_per_step[step]]
+                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(permutated_agents_positions).strip()])
+                header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Permutated_agents_positions"]
+            elif deleted_agents_per_step:
+                deleted_agents_positions = [agent.pos for agent in deleted_agents_per_step[step]]
                 data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(deleted_agents_positions).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Deleted_agents_positions"]
             else:
@@ -632,7 +766,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, n, step, flag, fitness, deleted_pos=[], analysis_dir_plots=None):
+    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, n, step, flag, fitness, permutated_pos=[], deleted_pos=[], analysis_dir_plots=None):
         
         fig, ax = plt.subplots()
 
@@ -640,6 +774,10 @@ class swarmGrid:
         for row in range(grid_nb_rows):
             for col in range(grid_nb_cols):
                 grid_pos.append(tuple((row, col)))
+
+        if permutated_pos:
+            x_permutated = [pos[1] for pos in permutated_pos]
+            y_permutated = [-pos[0] for pos in permutated_pos]
 
         if deleted_pos:
             x_deleted = [pos[1] for pos in deleted_pos]
@@ -671,6 +809,9 @@ class swarmGrid:
                 else:
                     circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
 
+                if pos in permutated_pos: # works?
+                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:green', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
+
                 if pos in deleted_pos: # works?
                     circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
                 
@@ -685,6 +826,9 @@ class swarmGrid:
             colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # Black to light blue
             cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
             plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
+
+            if permutated_pos:
+                plt.scatter(x_permutated, y_permutated, c='tab:green') # agents permutated
 
             if deleted_pos:
                 plt.scatter(x_deleted, y_deleted, c='tab:red') # deleted agents
