@@ -33,7 +33,7 @@ def init_all_runs_analysis(params):
     os.makedirs(params['analysis_dir']['root']+"/data_all_runs", exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/plots_all_runs", exist_ok=True)
 
-    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_time.csv", [], header = ["Run", "Time"])
+    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_time.csv", [], header = ["Run", "Time(s)"])
     save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
     
     return params
@@ -107,7 +107,7 @@ def write_all_runs_data(analysis_dir):
 
     # Save mean and std of the best fitnesses per run
     dataset = pd.read_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
-    save_data_to_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_mean_std.csv", [str(dataset['Fitness'].mean()), str(dataset['Fitness'].std())], header = ["Mean", "Std"])
+    save_data_to_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_mean_std.csv", [[str(dataset['Fitness'].mean()), str(dataset['Fitness'].std())]], header = ["Mean fitnesses", "Std fitnesses"])
 
 #---------------------------------------------------
 

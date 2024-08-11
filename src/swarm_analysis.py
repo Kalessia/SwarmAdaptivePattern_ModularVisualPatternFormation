@@ -30,7 +30,7 @@ def init_all_runs_analysis(learning_analysis_dir_root, params):
     os.makedirs(params['analysis_dir']['root']+"/data_all_runs", exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/plots_all_runs", exist_ok=True)
 
-    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_all_runs_time.csv", [], header = ["Run", "Time"])
+    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_all_runs_time.csv", [], header = ["Run", "Time(s)"])
     
     return params
 

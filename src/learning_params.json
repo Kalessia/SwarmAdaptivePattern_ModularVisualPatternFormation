@@ -1,6 +1,6 @@
 {
     "nb_runs": 3,
-    "nb_generations": 1200,
+    "nb_generations": 1,
  
     "env_name": "flag_automata",
 
@@ -23,13 +23,13 @@
     "time_window_end": 50,
 
     "init_cell_state_value info": "None (random), 0.0...",
-    "init_cell_state_value": 0.0,
+    "init_cell_state_value": 0.5,
 
     "learning_random_async_update_states_bool info": "agent's states update management. false: agents are chosen in random grid-positions order, and the updated state value of a chosen agent is used to compute the state of a not yet updated neighbor (realistic robotic setup). true: in grid-positions order, each agent computes its new state using pre-updated neighbors state values, then all new agents states are updated synchronously. In both options, all agents states are updated.",
     "learning_random_async_update_states_bool": false,
 
     "learning_random_init_states_bool info": "true: the initial state of each agent is a list of random values (normal distribution in [0,1[ ). false: the initial state of each agent is a fixed vector of init_cell_state_value",
-    "learning_random_init_states_bool": true,
+    "learning_random_init_states_bool": false,
 
     "learning_with_noise_bool info": "Each time a new agent state is computed, a noise N(0, learning_with_noise_std, len_state) is added to its value",
     "learning_with_noise_bool": false,
