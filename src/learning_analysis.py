@@ -106,8 +106,9 @@ def write_all_runs_data(analysis_dir):
                 all_runs_file.write(single_run_file.read())
 
     # Save mean and std of the best fitnesses per run
-    dataset = pd.read_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
-    save_data_to_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_mean_std.csv", [[str(dataset['Fitness'].mean()), str(dataset['Fitness'].std())]], header = ["Mean fitnesses", "Std fitnesses"])
+    if not (os.path.exists(analysis_dir+"/data_all_runs/data_evo_all_runs_mean_std.csv")):
+        dataset = pd.read_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
+        save_data_to_csv(analysis_dir+"/data_all_runs/data_evo_all_runs_mean_std.csv", [[str(dataset['Fitness'].mean()), str(dataset['Fitness'].std())]], header = ["Mean fitnesses", "Std fitnesses"])
 
 #---------------------------------------------------
 

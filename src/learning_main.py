@@ -58,7 +58,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
 def worker(task):
     run, learning_params = task
-    time.sleep(random.random()) # sleep between 0.0 and 1.0 seconds, avoid identical initial conditions
+    time.sleep(3*random.random()) # sleep between 0.0 and 3.0 seconds, avoid identical initial conditions and genomes
     return cmaES_EvoAlgorithm(run, learning_params)
 
 #---------------------------------------------------

@@ -58,12 +58,8 @@ class swarmAgent:
 
     #---------------------------------------------------
     
-    def init_state(self, random_init_bool=False):
-
-        if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(0, 1, self.len_state)
-        else:
-            self.state = [self.init_cell_state_value] * self.len_state
+    def init_state(self):
+        raise NotImplementedError("Subclasses must implement this method")
     
     #---------------------------------------------------
 
@@ -71,7 +67,7 @@ class swarmAgent:
 
         if with_noise_bool:
             state = vector.copy()
-            noise = np.random.normal(0, noise_std, self.len_state)
+            noise = np.random.normal(0, noise_std, self.len_state) 
             vector = [self.clip(state[i]+noise[i]) for i in range(self.len_state)] # check  
 
         self.state = vector
@@ -91,6 +87,8 @@ class swarmAgent:
     def get_chemical_species(self):
         raise NotImplementedError("Subclasses must implement this method")
     
+    #---------------------------------------------------
+    
     def get_phenotype(self):
         raise NotImplementedError("Subclasses must implement this method")
 
@@ -102,19 +100,32 @@ class agent1Output(swarmAgent):
         self.len_state = 1
         super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
 
+    #---------------------------------------------------
+
     def init_state(self, random_init_bool=False):
-        super().init_state(random_init_bool)
+        
+        if self.init_cell_state_value is None or random_init_bool:
+            self.state = np.random.uniform(0, 1, self.len_state)
+        else:
+            self.state = [self.init_cell_state_value] * self.len_state
+
+    #---------------------------------------------------
 
     def set_state(self, vector, with_noise_bool, noise_std):
         super().set_state(vector, with_noise_bool, noise_std)
+    
+    #---------------------------------------------------
 
     def get_chemical_species(self):
         state = super().get_state()
         return state[0]
+    
+    #---------------------------------------------------
 
     def get_phenotype(self):
         state = super().get_state()
         return state[0]
+
 
 ###########################################################################
 
@@ -123,15 +134,28 @@ class agent2Outputs(swarmAgent):
         self.len_state = 2
         super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
 
+    #---------------------------------------------------
+
     def init_state(self, random_init_bool=False):
-        super().init_state(random_init_bool)
+        
+        if self.init_cell_state_value is None or random_init_bool:
+            self.state = np.random.uniform(-1, 1, self.len_state)
+            self.state[1] = np.abs(self.state[1])
+        else:
+            self.state = [self.init_cell_state_value] * self.len_state
+
+    #---------------------------------------------------
 
     def set_state(self, vector, with_noise_bool, noise_std):
         super().set_state(vector, with_noise_bool, noise_std)
+    
+    #---------------------------------------------------
 
     def get_chemical_species(self):
         state = super().get_state()
         return state[0]
+    
+    #---------------------------------------------------
 
     def get_phenotype(self):
         state = super().get_state()
