@@ -319,11 +319,11 @@ class swarmGrid:
 
             for cell in self.grid_map_pos_agent.keys():
                 if cell[0] < horizontal_threshold_upper:
-                    flag_target[cell] = 0.0 # black
+                    flag_target[cell] = 0.0 # black in the upper region
                 elif cell[0] >= horizontal_threshold_lower:
-                    flag_target[cell] = 1.0 # white
+                    flag_target[cell] = 0.5 # grey in the lower region
                 else:
-                    flag_target[cell] = 0.5 # grey
+                    flag_target[cell] = 1.0 # white in the middle region
 
 
         elif flag_pattern == "centered_circle" or flag_pattern == "not_centered_circle":
