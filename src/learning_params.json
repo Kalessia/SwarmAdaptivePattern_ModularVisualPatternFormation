@@ -14,7 +14,7 @@
     "nb_neuronsPerOutputs": 3,
 
     "flag_pattern info": "available flag_patterns are ['2_stripes', '3_stripes', 'centered_circle', 'not_centered_circle', 'centered_half_circle', 'not_centered_half_circle']",
-    "flag_pattern": "centered_circle",
+    "flag_pattern": "2_stripes",
     "grid_nb_rows": 32,
     "grid_nb_cols": 32,
     
