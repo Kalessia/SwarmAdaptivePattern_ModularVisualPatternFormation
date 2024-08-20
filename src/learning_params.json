@@ -1,28 +1,28 @@
 {
-    "nb_runs": 11,
-    "nb_generations": 1024,
+    "nb_runs": 1,
+    "nb_generations": 100,
  
     "env_name": "flag_automata",
 
     "ind_min_value": -1,
     "ind_max_value": 1,
 
-    "": "",
-    "nb_neuronsPerInputs": 4,
+    "": "il biais sulle entree sara aggiunto dal nn, no biais su hidden",
+    "nb_neuronsPerInputs": 9,
     "nb_hiddenLayers": 1,
-    "nb_neuronsPerHidden": 2,
-    "nb_neuronsPerOutputs": 2,
+    "nb_neuronsPerHidden": 8,
+    "nb_neuronsPerOutputs": 3,
 
     "flag_pattern info": "available flag_patterns are ['2_stripes', '3_stripes', 'centered_circle', 'not_centered_circle', 'centered_half_circle', 'not_centered_half_circle']",
     "flag_pattern": "3_stripes",
-    "grid_nb_rows": 32,
-    "grid_nb_cols": 32,
+    "grid_nb_rows": 9,
+    "grid_nb_cols": 9,
     
     "time_steps": 50,
     "time_window_start": 30,
     "time_window_end": 50,
 
-    "init_cell_state_value info": "None (random), 0.0...",
+    "init_cell_state_value info": "null (random), 0.0...",
     "init_cell_state_value": 0.0,
 
     "learning_random_async_update_states_bool info": "agent's states update management. false: agents are chosen in random grid-positions order, and the updated state value of a chosen agent is used to compute the state of a not yet updated neighbor (realistic robotic setup). true: in grid-positions order, each agent computes its new state using pre-updated neighbors state values, then all new agents states are updated synchronously. In both options, all agents states are updated.",

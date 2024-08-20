@@ -90,6 +90,9 @@ def set_env(params):
     ind_size = len(nn_controller.getWeightsList())
     params['ind_size'] = ind_size
 
+    if params['nb_neuronsPerOutputs'] == 3: # Devert 2011 Expression function
+        params['ind_size'] = params['ind_size'] + 4 # Devert 2011 Expression function
+
     environments = {
         'flag_automata': {
             'eval_function': flag_automata, 
@@ -110,7 +113,7 @@ def set_env(params):
             },
             'env_boundaries': None,
             'toolbox_cmaes': {
-                'centroid': list(np.random.uniform(params['ind_min_value'], params['ind_max_value'], ind_size)),
+                'centroid': list(np.random.uniform(params['ind_min_value'], params['ind_max_value'], params['ind_size'])),
                 'sigma': 0.5
             }
         }

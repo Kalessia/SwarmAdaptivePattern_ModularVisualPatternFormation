@@ -36,8 +36,17 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_mode, learning_with_
                         init_cell_state_value=init_cell_state_value,
                         nn_controller=nn_controller)
     
-    env.set_agent_controller_weights(agent_controller_weights=agent_controller_weights)
-    env.init_agents_state()
+    # Some genomes could have 2 components, one dedicated to the controller NN and one for other purpose. Ex: in Devert 2011, 4 weights are required for the expression function
+    agent_additional_weights = None
+    nn_controller_weights_size = len(nn_controller.getWeightsList())
+    ind_size = len(agent_controller_weights)
+    if (ind_size > nn_controller_weights_size):
+        agent_additional_weights = agent_controller_weights[nn_controller_weights_size:]
+        agent_controller_weights = agent_controller_weights[:nn_controller_weights_size]
+    
+    # agent re-initialization is required at each new evaluation (with new agent_controller_weights), because the env is not re-initialized
+    env.set_agent_controller_weights(agent_controller_weights=agent_controller_weights, agent_additional_weights=agent_additional_weights)
+    env.init_agents_state() # to execute at last
 
     return env
 
@@ -47,14 +56,13 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_mode, learning_with_
 ###########################################################################
 
 class swarmAgent:
-    def __init__(self, pos, len_state, init_cell_state_value=None) -> None:
+    def __init__(self, pos, size_state, init_cell_state_value=None) -> None:
 
         self.pos = pos
-        self.len_state = len_state
+        self.size_state = size_state
         self.init_cell_state_value = init_cell_state_value
         self.neighbors_NWES = None
         self.state = None
-        self.init_state()
 
     #---------------------------------------------------
     
@@ -67,8 +75,8 @@ class swarmAgent:
 
         if with_noise_bool:
             state = vector.copy()
-            noise = np.random.normal(0, noise_std, self.len_state) 
-            vector = [self.clip(state[i]+noise[i]) for i in range(self.len_state)] # check  
+            noise = np.random.normal(0, noise_std, self.size_state) 
+            vector = [self.clip(state[i]+noise[i]) for i in range(self.size_state)] # check  
 
         self.state = vector
 
@@ -96,18 +104,20 @@ class swarmAgent:
 ###########################################################################
 
 class agent1Output(swarmAgent):
-    def __init__(self, pos, init_cell_state_value):
-        self.len_state = 1
-        super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
+    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+        self.size_state = 1
+        self.size_chemicals_to_spread = 1
+        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
+        self.init_state()
 
     #---------------------------------------------------
 
     def init_state(self, random_init_bool=False):
         
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(0, 1, self.len_state)
+            self.state = np.random.uniform(0, 1, self.size_state)
         else:
-            self.state = [self.init_cell_state_value] * self.len_state
+            self.state = [self.init_cell_state_value] * self.size_state
 
     #---------------------------------------------------
 
@@ -118,7 +128,7 @@ class agent1Output(swarmAgent):
 
     def get_chemical_species(self):
         state = super().get_state()
-        return state[0]
+        return state # list of floats
     
     #---------------------------------------------------
 
@@ -130,19 +140,21 @@ class agent1Output(swarmAgent):
 ###########################################################################
 
 class agent2Outputs(swarmAgent):
-    def __init__(self, pos, init_cell_state_value):
-        self.len_state = 2
-        super().__init__(pos=pos, len_state=self.len_state, init_cell_state_value=init_cell_state_value)
+    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+        self.size_state = 2
+        self.size_chemicals_to_spread = 1
+        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
+        self.init_state()
 
     #---------------------------------------------------
 
     def init_state(self, random_init_bool=False):
-        
+
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.len_state)
+            self.state = np.random.uniform(-1, 1, self.size_state)
             self.state[1] = np.abs(self.state[1])
         else:
-            self.state = [self.init_cell_state_value] * self.len_state
+            self.state = [self.init_cell_state_value] * self.size_state
 
     #---------------------------------------------------
 
@@ -153,14 +165,73 @@ class agent2Outputs(swarmAgent):
 
     def get_chemical_species(self):
         state = super().get_state()
-        return state[0]
+        return state # list of floats
     
     #---------------------------------------------------
 
     def get_phenotype(self):
         state = super().get_state()
-        return state[1]
+        return state[1] # float
+    
 
+###########################################################################
+
+class agent3Outputs_Devert2011(swarmAgent):
+    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+        self.size_state = 3
+        self.size_chemicals_to_spread = 2
+        self.agent_additional_weights = agent_additional_weights
+        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
+        self.init_state()
+
+    #---------------------------------------------------
+
+    def init_state(self, random_init_bool=False):
+
+        if self.init_cell_state_value is None or random_init_bool:
+            self.state = np.random.uniform(-1, 1, self.size_state) # Devert, 2011. State in [-1,1] because phenotype is not included in the state
+        else:
+            self.state = [self.init_cell_state_value] * self.size_state
+
+    #---------------------------------------------------
+
+    def set_state(self, vector, with_noise_bool, noise_std):
+        super().set_state(vector, with_noise_bool, noise_std)
+    
+    #---------------------------------------------------
+
+    def get_chemical_species(self): # Devert, 2011. A state is 2 external chemicals + 1 internal chemicals
+        state = super().get_state()
+        # print("state", state)
+        # print("chem", state[:self.size_chemicals_to_spread])
+        return state[:self.size_chemicals_to_spread]
+
+    #---------------------------------------------------
+
+    def get_internal_chemical(self): # Devert, 2011. A state is 2 external chemicals + 1 internal chemicals
+        state = super().get_state()
+        # print("internal state", state)
+        # print("internal chem", state[self.size_chemicals_to_spread:])
+        return state[self.size_chemicals_to_spread:]
+    
+    #---------------------------------------------------
+
+    def get_phenotype(self): # Devert, 2011. Expression function
+        state = super().get_state()
+        state.append(1) # bias neuron
+
+        val = 0
+        for i in range(len(state)):
+            val += self.agent_additional_weights[i] * state[i]
+
+        return (0.5 * (1 + np.tanh(val)))
+    
+    #---------------------------------------------------
+
+    def get_agent_energy(self): # Devert, 2011. Expression function: energy is the square root of the sum of the squared values of chemicals u and v
+        state = super().get_state()
+        return (state[0]**2 + state[1]**2 + state[2]**2)**0.5
+                
 
 ###########################################################################
 # Evaluation functions
@@ -175,8 +246,8 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
     in_t_window_zone_bools = []
     flags = []
 
-    init_cell_state_value = env_eval_function_params['init_cell_state_value']
-    if "learning_random_init_states_bool" in env_eval_function_params['learning_mode']:
+    init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
+    if "learning_random_init_states_bool" in env_eval_function_params['learning_mode']: # if this bool is True, init_cell_state_value is ignored
         init_cell_state_value = None # None = random state initialization
 
     random_async_update_bool = False
@@ -239,11 +310,16 @@ class swarmGrid:
         self.grid_nb_cols = grid_nb_cols
         self.grid_size = grid_nb_rows * grid_nb_cols
 
+        self.agent_controller_weights = None
+        self.agent_additional_weights = None
         self.agent_controller = nn_controller
+
         if nn_controller.n_neuronsPerOutputs == 1:
             self.agent_type = agent1Output
         elif nn_controller.n_neuronsPerOutputs == 2:
             self.agent_type = agent2Outputs
+        elif nn_controller.n_neuronsPerOutputs == 3:
+            self.agent_type = agent3Outputs_Devert2011
 
         # parameters useful in the swarm application, to restore learning initialization parameters 
         self.learning_random_async_update_states_bool = True if "learning_random_async_update_states_bool" in learning_mode else False
@@ -261,17 +337,24 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def set_agent_controller_weights(self, agent_controller_weights):
+    def set_agent_controller_weights(self, agent_controller_weights, agent_additional_weights=None):
+        self.agent_controller_weights = agent_controller_weights
         self.agent_controller.setWeightsFromList(agent_controller_weights)
+
+        if self.agent_type == agent3Outputs_Devert2011:
+            self.agent_additional_weights = agent_additional_weights
+            agents = self.get_agents()
+            for agent in agents:
+                agent.agent_additional_weights=agent_additional_weights # check si ça pose probleme en cas de deletion et reinsertion (agents sans additional_weights) ?
 
     #---------------------------------------------------
 
     def init_grid(self, init_cell_state_value):
-
+    
         grid_map_pos_agent = {}
         for row in range(self.grid_nb_rows):
             for col in range(self.grid_nb_cols):
-                agent = self.agent_type(pos=tuple((row, col)), init_cell_state_value=init_cell_state_value) # agent creation
+                agent = self.agent_type(pos=tuple((row, col)), init_cell_state_value=init_cell_state_value) # agent instance creation
                 grid_map_pos_agent[tuple((row, col))] = agent
         
         self.grid_map_pos_agent = grid_map_pos_agent
@@ -470,6 +553,17 @@ class swarmGrid:
 
     #---------------------------------------------------
 
+    def get_swarmGrid_energy(self):
+        if self.agent_type == agent3Outputs_Devert2011:
+            organism_energy = 0
+            agents = self.get_agents()
+            for agent in agents:
+                organism_energy += agent.get_agent_energy()
+            return organism_energy
+        raise ValueError("Error: <get_swarmGrid_energy>: energy not available for this agent. Set a agent3Outputs_Devert2011 agent.")
+
+    #---------------------------------------------------
+
     def compute_agent_state(self, agent):
         
         if agent is None: # check
@@ -479,10 +573,16 @@ class swarmGrid:
         for neighbor in agent.neighbors_NWES: # est il à jour? calcolarlo ora?
 
             if neighbor is not None: # si il a un id, il y a l'agent? tjr?
-                neighbors_states.append(neighbor.get_chemical_species())
+                neighbors_states += neighbor.get_chemical_species()
             else:
-                neighbors_states.append(self.default_missing_neighbor_state)
+                neighbors_states += [self.default_missing_neighbor_state] * agent.size_chemicals_to_spread
         
+        if (self.agent_type == agent3Outputs_Devert2011):
+            neighbors_states += agent.get_internal_chemical()
+        
+        # print("neighbors states", neighbors_states)
+        # print("len neighbors states", len(neighbors_states))
+
         # print("compute_agent_state: agent.pos:", agent.pos, ", its neighbors:", agent.neighbors_NWES, "neighbors states:", neighbors_states)
         # print("prima di set_state - state:", agent.state, "agent.get_chemical_species():", agent.get_chemical_species(), "agent.get_phenotype():", agent.get_phenotype())
         state = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer               
