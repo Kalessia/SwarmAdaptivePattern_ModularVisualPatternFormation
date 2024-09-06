@@ -29,8 +29,8 @@ for i in range(len(simulationAnalysis_dirs)):
     if os.path.exists("simulationAnalysis/"+ simulationAnalysis_dirs[i] + "/learning/data_all_runs/data_evo_all_runs_mean_std.csv"):    
         try:
             d2 = pd.read_csv("simulationAnalysis/"+ simulationAnalysis_dirs[i] + "/learning/data_all_runs/data_evo_all_runs_mean_std.csv")  
-            mean = d2.loc[0]['Mean fitnesses']
-            std = d2.loc[0]['Std fitnesses']
+            mean = round(d2.loc[0]['Mean fitnesses'], 3)
+            std = round(d2.loc[0]['Std fitnesses'], 3)
         except:
             mean = None
             std = None

@@ -11,18 +11,18 @@
 # Learning and swarm plot parameters
 ###########################################################################
 
-# Plot parameters. NB: the parallelization parameters for simulations are in the learning_params.json and swarm_params.json files
+# Plot parameters, used in learning_analysis.py and swarm_analysis.py. NB: the parallelization parameters for simulations are in the learning_params.json and swarm_params.json files
 with_parallelization_bool=True
 with_parallelization_nb_free_cores=0
 plot_with_animation_bool=False
 
 # If you want to launch a swarm simulation or to plot learning figures for a specific learning simulation, write the corresponding path in the following line
-# exemple path: "simulationAnalysis/flag_automata_2024-04-29_21-44-08_circle_9x9/learning"
-learning_analysis_dir="simulationAnalysis/flag_automata_2024-08-12_14-32-47_centered_circle_16x16/learning"
+# exemple path: "simulationAnalysis/flag_automata_2024-04-29_21-44-08_disc_9x9/learning"
+learning_analysis_dir="simulationAnalysis/flag_automata_2024-08-12_01-16-14_centered_circle_16x16/learning"
 
 # If you want to plot figures for a specific swarm simulation, write the corresponding path in the following line
-# example path: "simulationAnalysis/flag_automata_2024-05-02_05-45-47_circle_65x65/swarm"
-swarm_analysis_dir="simulationAnalysis/flag_automata_2024-06-19_14-40-05_centered_half_circle_32x32/swarm"
+# exemple path: "simulationAnalysis/flag_automata_2024-05-02_05-45-47_disc_65x65/swarm"
+swarm_analysis_dir="simulationAnalysis/flag_automata_2024-08-12_01-16-14_centered_circle_16x16/swarm"
 
 
 ###########################################################################
@@ -46,9 +46,9 @@ output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis
 ###########################################################################
 
 # COMMENT the following lines if you DON'T want to plot the learning data
-python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-                                --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-                                --plot_with_animation_bool ${plot_with_animation_bool}
+# python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+#                                 --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+#                                 --plot_with_animation_bool ${plot_with_animation_bool}
 
 
 ###########################################################################

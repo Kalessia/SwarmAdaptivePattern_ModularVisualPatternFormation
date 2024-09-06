@@ -5,6 +5,7 @@ from multiprocessing import Pool, cpu_count
 
 import pandas as pd
 import numpy as np
+import re
 
 import argparse
 
@@ -30,6 +31,9 @@ def init_all_runs_analysis(learning_analysis_dir_root, params):
     os.makedirs(params['analysis_dir']['root']+"/data_all_runs", exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/plots_all_runs", exist_ok=True)
 
+    if os.path.exists(learning_analysis_dir_root+"/plots_all_runs/plot_env_flag_target.png"): # forse meglio copiare la flag e ricrearla?
+        shutil.copyfile(learning_analysis_dir_root+"/plots_all_runs/plot_env_flag_target.png", params['analysis_dir']['root']+"/plots_all_runs/plot_env_flag_target.png")
+                    
     save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_all_runs_time.csv", [], header = ["Run", "Time(s)"])
     
     return params
@@ -39,12 +43,20 @@ def init_all_runs_analysis(learning_analysis_dir_root, params):
 def init_one_run_analysis(run, best_ind, best_ind_run, params):
 
     # Create the data and plot directories tree from the 'analysis_dir' folder
-    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/data"
-    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/plots"
+    params['analysis_dir']['data'] = params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/data"
+    params['analysis_dir']['plots'] = params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/plots"
     os.makedirs(params['analysis_dir']['data'], exist_ok=True)
     os.makedirs(params['analysis_dir']['plots'], exist_ok=True)
 
-    file_path = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/flag_individual.txt"
+    # Copy of the original best individual flag (taken from learning data) in data/original_flag_copied_from_learning
+    os.makedirs(params['analysis_dir']['data']+"/original_flag_copied_from_learning", exist_ok=True)
+    dataset = pd.read_csv(params['analysis_dir']['root'].replace("/swarm", "/learning") + "/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
+    gen = dataset.loc[(dataset.Run==best_ind_run),['Generation']].values.tolist()[0][0]
+    # source_path = params['analysis_dir']['root'].replace("/swarm", "/learning") + f"/run_{best_ind_run:03}/data/data_env_flag/data_env_flag_run_{best_ind_run:03}_gen_{gen:03}.csv"
+    source_path = params['analysis_dir']['root'].replace("/swarm", "/learning") + f"/run_{best_ind_run}/data/data_env_flag/data_env_flag_run_{best_ind_run}_gen_{gen}.csv"
+    shutil.copyfile(source_path, params['analysis_dir']['data']+ f"/original_flag_copied_from_learning/data_original_flag_copied_from_learning_flag_n_000.csv")
+
+    file_path = params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/flag_individual.txt"
     if not os.path.exists(file_path):
         with open (file_path, 'w') as f:
             f.write(str(best_ind))
@@ -61,15 +73,23 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
     time_run_ind = time.time()
     print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Starting")
 
-    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/data"
-    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_"+str(run)+"/best_ind_"+str(best_ind_run)+"/plots"
+    params['analysis_dir']['data'] = params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/data"
+    params['analysis_dir']['plots'] = params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/plots"
 
-    for setup_name in params['setups']:
+    os.makedirs(params['analysis_dir']['plots']+"/original_flag_copied_from_learning", exist_ok=True)
+    setups = params['setups'] + ["original_flag_copied_from_learning"]
+
+    for setup_name in setups:
         for n in range(params['nb_repetitions']):
-            data_flag_file = params['analysis_dir']['data']+"/"+setup_name+"/data_"+setup_name+"_flag_run_"+str(run)+"_n_"+str(n)+".csv"
+            data_flag_file = params['analysis_dir']['data']+ f"/{setup_name}/data_{setup_name}_flag_n_{n:03}.csv"
             dataset = pd.read_csv(data_flag_file)
+            steps = [0, params['switch_step']-1, params['switch_step'], params['time_steps']-1]
+            switch_step = params['switch_step']
+            
+            if setup_name == "original_flag_copied_from_learning" or setup_name.startswith("setup_sliding_puzzle"):
+                steps = dataset['Step'].unique()
 
-            for step in [0, params['switch_step']-1, params['switch_step'], params['time_steps']-1]:
+            for step in steps:
                 flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
                 flag_list = str(flag_list).replace('[', '').replace(']', '').strip()
                 flag_list = np.asarray(flag_list.split(','), dtype=np.float32)
@@ -81,12 +101,20 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                     permutated_pos = eval(permutated_pos)
 
                 deleted_pos = []
-                if setup_name.startswith("setup_deletion"):
+                if setup_name.startswith("setup_deletion") or setup_name.startswith("setup_sliding_puzzle"):
                     deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
                     deleted_pos = eval(deleted_pos)
 
-                swarmGrid.plot_flag(grid_nb_rows=params['grid_nb_rows'],
-                                    grid_nb_cols=params['grid_nb_cols'],
+                nb_rows = params['grid_nb_rows']
+                nb_cols = params['grid_nb_cols']
+                if setup_name.startswith("setup_scalability"):
+                    setup_name_chunks = re.split(r'[_x]', setup_name)
+                    nb_rows = int(setup_name_chunks[2]) # original: setup_scalability_NxM
+                    nb_cols = int(setup_name_chunks[3])
+                    switch_step = None
+
+                swarmGrid.plot_flag(grid_nb_rows=nb_rows,
+                                    grid_nb_cols=nb_cols,
                                     setup_name=setup_name,
                                     run=run,
                                     nb_ind=best_ind_run,
@@ -99,10 +127,13 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                                     deleted_pos=deleted_pos,
                                     analysis_dir_plots=params['analysis_dir']['plots'])
 
+            if setup_name == "original_flag_copied_from_learning":
+                break # there is only one repetition for this file to plot
+        
         swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
                                                       setup_name=setup_name,
                                                       run=run,
-                                                      switch_step=params['switch_step'],
+                                                      switch_step=switch_step,
                                                       analysis_dir_plots=params['analysis_dir']['plots'])
 
     time_run = time.time() - time_run_ind

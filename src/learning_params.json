@@ -1,22 +1,23 @@
 {
-    "nb_runs": 11,
-    "nb_generations": 1024,
+    "nb_runs": 2,
+    "nb_generations": 40,
  
     "env_name": "flag_automata",
 
     "ind_min_value": -1,
     "ind_max_value": 1,
 
-    "": "il biais sulle entree sara aggiunto dal nn, no biais su hidden",
-    "nb_neuronsPerInputs": 9,
-    "nb_hiddenLayers": 1,
-    "nb_neuronsPerHidden": 8,
-    "nb_neuronsPerOutputs": 3,
+    "": "il biais sulle entree sara aggiunto dal nn, no biais su hidden. Check hidden layers. nb_neuronsPerInputs >=4",
+    "nb_neuronsPerInputs": 4,
+    "nb_hiddenLayers": 0,
+    "hidden_layers": [2],
+    "nb_neuronsPerHidden": 1,
+    "nb_neuronsPerOutputs": 2,
 
-    "flag_pattern info": "available flag_patterns are ['2_stripes', '3_stripes', 'centered_circle', 'not_centered_circle', 'centered_half_circle', 'not_centered_half_circle']",
-    "flag_pattern": "2_stripes",
-    "grid_nb_rows": 32,
-    "grid_nb_cols": 32,
+    "flag_pattern info": "available flag_patterns are ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']",
+    "flag_pattern": "two_bands",
+    "grid_nb_rows": 10,
+    "grid_nb_cols": 10,
     
     "time_steps": 50,
     "time_window_start": 30,

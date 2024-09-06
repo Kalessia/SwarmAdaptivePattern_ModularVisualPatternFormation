@@ -65,8 +65,7 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
     # setup_permutation
     if swarm_params['setup_permutation']['setup_permutation_bool']:
         setup_name = "setup_permutation"
-        permutation_ticks = [int(env.grid_size*tick_percent/100) for tick_percent in swarm_params['setup_permutation']['setup_permutation_ticks_percent']]
-        permutation_ticks = [val if val % 2 == 0 else val - 1 for val in permutation_ticks] # permutation_ticks must be even
+        permutation_ticks = swarm_params['setup_permutation']['permutation_ticks']
         setups += [setup_name+"_"+str(tick) for tick in permutation_ticks]
         env.setup_permutation(run=run,
                               setup_name=setup_name,
@@ -81,7 +80,7 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
     # setup_deletion
     if swarm_params['setup_deletion']['setup_deletion_bool']:
         setup_name = "setup_deletion"
-        deletion_ticks = [int(env.grid_size*tick_percent/100) for tick_percent in swarm_params['setup_deletion']['setup_deletion_ticks_percent']]
+        deletion_ticks = swarm_params['setup_deletion']['deletion_ticks']
         setups += [setup_name+"_"+str(tick) for tick in deletion_ticks]
         env.setup_deletion(run=run,
                            setup_name=setup_name,
@@ -92,6 +91,42 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
                            switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
                            switch_step_with_random_async_update_bool=swarm_params['switch_step_with_random_async_update_bool'],
                            analysis_dir=swarm_params['analysis_dir'])
+        
+    # setup_sliding_puzzle
+    if swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
+        setup_name = "setup_sliding_puzzle"
+        sliding_puzzle_ticks = [int(tick_unit) for tick_unit in swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_units']]
+        setups += [setup_name+"_"+str(tick) for tick in sliding_puzzle_ticks]
+        env.setup_sliding_puzzle(run=run,
+                                 setup_name=setup_name,
+                                 nb_repetitions=swarm_params['nb_repetitions'],
+                                 sliding_puzzle_ticks=sliding_puzzle_ticks,
+                                 sliding_puzzle_proba_move=swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'],
+                                 time_steps=swarm_params['time_steps'],
+                                 switch_step=swarm_params['switch_step'],
+                                 switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+                                 analysis_dir=swarm_params['analysis_dir'])
+        
+    # setup scalability
+    if swarm_params['setup_scalability']['setup_scalability_bool']:
+        setup_name = "setup_scalability"
+        rows = swarm_params['grid_nb_rows']
+        cols = swarm_params['grid_nb_cols']
+        scalability_ticks = [[rows, cols], [rows*2, cols*2], [rows*2, cols], [rows, cols*2], [int(rows/2), int(cols/2)], [int(rows/2), cols], [rows, int(cols/2)]]
+        setups += [setup_name+"_"+str(tick[0])+"x"+str(tick[1]) for tick in scalability_ticks]
+        swarmGrid.setup_scalability(run=run,
+                                    setup_name=setup_name,
+                                    nb_repetitions=swarm_params['nb_repetitions'],
+                                    scalability_ticks=scalability_ticks,
+                                    learning_mode=swarm_params['learning_mode'],
+                                    learning_with_noise_std=swarm_params['learning_with_noise_std'],
+                                    flag_pattern=swarm_params['flag_pattern'],
+                                    init_cell_state_value=swarm_params['init_cell_state_value'],
+                                    nn_controller=swarm_params['controller'],
+                                    agent_controller_weights=best_ind,
+                                    time_steps=swarm_params['time_steps'],
+                                    analysis_dir=swarm_params['analysis_dir'])
+
 
     swarm_params['setups'] = setups
 
@@ -146,7 +181,7 @@ if (__name__ == "__main__"):
         swarm_params = json.load(f)
 
     # Initializations
-    check_params_validity(params=swarm_params)
+    check_params_validity(grid_size=learning_params['grid_nb_rows']*learning_params['grid_nb_cols'], params=swarm_params)
     swarm_params = init_all_runs_analysis(learning_analysis_dir_root=learning_params['analysis_dir']['root'], params=swarm_params)
     swarm_params = copy_params_from_learning(learning_params=learning_params, swarm_params=swarm_params)
     best_ind_per_run_dict = get_best_ind_per_run_dict(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")

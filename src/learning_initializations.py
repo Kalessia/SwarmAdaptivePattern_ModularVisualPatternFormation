@@ -10,7 +10,8 @@ import random
 import csv
 
 from environments import flag_automata
-from nn import NeuralNetwork
+# from nn import NeuralNetwork
+from nn_test import NeuralNetwork
 
 
 ###########################################################################
@@ -68,7 +69,7 @@ def check_params_validity(params):
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
 
-    patterns = ['2_stripes', '3_stripes', 'centered_circle', 'not_centered_circle', 'centered_half_circle', 'not_centered_half_circle']
+    patterns = ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']
     if params['flag_pattern'] not in patterns:
         print(f"Error in learning_initializations.py - The flag_pattern parameter must be one of the following: {patterns}")
         exit_bool = True
@@ -83,12 +84,17 @@ def set_env(params):
 
     check_params_validity(params)
 
-    nn_controller = NeuralNetwork(nb_neuronsPerInputs=params['nb_neuronsPerInputs'],
-                                    nb_hiddenLayers=params['nb_hiddenLayers'],
-                                    nb_neuronsPerHidden=params['nb_neuronsPerHidden'],
-                                    nb_neuronsPerOutputs=params['nb_neuronsPerOutputs'])
-    ind_size = len(nn_controller.getWeightsList())
-    params['ind_size'] = ind_size
+    # nn_controller = NeuralNetwork(nb_neuronsPerInputs=params['nb_neuronsPerInputs'],
+    #                                 nb_hiddenLayers=params['nb_hiddenLayers'],
+    #                                 nb_neuronsPerHidden=params['nb_neuronsPerHidden'],
+    #                                 nb_neuronsPerOutputs=params['nb_neuronsPerOutputs'])
+    # ind_size = len(nn_controller.getWeightsList())
+
+    nn_controller = NeuralNetwork(input_size=params['nb_neuronsPerInputs'],
+                                  hidden_layers=params['hidden_layers'],
+                                  output_size=params['nb_neuronsPerOutputs'],
+                                  activation_function='tanh')
+    params['ind_size'] = nn_controller.weights_biases_size
 
     if params['nb_neuronsPerOutputs'] == 3: # Devert 2011 Expression function
         params['ind_size'] = params['ind_size'] + 4 # Devert 2011 Expression function

@@ -59,13 +59,13 @@ class NeuralNetwork:
         # We apply the same procedure to all the hidden layers.
         # NB. The first hidden layer will be linked with the input layer.
         cptLayers = 0
-        self.n_neuronsPreviousLayer = self.n_neuronsPerInputs + 1
+        self.n_neuronsPreviousLayer = self.n_neuronsPerInputs  #+1
         for layer in range(self.n_hiddenLayers):
             cptLayers += 1
             s = "Layer" + str(cptLayers)
             self.weights[s] = []
             for neuron in range(self.n_neuronsPerHidden):
-                self.weights[s].append([random.random() for i in range(self.n_neuronsPreviousLayer)])
+                self.weights[s].append([random.random() for i in range(self.n_neuronsPreviousLayer+1)]) #-1
             self.n_neuronsPreviousLayer = self.n_neuronsPerHidden
 
         # Output layers' weights : for every neuron on the output layer, we stock the weight 
@@ -75,7 +75,7 @@ class NeuralNetwork:
         self.weights[s] = []
         for neuron in range(self.n_neuronsPerOutputs):
             if self.n_hiddenLayers > 0 :   
-                self.weights[s].append([random.random() for i in range(self.n_neuronsPerHidden)])
+                self.weights[s].append([random.random() for i in range(self.n_neuronsPerHidden+1)]) #-1
             else:
                 self.weights[s].append([random.random() for i in range(self.n_neuronsPerInputs + 1)])
 
@@ -111,7 +111,7 @@ class NeuralNetwork:
         # print("original weights", len(self.getWeightsList()), self.getWeightsList())
         # print("tabWeights", len(tabWeights), tabWeights)
 
-        assert len(tabWeights) == len(self.getWeightsList()), "Debug: len(tabWeights)=" + str(len(tabWeights)) + " must be equal to len(self.weights)=" + str(len(self.getWeightsList()))
+        # assert len(tabWeights) == len(self.getWeightsList()), "Debug: len(tabWeights)=" + str(len(tabWeights)) + " must be equal to len(self.weights)=" + str(len(self.getWeightsList()))
 
         weightsDict = {}
         tabW = copy.deepcopy(tabWeights)
@@ -239,7 +239,7 @@ class NeuralNetwork:
         # for each layer in 'weights' (hidden + output):
         inputLayer = inputsNeuronsValues
         for l, layer in enumerate(self.weights.keys()): 
-            self.neurons[layer] = []        
+            self.neurons[layer] = []
             newInputLayer = [] 
 
             # computing the value of the neurons in the current layer, from  the input values
@@ -249,13 +249,20 @@ class NeuralNetwork:
                 
                 activation = self.neuronActivation(weightsNeuron, inputLayer) # sum(input_i * w_i) previous Layer
                 # print("nous somme en ", layer, ". Activation:", activation)
-                if l != (len(self.weights.keys()) - 1):
+
+
+                # if l != (len(self.weights.keys()) - 1): # restore line
+                if l != (len(self.weights.keys())):
                     self.neurons[layer].append(self.transferNeuronActivation_tanh(activation)) # activation function (sigmoid, tanh, ...)
                     newInputLayer.append(self.neurons[layer][-1])
                     # print("layer", layer, "activation", activation, "applying tanh", newInputLayer)
-                else: # last layer (outputs)
-                    self.neurons[layer].append(self.transferNeuronActivation_sig(activation)) # activation function (sigmoid, tanh, ...)
-                    newInputLayer.append(self.neurons[layer][-1])
+                
+                #restore
+                # else: # last layer (outputs)
+                #     self.neurons[layer].append(self.transferNeuronActivation_sig(activation)) # activation function (sigmoid, tanh, ...)
+                #     newInputLayer.append(self.neurons[layer][-1])
+
+
                     # print("layer", layer, "activation", activation, "applying sig", newInputLayer)
                 # print("input layer previous layer", layer, newInputLayer)
             inputLayer = newInputLayer

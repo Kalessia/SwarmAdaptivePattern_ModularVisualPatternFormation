@@ -1,6 +1,5 @@
 import os
 import time
-import shutil
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 
@@ -43,15 +42,15 @@ def init_all_runs_analysis(params):
 def init_one_run_analysis(run, params):
 
     # Create the data and plot directories tree from the 'analysis_dir' folder
-    params['analysis_dir']['data'] = params['analysis_dir']['root']+"/run_"+str(run)+"/data"
-    params['analysis_dir']['plots'] = params['analysis_dir']['root']+"/run_" + str(run) + "/plots"
+    params['analysis_dir']['data'] = params['analysis_dir']['root']+ f"/run_{run:03}/data"
+    params['analysis_dir']['plots'] = params['analysis_dir']['root']+ f"/run_{run:03}/plots"
     os.makedirs(params['analysis_dir']['data'], exist_ok=True)
     os.makedirs(params['analysis_dir']['plots'], exist_ok=True)
 
     # Create headers for files to update at each generation of each run
-    save_data_to_csv(params['analysis_dir']['data']+"/data_evo_run_"+str(run)+"_all_pop.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
-    save_data_to_csv(params['analysis_dir']['data']+"/data_evo_run_"+str(run)+"_best_inds_per_gen.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
-    save_data_to_csv(params['analysis_dir']['data']+"/data_evo_run_"+str(run)+"_best_inds_ever.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir']['data']+ f"/data_evo_run_{run:03}_all_pop.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir']['data']+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir']['data']+ f"/data_evo_run_{run:03}_best_inds_ever.csv", [], header = ["Run", "Generation", "Fitness", "Individual"])
 
     return params
 
@@ -66,20 +65,20 @@ def write_single_gen_data(run, gen, population, analysis_dir_data):
     data_all_pop = []
     for ind in population:
         data_all_pop.append([str(run), str(gen), str(ind.fitness.values[0]).strip(), str(ind).strip()])
-    save_data_to_csv(analysis_dir_data+"/data_evo_run_"+str(run)+"_all_pop.csv", data_all_pop)
+    save_data_to_csv(analysis_dir_data+ f"/data_evo_run_{run:03}_all_pop.csv", data_all_pop)
 
     # Save best individual data for this single gen. NB: 'max' is the best fitness, deap manages if 'max' is maximization or minimization
     best_ind = max(population, key=attrgetter("fitness"))
     data_best_ind = [[str(run), str(gen), str(best_ind.fitness.values[0]).strip(), str(best_ind).strip()]] #check
-    save_data_to_csv(analysis_dir_data+"/data_evo_run_"+str(run)+"_best_inds_per_gen.csv", data_best_ind)
+    save_data_to_csv(analysis_dir_data+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv", data_best_ind)
  
 #---------------------------------------------------
     
 def write_single_run_data(run, time_run, analysis_dir):
 
     # Save best ever individual data for this single run
-    dataset_path = analysis_dir['data']+"/data_evo_run_"+str(run)+"_best_inds_per_gen.csv"
-    save_best_inds_ever_filename =  analysis_dir['data']+"/data_evo_run_"+str(run)+"_best_inds_ever.csv"
+    dataset_path = analysis_dir['data']+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv"
+    save_best_inds_ever_filename =  analysis_dir['data']+ f"/data_evo_run_{run:03}_best_inds_ever.csv"
     save_best_ind_per_run_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
     write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename)
 
@@ -142,32 +141,32 @@ def plot_single_run_data(run, params):
 
     time_run = time.time()
     print(f"learning_analysis plots for the single run n.{run} - Started")
-    os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo", exist_ok=True)
-    os.makedirs(params['analysis_dir']['root']+"/run_"+str(run)+"/data/flags_best_inds_ever", exist_ok=True)
+    os.makedirs(params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo", exist_ok=True)
+    os.makedirs(params['analysis_dir']['root']+ f"/run_{run:03}/data/flags_best_inds_ever", exist_ok=True)
 
     # Plot_all_pop_fitnesses_boxplot
-    dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_all_pop.csv"
-    save_filename = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo/plot_evo_run_"+str(run)+"_all_pop_fitnesses_boxplot.png"
+    dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_all_pop.csv"
+    save_filename = params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo/plot_evo_run_{run:03}_all_pop_fitnesses_boxplot.png"
     plot_all_pop_fitnesses_boxplot(run, dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_best_inds_ever
-    dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
-    save_filename = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/evo/plot_evo_run_"+str(run)+"_best_inds_ever.png"
+    dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_best_inds_ever.csv"
+    save_filename = params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo/plot_evo_run_{run:03}_best_inds_ever.png"
     plot_best_inds_ever(dataset_path=dataset_path, save_filename=save_filename)
 
     # Plot_flag_from_file for best individuals ever in a defined range of steps
-    dataset_path = params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_evo_run_"+str(run)+"_best_inds_ever.csv"
+    dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_best_inds_ever.csv"
     # best_inds_ever_dataset = pd.read_csv(dataset_path)[-10:] # plot only the last 10 best_individuals performances
     best_inds_ever_dataset = pd.read_csv(dataset_path)
     time_steps = params['time_steps']
     time_window_start = params['time_window_start']
-    time_window_end = params['time_window_end'] # check min(params['time_steps'], params['time_window_end']) # check in initialization
+    time_window_end = params['time_window_end']
     steps = range(time_window_start, time_window_end)
 
-    for index in best_inds_ever_dataset.index: # for each best individual ever less the last one
+    for index in best_inds_ever_dataset.index: # for each best individual ever less the last one <--- perché ho scritto cio?
         gen = best_inds_ever_dataset.loc[index, 'Generation']
         ind = best_inds_ever_dataset.loc[index, 'Individual']
-        dataset = pd.read_csv(params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv")
+        dataset = pd.read_csv(params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv")
 
         dataset_gen = dataset.loc[(dataset.Generation==gen)]
         dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
@@ -196,19 +195,19 @@ def plot_single_run_data(run, params):
                                     flag=flag_list,
                                     fitness=fitness,
                                     deleted_pos=[],
-                                    analysis_dir_plots=params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env")
+                                    analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
             
                 if step == steps[0]:
-                    file_path = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env/run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+"/flag_individual.txt"
+                    file_path = params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}/flag_individual.txt"
                     if not os.path.exists(file_path):
                         with open (file_path, 'w') as f:
                             f.write(str(ind))
 
             data_env_flag.append([str(gen), str(step), str(fitness).strip(), str(time_window_zone).strip(), str(flag_list.tolist()).strip(), str(ind).strip()])
 
-        save_data_to_csv(params['analysis_dir']['root']+"/run_"+str(run)+"/data/flags_best_inds_ever/run_"+str(run)+"_gen_"+str(gen)+"_individual_"+str(nb_ind)+".csv", data_env_flag, header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
+        save_data_to_csv(params['analysis_dir']['root']+ f"/run_{run:03}/data/flags_best_inds_ever/run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}.csv", data_env_flag, header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
 
-        swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag/data_env_flag_run_"+str(run)+"_gen_"+str(gen)+".csv",
+        swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv",
                                                 setup_name=None,
                                                 time_window_start=time_window_start,
                                                 time_window_length=time_window_end - time_window_start + 1,
@@ -218,22 +217,22 @@ def plot_single_run_data(run, params):
                                                 n="",
                                                 gen=gen,
                                                 switch_step=None,
-                                                analysis_dir_plots=params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env")
+                                                analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
 
     # Animation of: plot all the flag steps of the last best individual ever
     if params['plot_with_animation_bool']:
-        dir = params['analysis_dir']['root']+"/run_"+str(run)+"/plots/env/"
+        dir = params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/"
         flag_last_best_ind_ever_dirs = os.listdir(dir)
         flag_last_best_ind_ever_dir = sorted(flag_last_best_ind_ever_dirs, key=get_gen_ind_from_file_name)[-1]
         images = sorted(os.listdir(dir+flag_last_best_ind_ever_dir+"/flag"))
         frames = np.stack([iio.imread(dir+flag_last_best_ind_ever_dir+"/flag/"+img) for img in images], axis = 0)
-        iio.mimwrite(dir+flag_last_best_ind_ever_dir+".gif", frames, format='GIF', duration=0.5*len(frames), subrectangles=True)
+        iio.mimwrite(dir+flag_last_best_ind_ever_dir+".gif", frames, format='GIF', duration=0.5, subrectangles=True)
         print(f"Animation for the single run n.{run} - Saved in {dir}")
 
-    # shutil.rmtree(params['analysis_dir']['root']+"/run_"+str(run)+"/data/data_env_flag")
+    # shutil.rmtree(params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag")
     time_run = time.time() - time_run
     print(f"learning_analysis plots for the single run n.{run} - Completed. Execution time: {time_run} seconds")
-    
+
 #---------------------------------------------------
 
 def get_gen_ind_from_file_name(file_name):
@@ -320,7 +319,7 @@ def plot_best_inds_ever(dataset_path, save_filename):
             generations.append(max_generation)
             best_fitnesses_ever.append(best_fitnesses_ever[-1])
 
-        plt.step(generations, best_fitnesses_ever, where='post', label='run '+str(run)) # plot
+        plt.step(generations, best_fitnesses_ever, where='post', label= f"run {run}") # plot
 
     plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.title("Fitnesses over generations\nbest individuals ever", fontsize=14)

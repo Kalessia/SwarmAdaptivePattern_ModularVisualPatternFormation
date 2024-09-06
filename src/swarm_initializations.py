@@ -10,7 +10,7 @@ from nn import NeuralNetwork
 # Environment initialization
 ###########################################################################
 
-def check_params_validity(params):
+def check_params_validity(grid_size, params):
 
     exit_bool = False
 
@@ -26,6 +26,8 @@ def check_params_validity(params):
 
     if params['setup_ind_consistency']['setup_ind_consistency_bool']:
         setup_ind_consistency_options = []
+        if params['setup_ind_consistency']['setup_ind_consistency_learning_conditions_bool']:
+            setup_ind_consistency_options.append("setup_ind_consistency_learning_conditions")
         if params['setup_ind_consistency']['setup_ind_consistency_random_init_states_bool']:
             setup_ind_consistency_options.append("setup_ind_consistency_random_init_states")
         if params['setup_ind_consistency']['setup_ind_consistency_random_async_update_states_bool']:
@@ -36,14 +38,37 @@ def check_params_validity(params):
         print(f"Error in swarm_initializations.py - Parameter setup_noise_std_ticks must be a list")
         exit_bool = True
 
-    if params['setup_permutation']['setup_permutation_bool'] and not isinstance(params['setup_permutation']['setup_permutation_ticks_percent'], list):
-        print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_percent must be a list")
-        exit_bool = True
+    if params['setup_permutation']['setup_permutation_bool']:
+        if not isinstance(params['setup_permutation']['setup_permutation_ticks_percent'], list):
+            print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_percent must be a list")
+            exit_bool = True
 
-    if params['setup_deletion']['setup_deletion_bool'] and not isinstance(params['setup_deletion']['setup_deletion_ticks_percent'], list):
-        print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_percent must be a list")
-        exit_bool = True
+        if params['setup_permutation']['setup_permutation_ticks_units'] is None:
+            permutation_ticks = [int(grid_size*tick_percent/100) for tick_percent in params['setup_permutation']['setup_permutation_ticks_percent']]
+        else:
+            permutation_ticks = [int(tick_unit) for tick_unit in params['setup_permutation']['setup_permutation_ticks_units']]
+        params['setup_permutation']['permutation_ticks'] = [val if val % 2 == 0 else val - 1 for val in permutation_ticks] # permutation_ticks must be even
 
+    if params['setup_deletion']['setup_deletion_bool']:
+        if not isinstance(params['setup_deletion']['setup_deletion_ticks_percent'], list):
+            print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_percent must be a list")
+            exit_bool = True
+
+        if params['setup_deletion']['setup_deletion_ticks_units'] is None:
+            params['setup_deletion']['deletion_ticks'] = [int(grid_size*tick_percent/100) for tick_percent in params['setup_deletion']['setup_deletion_ticks_percent']]
+        else:
+            params['setup_deletion']['deletion_ticks'] = [int(tick_unit) for tick_unit in params['setup_deletion']['setup_deletion_ticks_units']]
+
+    if params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
+        if not isinstance(params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_units'], list):
+            print(f"Error in swarm_initializations.py - Parameter setup_sliding_puzzle_ticks_units must be a list")
+            exit_bool = True
+        
+        params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'] = float(params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'])
+        if params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'] < 0.0 or params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'] > 1.0:
+            print(f"Error in swarm_initializations.py - Parameter setup_sliding_puzzle_proba_move must be in [0.0, 1.0]")
+            exit_bool = True
+    
     if exit_bool:
         print("learning_main stopped. Please correct the entry parameter in swarm_params.json before restart.")
         exit()
@@ -96,6 +121,8 @@ def copy_params_from_learning(learning_params, swarm_params):
     swarm_params['grid_nb_rows'] = learning_params['grid_nb_rows']
     swarm_params['grid_nb_cols'] = learning_params['grid_nb_cols']
     swarm_params['init_cell_state_value'] = learning_params['init_cell_state_value']
+    swarm_params['flag_pattern'] = learning_params['flag_pattern']
+
 
     swarm_params['controller'] = NeuralNetwork(nb_neuronsPerInputs=learning_params['nb_neuronsPerInputs'],
                                         nb_hiddenLayers=learning_params['nb_hiddenLayers'],

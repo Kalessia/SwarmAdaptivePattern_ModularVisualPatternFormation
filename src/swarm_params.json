@@ -1,7 +1,7 @@
 {
     "nb_runs": 1,
 
-    "nb_repetitions": 3,
+    "nb_repetitions": 5,
     "time_steps": 200,
     "switch_step": 100,
     "switch_step_with_reset_env_bool": true,
@@ -10,6 +10,7 @@
     "setup_ind_consistency info": "",
     "setup_ind_consistency": {
         "setup_ind_consistency_bool": true,
+        "setup_ind_consistency_learning_conditions_bool": true,
         "setup_ind_consistency_random_init_states_bool": true,
         "setup_ind_consistency_random_async_update_states_bool": true
     },
@@ -20,16 +21,30 @@
         "setup_noise_std_ticks": [1.0e-1, 1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5]
     },
 
-    "setup_permutation info": "percent",
+    "setup_permutation info": "if units defined (!= null), percent ignored",
     "setup_permutation": {
         "setup_permutation_bool": true,
-        "setup_permutation_ticks_percent": [20, 50]
+        "setup_permutation_ticks_units": null,
+        "setup_permutation_ticks_percent": [1, 2, 3, 4, 5, 10]
     },
 
     "setup_deletion info": "",
     "setup_deletion": {
         "setup_deletion_bool": true,
+        "setup_deletion_ticks_units": [1, 2, 3, 4, 5, 10, 20, 30],
         "setup_deletion_ticks_percent": [1, 2, 3, 4, 5, 10]
+    },
+
+    "setup_sliding_puzzle info": "",
+    "setup_sliding_puzzle": {
+        "setup_sliding_puzzle_bool": true,
+        "setup_sliding_puzzle_ticks_units": [1, 2, 5, 10, 20],
+        "setup_sliding_puzzle_proba_move": 0.2
+    },
+
+    "setup_scalability info": "",
+    "setup_scalability": {
+        "setup_scalability_bool": true
     },
 
     "verbose_debug": true,
