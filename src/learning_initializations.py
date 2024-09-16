@@ -10,8 +10,7 @@ import random
 import csv
 
 from environments import flag_automata
-# from nn import NeuralNetwork
-from nn_test import NeuralNetwork
+from nn import NeuralNetwork
 
 
 ###########################################################################
