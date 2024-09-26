@@ -9,7 +9,7 @@ import random
 
 import csv
 
-from environments import flag_automata
+from environments import flag_automata, sliding_puzzle_incremental
 from nn import NeuralNetwork
 
 
@@ -21,61 +21,83 @@ def check_params_validity(params):
 
     exit_bool = False
 
-    params['nb_runs'] = int(params['nb_runs'])
-    params['nb_generations'] = int(params['nb_generations'])
-    params['grid_nb_rows'] = int(params['grid_nb_rows'])
-    params['grid_nb_cols'] = int(params['grid_nb_cols'])
-    params['time_steps'] = int(params['time_steps'])
-    params['time_window_start'] = int(params['time_window_start'])
-    params['time_window_end'] = int(params['time_window_end'])
-    params['nb_neuronsPerInputs'] = int(params['nb_neuronsPerInputs'])
-    params['nb_hiddenLayers'] = int(params['nb_hiddenLayers'])
-    params['nb_neuronsPerHidden'] = int(params['nb_neuronsPerHidden'])
-    params['nb_neuronsPerOutputs'] = int(params['nb_neuronsPerOutputs'])
-    params['with_parallelization_nb_free_cores'] = int(params['with_parallelization_nb_free_cores'])
+    params['evolutionary_settings']['nb_runs'] = int(params['evolutionary_settings']['nb_runs'])
+    params['evolutionary_settings']['nb_evals'] = int(params['evolutionary_settings']['nb_evals'])
 
-    learning_modes = ["learning_random_async_update_states_bool", "learning_random_init_states_bool", "learning_with_noise_bool"]
-    params['learning_mode'] = [learning_mode for learning_mode in learning_modes if params[learning_mode] == True]
+    if params['evolutionary_settings']['nb_runs'] <= 0 or params['grid']['grid_nb_rows'] <= 0 or params['grid']['grid_nb_cols'] <= 0 \
+        or params['nn_controller']['nb_neuronsPerInputs'] <= 0 or params['nn_controller']['nb_neuronsPerOutputs'] <= 0 or params['environment']['time_steps'] <= 0:
+        print(f"Error in learning_initializations.py - Parameters nb_runs, grid_nb_rows, grid_nb_cols, nb_neuronsPerInputs, nb_neuronsPerOutputs and time_steps must be > 0")
+        exit_bool = True
+    
+    if params['evolutionary_settings']['env_name'] != "sliding_puzzle_incremental":
+        params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = None # used in learning_analysis.py to plot the switch eval line (setups delimiter)
 
-    if "learning_with_noise_bool" not in params['learning_mode']: # add check on noise_std
-        params['learning_with_noise_std'] = None
+    #---------------------------------------------------
 
-    if params['nb_runs'] <= 0 or params['nb_generations'] <= 0 or params['grid_nb_rows'] <= 0 or params['grid_nb_cols'] <= 0 \
-        or params['nb_neuronsPerInputs'] <= 0 or params['nb_neuronsPerHidden'] <= 0 or params['nb_neuronsPerOutputs'] <= 0 or params['time_steps'] <= 0:
-        print(f"Error in learning_initializations.py - Parameters nb_runs, nb_generations, grid_nb_rows, grid_nb_cols, nb_neuronsPerInputs, nb_neuronsPerHidden, nb_neuronsPerOutputs and time_steps must be > 0")
+    params['nn_controller']['nb_neuronsPerInputs'] = int(params['nn_controller']['nb_neuronsPerInputs'])
+    params['nn_controller']['nb_neuronsPerOutputs'] = int(params['nn_controller']['nb_neuronsPerOutputs'])
+    
+    if not isinstance( params['nn_controller']['hidden_layers'], list):
+        print(f"Error in learning_initializations.py - Parameter hidden_layers must be a list")
         exit_bool = True
 
-    if params['nb_hiddenLayers'] < 0 or params['with_parallelization_nb_free_cores'] < 0:
-        print(f"Error in learning_initializations.py - Parameters nb_hiddenLayers and with_parallelization_nb_free_cores must be >= 0")
-        exit_bool = True
+    #---------------------------------------------------
 
-    if params['init_cell_state_value'] is not None:
-        params['init_cell_state_value'] = float(params['init_cell_state_value'])
-        if params['init_cell_state_value'] < 0.0 or params['init_cell_state_value'] > 1.0:
+    params['grid']['grid_nb_rows'] = int(params['grid']['grid_nb_rows'])
+    params['grid']['grid_nb_cols'] = int(params['grid']['grid_nb_cols'])
+
+    if params['grid']['init_cell_state_value'] is not None:
+        params['grid']['init_cell_state_value'] = float(params['grid']['init_cell_state_value'])
+        if params['grid']['init_cell_state_value'] < 0.0 or params['grid']['init_cell_state_value'] > 1.0:
             print(f"Error in learning_initializations.py - Parameter init_cell_state_value must be in [0.0, 1.0]")
             exit_bool = True
 
-    if params['time_window_start'] < 0 or params['time_window_start'] >= params['time_steps']:
-        print(f"Error in learning_initializations.py - The time_window_start parameter value must be in [0,{params['time_steps']}[")
+    #---------------------------------------------------
+
+    params['environment']['time_steps'] = int(params['environment']['time_steps'])
+    params['environment']['time_window_start'] = int(params['environment']['time_window_start'])
+    params['environment']['time_window_end'] = int(params['environment']['time_window_end'])
+
+    if params['environment']['time_window_start'] < 0 or params['environment']['time_window_start'] >= params['environment']['time_steps']:
+        print(f"Error in learning_initializations.py - The time_window_start parameter value must be in [0,{params['environment']['time_steps']}[")
         exit_bool = True
 
-    if params['time_window_end'] < 0 or params['time_window_end'] <= params['time_window_start'] or params['time_window_end'] > params['time_steps']:
-        print(f"Error in learning_initializations.py - The time_window_end parameter value must be in ]{params['time_window_start']},{params['time_steps']}]")
+    if params['environment']['time_window_end'] < 0 or params['environment']['time_window_end'] <= params['environment']['time_window_start'] or params['environment']['time_window_end'] > params['environment']['time_steps']:
+        print(f"Error in learning_initializations.py - The time_window_end parameter value must be in ]{params['environment']['time_window_start']},{params['environment']['time_steps']}]")
         exit_bool = True
 
-    patterns = ['flag_automata']
-    if params['env_name'] not in patterns:
+    #---------------------------------------------------
+
+    params['learning_modes'] = [learning_option for learning_option in params['learning_options'].keys() if params['learning_options'][learning_option][f"{learning_option}_bool"] == True]
+
+    if "learning_with_noise" not in params['learning_modes']:
+        params['learning_options']['learning_with_noise']['learning_with_noise_std'] = None
+
+    #---------------------------------------------------
+
+    params['with_parallelization_nb_free_cores'] = int(params['with_parallelization_nb_free_cores'])
+
+    if params['with_parallelization_nb_free_cores'] < 0:
+        params['with_parallelization_nb_free_cores'] = 0
+
+    #---------------------------------------------------
+
+    patterns = ['flag_automata', 'sliding_puzzle_incremental']
+    if params['evolutionary_settings']['env_name'] not in patterns:
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
 
     patterns = ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']
-    if params['flag_pattern'] not in patterns:
+    if params['grid']['flag_pattern'] not in patterns:
         print(f"Error in learning_initializations.py - The flag_pattern parameter must be one of the following: {patterns}")
         exit_bool = True
+
+    #---------------------------------------------------
 
     if exit_bool:
         print("learning_main stopped. Please correct the entry parameter in learning_params.json before restart.")
         exit()
+
 
 #---------------------------------------------------
 
@@ -83,48 +105,65 @@ def set_env(params):
 
     check_params_validity(params)
 
-    # nn_controller = NeuralNetwork(nb_neuronsPerInputs=params['nb_neuronsPerInputs'],
-    #                                 nb_hiddenLayers=params['nb_hiddenLayers'],
-    #                                 nb_neuronsPerHidden=params['nb_neuronsPerHidden'],
-    #                                 nb_neuronsPerOutputs=params['nb_neuronsPerOutputs'])
-    # ind_size = len(nn_controller.getWeightsList())
-
-    nn_controller = NeuralNetwork(input_size=params['nb_neuronsPerInputs'],
-                                  hidden_layers=params['hidden_layers'],
-                                  output_size=params['nb_neuronsPerOutputs'],
+    nn_controller = NeuralNetwork(input_size=params['nn_controller']['nb_neuronsPerInputs'],
+                                  hidden_layers=params['nn_controller']['hidden_layers'],
+                                  output_size=params['nn_controller']['nb_neuronsPerOutputs'],
                                   activation_function='tanh')
-    params['ind_size'] = nn_controller.weights_biases_size
+    params['evolutionary_settings']['ind_size'] = nn_controller.weights_biases_size
 
-    if params['nb_neuronsPerOutputs'] == 3: # Devert 2011 Expression function
-        params['ind_size'] = params['ind_size'] + 4 # Devert 2011 Expression function
+    if params['nn_controller']['nb_neuronsPerOutputs'] == 3: # Devert 2011
+        params['evolutionary_settings']['ind_size'] = params['evolutionary_settings']['ind_size'] + 4 # Devert 2011 +4 weights for the Expression function
 
     environments = {
         'flag_automata': {
             'eval_function': flag_automata, 
             'eval_function_params': {
-                'grid_nb_rows': params['grid_nb_rows'], 
-                'grid_nb_cols': params['grid_nb_cols'],
-                'flag_pattern': params['flag_pattern'],
+                'grid_nb_rows': params['grid']['grid_nb_rows'],
+                'grid_nb_cols': params['grid']['grid_nb_cols'],
+                'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
-                'init_cell_state_value': params['init_cell_state_value'],
+                'init_cell_state_value': params['grid']['init_cell_state_value'],
                 'controller': nn_controller,
-                'time_steps': params['time_steps'],
-                'time_window_start': params['time_window_start'],
-                'time_window_end': params['time_window_end'],
-                'learning_mode': params['learning_mode'],
-                'noise_std': params['learning_with_noise_std'],
+                'time_steps': params['environment']['time_steps'],
+                'time_window_start': params['environment']['time_window_start'],
+                'time_window_end': params['environment']['time_window_end'],
+                'learning_modes': params['learning_modes'],
+                'noise_std': params['learning_options']['learning_with_noise']['learning_with_noise_std'],
                 'verbose_debug': params['verbose_debug'],
                 'analysis_dir': params['analysis_dir']
             },
             'env_boundaries': None,
             'toolbox_cmaes': {
-                'centroid': list(np.random.uniform(params['ind_min_value'], params['ind_max_value'], params['ind_size'])),
+                'centroid': list(np.random.uniform(-4, 4, params['evolutionary_settings']['ind_size'])),
+                'sigma': 0.5
+            }
+        },
+        'sliding_puzzle_incremental': {
+            'eval_function': sliding_puzzle_incremental,
+            'eval_function_params': {
+                'grid_nb_rows': params['grid']['grid_nb_rows'],
+                'grid_nb_cols': params['grid']['grid_nb_cols'],
+                'flag_pattern': params['grid']['flag_pattern'],
+                'flag_target': None,
+                'init_cell_state_value': params['grid']['init_cell_state_value'],
+                'controller': nn_controller,
+                'time_steps': params['environment']['time_steps'],
+                'time_window_start': params['environment']['time_window_start'],
+                'time_window_end': params['environment']['time_window_end'],
+                'learning_modes': params['learning_modes'],
+                'noise_std': params['learning_options']['learning_with_noise']['learning_with_noise_std'],
+                'verbose_debug': params['verbose_debug'],
+                'analysis_dir': params['analysis_dir']
+            },
+            'env_boundaries': None,
+            'toolbox_cmaes': {
+                'centroid': list(np.random.uniform(-4, 4, params['evolutionary_settings']['ind_size'])),
                 'sigma': 0.5
             }
         }
     }
 
-    params['env'] = environments[params['env_name']]
+    params['env'] = environments[params['evolutionary_settings']['env_name']]
     return params
 
 

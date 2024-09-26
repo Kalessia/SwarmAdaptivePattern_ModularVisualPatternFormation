@@ -1,40 +1,56 @@
 {
-    "nb_runs": 2,
-    "nb_generations": 40,
- 
-    "env_name": "flag_automata",
+    "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process.",
+    "evolutionary_settings": {
+        "nb_runs": 2,
+        "nb_evals": 120,
+        "env_name info": "env_name in ['flag_automata', 'sliding_puzzle_incremental']",   
+        "env_name": "sliding_puzzle_incremental",
+        "sliding_puzzle_incremental": {
+            "sliding_puzzle_incremental info": "Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions[1] in the 2nd. The switch generation is deducted from 'switch_eval'.",
+            "sliding_puzzle_incremental_switch_eval": 150,
+            "sliding_puzzle_incremental_nb_deletions": [1, 50],
+            "sliding_puzzle_incremental_proba_move": 0.2
+        }
+    },
 
-    "ind_min_value": -1,
-    "ind_max_value": 1,
+    "nn_controller info": "The agent's controller is a forward neural network. 'nb_neuronsPerInputs' is >= 4. 'hidden_layers' lists the nb of neurons per hidden layer. One biais neuron is added to the input and each hidden layer. Weights (individual) values are in ]-inf, +inf[",
+    "nn_controller": {
+        "nb_neuronsPerInputs": 4,
+        "hidden_layers": [2],
+        "nb_neuronsPerOutputs": 2
+    },
 
-    "": "il biais sulle entree sara aggiunto dal nn, no biais su hidden. Check hidden layers. nb_neuronsPerInputs >=4",
-    "nb_neuronsPerInputs": 4,
-    "nb_hiddenLayers": 0,
-    "hidden_layers": [2],
-    "nb_neuronsPerHidden": 1,
-    "nb_neuronsPerOutputs": 2,
+    "grid info": "flag_patterns in ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']. Set init_cell_state_value as a scalar or null (random).",
+    "grid": {
+        "flag_pattern": "two_bands",
+        "grid_nb_rows": 10,
+        "grid_nb_cols": 10,
+        "init_cell_state_value": 0.0
+    },
 
-    "flag_pattern info": "available flag_patterns are ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']",
-    "flag_pattern": "two_bands",
-    "grid_nb_rows": 10,
-    "grid_nb_cols": 10,
-    
-    "time_steps": 50,
-    "time_window_start": 30,
-    "time_window_end": 50,
+    "environment info": "Time step is the total length of the development flag task. Time window is the interval of steps where we compute the mean of each step fitness. Time window is in [time_window_start (step), time_window_end (step)].",
+    "environment": {
+        "time_steps": 50,
+        "time_window_start": 30,
+        "time_window_end": 50
+    },
 
-    "init_cell_state_value info": "null (random), 0.0...",
-    "init_cell_state_value": 0.0,
-
-    "learning_random_async_update_states_bool info": "agent's states update management. false: agents are chosen in random grid-positions order, and the updated state value of a chosen agent is used to compute the state of a not yet updated neighbor (realistic robotic setup). true: in grid-positions order, each agent computes its new state using pre-updated neighbors state values, then all new agents states are updated synchronously. In both options, all agents states are updated.",
-    "learning_random_async_update_states_bool": false,
-
-    "learning_random_init_states_bool info": "true: the initial state of each agent is a list of random values (normal distribution in [0,1[ ). false: the initial state of each agent is a fixed vector of init_cell_state_value",
-    "learning_random_init_states_bool": false,
-
-    "learning_with_noise_bool info": "Each time a new agent state is computed, a noise N(0, learning_with_noise_std, len_state) is added to its value",
-    "learning_with_noise_bool": false,
-    "learning_with_noise_std": 1.0e-5,
+    "learning_options info": "learning_options in ['learning_random_async_update_states', 'learning_random_init_states', 'learning_with_noise']",
+    "learning_options": {
+        "learning_random_async_update_states": {
+            "learning_random_async_update_states info": "false: agents states are updated in random grid-positions order and asynchronous time, meaning that the updated state value of a chosen agent is used to compute the state of a not yet updated neighbor (realistic robotic setup). true: in grid-positions order, each agent computes its new state using pre-update neighbors state values, then all new agents states are updated synchronously. In both options, all agents states are updated.",
+            "learning_random_async_update_states_bool": false
+        },
+        "learning_random_init_states": {
+            "learning_random_init_states info": "false: the initial state of each agent is a fixed vector of init_cell_state_value. true: the initial state of each agent is a list of random values (normal distribution in [0,1[ ).",
+            "learning_random_init_states_bool": false
+        },
+        "learning_with_noise": {
+            "learning_with_noise info": "Each newly computed agent' state is perturbed by a noise N(0, learning_with_noise_std, len_state)",
+            "learning_with_noise_bool": false,
+            "learning_with_noise_std": 1.0e-5
+        }
+    },
 
     "verbose_debug": false,
 

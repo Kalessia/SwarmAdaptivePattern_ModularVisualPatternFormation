@@ -16,23 +16,36 @@ from matplotlib.colors import ListedColormap
 verbose_debug = False
 verbose_str = ""
 
+env = None
 
-def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, verbose_debug_bool, analysis_dir):
+###########################################################################
+# Activation functions
+###########################################################################
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+
+def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, verbose_debug_bool, analysis_dir):
     
-    global verbose_debug
+    global verbose_debug, env
 
     verbose_debug = verbose_debug_bool
     with open(analysis_dir['root']+"/verbose_debug.txt", 'w') as f: # to replace or erase eventual previous existing content in verbose_debug.txt
         f.write(verbose_str)
 
-    env = swarmGrid(grid_nb_rows=grid_nb_rows,
-                    grid_nb_cols=grid_nb_cols,
-                    learning_mode=learning_mode,
-                    learning_with_noise_std=learning_with_noise_std,
-                    flag_pattern=flag_pattern,
-                    flag_target=flag_target,
-                    init_cell_state_value=init_cell_state_value,
-                    nn_controller=nn_controller)
+    if env is None:
+        env = swarmGrid(grid_nb_rows=grid_nb_rows,
+                        grid_nb_cols=grid_nb_cols,
+                        learning_modes=learning_modes,
+                        learning_with_noise_std=learning_with_noise_std,
+                        flag_pattern=flag_pattern,
+                        flag_target=flag_target,
+                        init_cell_state_value=init_cell_state_value,
+                        nn_controller=nn_controller)
+    
+    env.write_flag_target_data(analysis_dir) # check emplacement
     
     # Some genomes could have 2 components, one dedicated to the controller NN and one for other purpose. Ex: in Devert 2011, 4 weights are required for the expression function
     agent_additional_weights = None
@@ -132,7 +145,7 @@ class agent1Output(swarmAgent):
 
     def get_phenotype(self):
         state = super().get_state()
-        return state[0] # float
+        return sigmoid(state[0]) # float
 
 
 ###########################################################################
@@ -169,7 +182,7 @@ class agent2Outputs(swarmAgent):
 
     def get_phenotype(self):
         state = super().get_state()
-        return state[1] # float
+        return sigmoid(state[1]) # float
     
 
 ###########################################################################
@@ -230,7 +243,7 @@ class agent3Outputs_Devert2011(swarmAgent):
 # Learning evaluation function
 ###########################################################################
 
-def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, weights):
+def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions=None, sliding_puzzle_proba_move=None):
     time_steps = env_eval_function_params['time_steps']
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
@@ -240,22 +253,22 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
     flags = []
 
     init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
-    if "learning_random_init_states_bool" in env_eval_function_params['learning_mode']: # if this bool is True, init_cell_state_value is ignored
+    if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
         init_cell_state_value = None # None = random state initialization
 
     random_async_update_bool = False
-    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_mode']:
+    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_modes']:
         random_async_update_bool = True
 
     with_noise_bool = False
     noise_std = None
-    if "learning_with_noise_bool" in env_eval_function_params['learning_mode']:
+    if "learning_with_noise_bool" in env_eval_function_params['learning_modes']:
         with_noise_bool = True
         noise_std = env_eval_function_params['noise_std']
 
     env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
                              grid_nb_cols=env_eval_function_params['grid_nb_cols'],
-                             learning_mode=[],
+                             learning_modes=[],
                              learning_with_noise_std=None,
                              flag_pattern=env_eval_function_params['flag_pattern'],
                              flag_target=env_eval_function_params['flag_target'],
@@ -287,7 +300,91 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
         
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, analysis_dir=analysis_dir)
+        env.write_flag_data_learning(run=run, gen=gen, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, analysis_dir=analysis_dir)
+
+    return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
+
+#---------------------------------------------------
+
+def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
+    global verbose_str
+    
+    time_steps = env_eval_function_params['time_steps']
+    time_window_start = env_eval_function_params['time_window_start']
+    time_window_end = env_eval_function_params['time_window_end']
+
+    init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
+    if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
+        init_cell_state_value = None # None = random state initialization
+
+    random_async_update_bool = False
+    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_modes']:
+        random_async_update_bool = True
+
+    with_noise_bool = False
+    noise_std = None
+    if "learning_with_noise_bool" in env_eval_function_params['learning_modes']:
+        with_noise_bool = True
+        noise_std = env_eval_function_params['noise_std']
+
+    env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
+                             grid_nb_cols=env_eval_function_params['grid_nb_cols'],
+                             learning_modes=[],
+                             learning_with_noise_std=None,
+                             flag_pattern=env_eval_function_params['flag_pattern'],
+                             flag_target=env_eval_function_params['flag_target'],
+                             init_cell_state_value=init_cell_state_value,
+                             nn_controller=env_eval_function_params['controller'],
+                             agent_controller_weights=weights,
+                             verbose_debug_bool=env_eval_function_params['verbose_debug'],
+                             analysis_dir=env_eval_function_params['analysis_dir'])
+
+    #self.init_agents_state() # fait at init env
+
+    in_t_window_zone_bools = []
+    flags = []
+
+    flags_distance = 0.0
+    sum_flags_distances = 0.0
+    flags_distances = []
+
+    agents_to_delete = []
+    deleted_agents_per_step = []
+
+    agents = env.get_agents()
+    agents_to_delete = random.sample(agents, sliding_puzzle_nb_deletions)
+    deleted_map_pos_agent = env.delete_agent(agents_to_delete=agents_to_delete)
+
+    for step in range(time_steps):
+        in_t_window_zone_bool = False
+        flag = env.get_flag_from_grid()
+        flags.append(env.convert_flag_to_list(flag))
+        flags_distance = env.eval_flags_distance(flag) #check
+        deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+        
+        if step >= time_window_start and step <= time_window_end:
+            in_t_window_zone_bool = True
+            sum_flags_distances += flags_distance
+
+        flags_distances.append(flags_distance)
+        in_t_window_zone_bools.append(in_t_window_zone_bool)
+
+        env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
+                                                    sliding_puzzle_proba_move=sliding_puzzle_proba_move,
+                                                    with_noise_bool=with_noise_bool,
+                                                    noise_std=noise_std)
+
+    mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
+    if mean_tw_flags_distances < best_fit:
+        env.write_flag_data_learning(run=run, gen=gen, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
+        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
+
+    # Restore original grid
+    env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent) # i have a new grid each time?
+
+    with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+        f.write(verbose_str)
+        verbose_str = ""
 
     return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
 
@@ -297,7 +394,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, best_fit, we
 ###########################################################################
 
 class swarmGrid:
-    def __init__(self, grid_nb_rows, grid_nb_cols, learning_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller) -> None:
+    def __init__(self, grid_nb_rows, grid_nb_cols, learning_modes, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller) -> None:
       
         self.grid_nb_rows = grid_nb_rows
         self.grid_nb_cols = grid_nb_cols
@@ -316,8 +413,8 @@ class swarmGrid:
             self.agent_type = agent3Outputs_Devert2011
 
         # parameters useful in the swarm application, to restore learning initialization parameters 
-        self.learning_random_async_update_states_bool = True if "learning_random_async_update_states_bool" in learning_mode else False
-        self.learning_with_noise_bool = True if "learning_with_noise_bool" in learning_mode else False
+        self.learning_random_async_update_states_bool = True if "learning_random_async_update_states_bool" in learning_modes else False
+        self.learning_with_noise_bool = True if "learning_with_noise_bool" in learning_modes else False
         self.learning_with_noise_std = learning_with_noise_std
         
         self.default_missing_neighbor_state = 0.0
@@ -331,7 +428,7 @@ class swarmGrid:
         
     #---------------------------------------------------
 
-    def set_agent_controller_weights(self, agent_controller_weights, agent_additional_weights=None, ):
+    def set_agent_controller_weights(self, agent_controller_weights, agent_additional_weights=None):
         self.agent_controller_weights = agent_controller_weights
         # self.agent_controller.setWeightsFromList(agent_controller_weights)
         self.agent_controller.set_weights_biases_vectors_from_list(agent_controller_weights)
@@ -638,7 +735,7 @@ class swarmGrid:
                           noise_std=noise_std)
             
             # Save flags for this run
-            self.write_flag_data(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
+            self.write_flag_data_swarm(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
 
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -673,7 +770,7 @@ class swarmGrid:
                               noise_std=noise_std)
                 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
         
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -721,7 +818,7 @@ class swarmGrid:
                               noise_std=noise_std)
 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=permutated_agents_per_step, deleted_agents_per_step=[], analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=permutated_agents_per_step, deleted_agents_per_step=[], analysis_dir=analysis_dir)
 
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -765,7 +862,7 @@ class swarmGrid:
                               noise_std=noise_std)
                 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
             
                 # Restore original grid
                 self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
@@ -815,7 +912,7 @@ class swarmGrid:
                                                                 noise_std=noise_std)
 
                 # Save flags for this run
-                self.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
             
                 # Restore original grid
                 self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
@@ -827,7 +924,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def setup_scalability(run, setup_name, nb_repetitions, scalability_ticks, learning_mode, learning_with_noise_std, flag_pattern, init_cell_state_value, nn_controller,
+    def setup_scalability(run, setup_name, nb_repetitions, scalability_ticks, learning_modes, learning_with_noise_std, flag_pattern, init_cell_state_value, nn_controller,
                          agent_controller_weights, time_steps, analysis_dir):
 
         global verbose_str
@@ -839,7 +936,7 @@ class swarmGrid:
                 # Grid creation with a new size
                 new_env = init_swarmGrid_env(grid_nb_rows=tick[0],
                                         grid_nb_cols=tick[1],
-                                        learning_mode=learning_mode,
+                                        learning_modes=learning_modes,
                                         learning_with_noise_std=learning_with_noise_std,
                                         flag_pattern=flag_pattern,
                                         flag_target=None,
@@ -864,7 +961,7 @@ class swarmGrid:
                             noise_std=noise_std)
                 
                 # Save flags for this run
-                new_env.write_flag_data(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
+                new_env.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
 
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -960,40 +1057,45 @@ class swarmGrid:
 
     #---------------------------------------------------
     
-    def write_flag_data_learning(self, run, gen, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, analysis_dir):
+    def write_flag_target_data(self, analysis_dir):
 
         from learning_initializations import save_data_to_csv
 
-        if run == 0 and gen == 0 and not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")): # os.path.exists test is not enough with parallelization
+        if not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")):
             save_data_to_csv(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.flag_target).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
-        
-        if not (os.path.exists(analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv")):
-            os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
-            os.makedirs(analysis_dir['data']+"/data_env_pogobots_controllers/", exist_ok=True)
-            save_data_to_csv(analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv", [], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])    
 
-        # Write this agent controller in a pogobots implementation format 
-        nb_ind = 0
-        file_path = analysis_dir['data']+ f"/data_env_pogobots_controllers/data_env_individual_controller_pogobots_run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}.txt"
-        while os.path.exists(file_path):
-            nb_ind += 1
-            file_path = analysis_dir['data']+ f"/data_env_pogobots_controllers/data_env_individual_controller_pogobots_run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}.txt"
-        with open (file_path, 'w') as f:
-            s = self.agent_controller.get_weights_biases_for_pogobots()
-            if self.agent_additional_weights:
-                s += f"const double additional_weights[] = {(str(self.agent_additional_weights).replace('[','{')).replace(']','}')};\n"
-            s += f"#define {self.agent_type}"
-            f.write(s)
+    #---------------------------------------------------
+    
+    def write_flag_data_learning(self, run, gen, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, deleted_agents_per_step, analysis_dir):
+
+        from learning_initializations import save_data_to_csv
+
+        file_path = analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv"
+        if not (os.path.exists(file_path)):
+            os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
+            save_data_to_csv(file_path, [], header = ["Generation", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual", "Deleted_agents_positions"])
 
         data_env_flag = []
         for step in range(time_steps):
-            data_env_flag.append([str(gen), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip()])
+            data_env_flag.append([str(gen), str(nb_ind), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip(), str(deleted_agents_per_step[step]).strip()])
 
-        save_data_to_csv(analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv", data_env_flag)
+        save_data_to_csv(file_path, data_env_flag)
+
+    #---------------------------------------------------
+        
+    def write_controller_data_for_pogobots(self, run, gen, nb_ind, analysis_file):
+        
+        with open (analysis_file, 'w') as f:
+            s = f"// flagAutomata individual controller run {run:03}, gen {gen:03}, nb_ind {nb_ind:03}\n"
+            s += self.agent_controller.get_weights_biases_for_pogobots()
+            if self.agent_additional_weights:
+                s += f"const double additional_weights[] = {(str(self.agent_additional_weights).replace('[','{')).replace(']','}')};\n"
+            s += f"#define {self.agent_type.__name__}"
+            f.write(s)
 
     #---------------------------------------------------
 
-    def write_flag_data(self, setup_name, run, n, time_steps, flags, permutated_agents_per_step, deleted_agents_per_step, analysis_dir):
+    def write_flag_data_swarm(self, setup_name, run, n, time_steps, flags, permutated_agents_per_step, deleted_agents_per_step, analysis_dir):
 
         from learning_initializations import save_data_to_csv
 

@@ -1,6 +1,5 @@
 {
     "nb_runs": 1,
-
     "nb_repetitions": 5,
     "time_steps": 200,
     "switch_step": 100,

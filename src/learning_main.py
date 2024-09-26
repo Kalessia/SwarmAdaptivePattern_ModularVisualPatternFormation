@@ -21,9 +21,24 @@ def cmaES_EvoAlgorithm(run, learning_params):
     learning_params = init_one_run_analysis(run, learning_params)
     toolbox = init_toolbox(learning_params)
     best_fit = np.inf
+    gen = -1
+    nb_eval = 0
+    sliding_puzzle_nb_deletions = None
+    sliding_puzzle_proba_move = None
 
     # Main evolutionary loop
-    for gen in range(learning_params['nb_generations']):
+    while(nb_eval < learning_params['evolutionary_settings']['nb_evals']): # while the max budjet of allowed evaluations is not reached
+
+        gen += 1 # each while iteration is a new evolutionary generation
+        nb_evals = []
+
+        # In case of sliding_puzzle incremental learning, we switch from the 1st to the 2nd setup
+        if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
+            sliding_puzzle_incremental_nb_deletions = learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions']
+            sliding_puzzle_nb_deletions = sliding_puzzle_incremental_nb_deletions[0]
+            sliding_puzzle_proba_move = learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move']
+            if nb_eval >= learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval']:
+                sliding_puzzle_nb_deletions = sliding_puzzle_incremental_nb_deletions[1]
 
         # DEAP CMAES
         # To control the stopping criteria: while not any(conditions.values())
@@ -31,18 +46,22 @@ def cmaES_EvoAlgorithm(run, learning_params):
         # http://deap.gel.ulaval.ca/doc/default/examples/eda.html
 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
+        len_pop = len(population)
 
-        eval_results = toolbox.map(toolbox.evaluate, [run]*len(population), [gen]*len(population), [best_fit]*len(population), population)
+        eval_results = toolbox.map(toolbox.evaluate, [run]*len_pop, [gen]*len_pop, range(len_pop), [best_fit]*len_pop, population, [sliding_puzzle_nb_deletions]*len_pop, [sliding_puzzle_proba_move]*len_pop)
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
+            nb_eval += 1
+            nb_evals.append(nb_eval)
 
             # In the 'flag_automata' env (see set_env in learning_initializations.py), save the best flags only (memory optimization)
             if fit[0] < best_fit:
                 best_fit = fit[0]
 
-        write_single_gen_data(run, gen, population, learning_params['analysis_dir']['data'])
+        write_single_gen_data(run, gen, nb_evals, population, learning_params['analysis_dir']['data'])
 
         toolbox.update(population) # update the current covariance matrix strategy from the population; update the strategy with the evaluated individuals
+
 
     time_run = time.time() - time_run
     print(f"cmaES_EvoAlgorithm run n.{run} - Completed. Execution time: {time_run} seconds")
@@ -94,9 +113,9 @@ if (__name__ == "__main__"):
 
     # Launch the Evolutionary Algorithm with parallelization over runs OR sequentially
     if learning_params['with_parallelization_bool']:
-        learning_params = parallelize_processes(learning_params['nb_runs'], learning_params)
+        learning_params = parallelize_processes(learning_params['evolutionary_settings']['nb_runs'], learning_params)
     else:
-        for run in range(learning_params['nb_runs']):
+        for run in range(learning_params['evolutionary_settings']['nb_runs']):
             learning_params = cmaES_EvoAlgorithm(run, learning_params)
 
     # Save a trace of used parameters for this simulation in learning_params.json

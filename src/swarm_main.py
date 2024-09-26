@@ -26,7 +26,7 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
 
     env = init_swarmGrid_env(grid_nb_rows=swarm_params['grid_nb_rows'],
                              grid_nb_cols=swarm_params['grid_nb_cols'],
-                             learning_mode=swarm_params['learning_mode'],
+                             learning_modes=swarm_params['learning_modes'],
                              learning_with_noise_std=swarm_params['learning_with_noise_std'],
                              flag_pattern=None,
                              flag_target=swarm_params['flag_target'],
@@ -118,7 +118,7 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
                                     setup_name=setup_name,
                                     nb_repetitions=swarm_params['nb_repetitions'],
                                     scalability_ticks=scalability_ticks,
-                                    learning_mode=swarm_params['learning_mode'],
+                                    learning_modes=swarm_params['learning_modes'],
                                     learning_with_noise_std=swarm_params['learning_with_noise_std'],
                                     flag_pattern=swarm_params['flag_pattern'],
                                     init_cell_state_value=swarm_params['init_cell_state_value'],
@@ -181,7 +181,7 @@ if (__name__ == "__main__"):
         swarm_params = json.load(f)
 
     # Initializations
-    check_params_validity(grid_size=learning_params['grid_nb_rows']*learning_params['grid_nb_cols'], params=swarm_params)
+    check_params_validity(grid_size=learning_params['grid']['grid_nb_rows']*learning_params['grid']['grid_nb_cols'], params=swarm_params)
     swarm_params = init_all_runs_analysis(learning_analysis_dir_root=learning_params['analysis_dir']['root'], params=swarm_params)
     swarm_params = copy_params_from_learning(learning_params=learning_params, swarm_params=swarm_params)
     best_ind_per_run_dict = get_best_ind_per_run_dict(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")

@@ -4,7 +4,7 @@ import copy
 
 
 ###########################################################################
-# Activation functions and their derivatives
+# Activation functions
 ###########################################################################
 
 def tanh(x):
@@ -143,7 +143,7 @@ class NeuralNetwork:
         s_pointers += f"const int weights_sizes[] = {{{s_pointers_weights_sizes}}};\n"
         s_pointers += f"const int biases_sizes[] = {{{s_pointers_biases_sizes}}};\n"
 
-        s_define = f"\n#define ACTIVATION_FUNCTION {self.activation_function}_activation"
+        s_define = f"\n#define ACTIVATION_FUNCTION {self.activation_function}_activation\n"
 
         return s_variables + s_weights + s_biases + s_pointers + s_define
     

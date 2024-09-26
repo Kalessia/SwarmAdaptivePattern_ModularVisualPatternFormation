@@ -52,8 +52,7 @@ def init_one_run_analysis(run, best_ind, best_ind_run, params):
     os.makedirs(params['analysis_dir']['data']+"/original_flag_copied_from_learning", exist_ok=True)
     dataset = pd.read_csv(params['analysis_dir']['root'].replace("/swarm", "/learning") + "/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
     gen = dataset.loc[(dataset.Run==best_ind_run),['Generation']].values.tolist()[0][0]
-    # source_path = params['analysis_dir']['root'].replace("/swarm", "/learning") + f"/run_{best_ind_run:03}/data/data_env_flag/data_env_flag_run_{best_ind_run:03}_gen_{gen:03}.csv"
-    source_path = params['analysis_dir']['root'].replace("/swarm", "/learning") + f"/run_{best_ind_run}/data/data_env_flag/data_env_flag_run_{best_ind_run}_gen_{gen}.csv"
+    source_path = params['analysis_dir']['root'].replace("/swarm", "/learning") + f"/run_{best_ind_run:03}/data/data_env_flag/data_env_flag_run_{best_ind_run:03}_gen_{gen:03}.csv"
     shutil.copyfile(source_path, params['analysis_dir']['data']+ f"/original_flag_copied_from_learning/data_original_flag_copied_from_learning_flag_n_000.csv")
 
     file_path = params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/flag_individual.txt"

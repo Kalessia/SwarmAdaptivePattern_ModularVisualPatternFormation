@@ -117,20 +117,19 @@ def get_flag_target(dataset_path=None):
 
 def copy_params_from_learning(learning_params, swarm_params):
     
-    swarm_params['learning_nb_runs'] = learning_params['nb_runs']
-    swarm_params['grid_nb_rows'] = learning_params['grid_nb_rows']
-    swarm_params['grid_nb_cols'] = learning_params['grid_nb_cols']
-    swarm_params['init_cell_state_value'] = learning_params['init_cell_state_value']
-    swarm_params['flag_pattern'] = learning_params['flag_pattern']
-
-
-    swarm_params['controller'] = NeuralNetwork(nb_neuronsPerInputs=learning_params['nb_neuronsPerInputs'],
-                                        nb_hiddenLayers=learning_params['nb_hiddenLayers'],
-                                        nb_neuronsPerHidden=learning_params['nb_neuronsPerHidden'],
-                                        nb_neuronsPerOutputs=learning_params['nb_neuronsPerOutputs'])
+    swarm_params['learning_nb_runs'] = learning_params['evolutionary_settings']['nb_runs']
+    swarm_params['grid_nb_rows'] = learning_params['grid']['grid_nb_rows']
+    swarm_params['grid_nb_cols'] = learning_params['grid']['grid_nb_cols']
+    swarm_params['init_cell_state_value'] = learning_params['grid']['init_cell_state_value']
+    swarm_params['flag_pattern'] = learning_params['grid']['flag_pattern']
     
-    swarm_params['learning_mode'] = learning_params['learning_mode']
-    swarm_params['learning_with_noise_std'] = learning_params['learning_with_noise_std']
+    swarm_params['controller'] = NeuralNetwork(input_size=learning_params['nn_controller']['nb_neuronsPerInputs'],
+                                        hidden_layers=learning_params['nn_controller']['hidden_layers'],
+                                        output_size=learning_params['nn_controller']['nb_neuronsPerOutputs'],
+                                        activation_function='tanh')
+
+    swarm_params['learning_modes'] = learning_params['learning_modes']
+    swarm_params['learning_with_noise_std'] = learning_params['learning_options']['learning_with_noise']['learning_with_noise_std']
 
     swarm_params['best_ind_ever'], swarm_params['best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
     swarm_params['flag_target'] = get_flag_target(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")
