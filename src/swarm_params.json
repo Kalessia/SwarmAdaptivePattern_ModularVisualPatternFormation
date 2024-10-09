@@ -1,6 +1,6 @@
 {
     "nb_runs": 1,
-    "nb_repetitions": 5,
+    "nb_repetitions": 3,
     "time_steps": 200,
     "switch_step": 100,
     "switch_step_with_reset_env_bool": true,
@@ -30,7 +30,7 @@
     "setup_deletion info": "",
     "setup_deletion": {
         "setup_deletion_bool": true,
-        "setup_deletion_ticks_units": [1, 2, 3, 4, 5, 10, 20, 30],
+        "setup_deletion_ticks_units": null,
         "setup_deletion_ticks_percent": [1, 2, 3, 4, 5, 10]
     },
 
