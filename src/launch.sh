@@ -38,7 +38,7 @@ output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new swarm simulation. NB: this line modifies the "swarm_analysis_dir" parameter
-output=$(mktemp); python3 -u swarm_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; swarm_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+# output=$(mktemp); python3 -u swarm_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; swarm_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
@@ -56,6 +56,6 @@ python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir}
 ###########################################################################
 
 # COMMENT the following lines if you DON'T want to plot the swarm data
-python3 -u swarm_analysis.py --swarm_analysis_dir ${swarm_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-                             --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-                             --plot_with_animation_bool ${plot_with_animation_bool}
+# python3 -u swarm_analysis.py --swarm_analysis_dir ${swarm_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+#                              --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+#                              --plot_with_animation_bool ${plot_with_animation_bool}
