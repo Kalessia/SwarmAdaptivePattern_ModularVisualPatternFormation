@@ -52,8 +52,8 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, learning_with
     nn_controller_weights_size = nn_controller.weights_biases_size
     ind_size = len(agent_controller_weights)
     if (ind_size > nn_controller_weights_size):
-        agent_additional_weights = agent_controller_weights[nn_controller_weights_size:]
         agent_controller_weights = agent_controller_weights[:nn_controller_weights_size]
+        agent_additional_weights = agent_controller_weights[nn_controller_weights_size:]
     
     # grid and agent re-initialization are required for each new individual (new agent_controller_weights) before evaluation
     env.set_agent_controller_weights(agent_controller_weights=agent_controller_weights, agent_additional_weights=agent_additional_weights)
@@ -145,8 +145,7 @@ class agent1Output(swarmAgent):
 
     def get_phenotype(self):
         state = super().get_state()
-        return sigmoid(state[0]) # float
-
+        return (state[0] + 1) / 2 # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale. Issue with sigmoid(state[0]): sigmoid(x) with x in (-1, 1) returned inconvenient bounded result in [0.27, 0.73] and we need phenotype in [0,1]
 
 ###########################################################################
 
@@ -182,7 +181,7 @@ class agent2Outputs(swarmAgent):
 
     def get_phenotype(self):
         state = super().get_state()
-        return sigmoid(state[1]) # float
+        return (state[1] + 1) / 2 # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale. Issue with sigmoid(state[1]): sigmoid(x) with x in (-1, 1) returned inconvenient bounded result in [0.27, 0.73] and we need phenotype in [0,1]
     
 
 ###########################################################################
@@ -243,7 +242,7 @@ class agent3Outputs_Devert2011(swarmAgent):
 # Learning evaluation function
 ###########################################################################
 
-def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions=None, sliding_puzzle_proba_move=None):
+def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
     time_steps = env_eval_function_params['time_steps']
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
@@ -300,13 +299,14 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_ind, best
         
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, analysis_dir=analysis_dir)
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=None, analysis_dir=analysis_dir)
+        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
 
 #---------------------------------------------------
 
-def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
+def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
     global verbose_str
     
     time_steps = env_eval_function_params['time_steps']
@@ -376,8 +376,8 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
-        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
+        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     # Restore original grid
     env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent) # i have a new grid each time?
@@ -404,7 +404,6 @@ class swarmGrid:
         self.agent_additional_weights = None
         self.agent_controller = nn_controller
 
-        # if nn_controller.n_neuronsPerOutputs == 1:
         if nn_controller.output_size == 1:
             self.agent_type = agent1Output
         elif nn_controller.output_size == 2:
@@ -478,7 +477,7 @@ class swarmGrid:
 
         flag_target = {}
 
-        if flag_pattern == "two_bands" or flag_pattern == "2_stripes": # effacer
+        if flag_pattern == "two_bands":
             vertical_threshold = np.floor(self.grid_nb_cols*2/5)
 
             for cell in self.grid_map_pos_agent.keys():
@@ -1043,11 +1042,13 @@ class swarmGrid:
     def eval_flags_distance(self, flag):
         sum_states = 0.0
         
-        for p, pos in enumerate(self.grid_map_pos_agent.keys()):
-            sum_states += (self.flag_target[p] - flag[pos])**2
+        positions = self.grid_map_pos_agent.keys() # all positions in the grid
+        assert len(positions) == self.grid_size, f"\eval_flags_distance, len(positions) {len(positions)} != grid_size {self.grid_size}"
+        for p, pos in enumerate(positions):
+            if self.grid_map_pos_agent[pos] is not None:
+                sum_states += (self.flag_target[p] - flag[pos])**2
 
-        nb_agents = len([1 for a in self.grid_map_pos_agent.values() if a != None])
-        flags_distance = sum_states/nb_agents # check si calcolo ok en f del numero di robots presenti. Gli assenti sono contati?
+        flags_distance = sum_states/self.grid_size
         return flags_distance
     
     #---------------------------------------------------
@@ -1066,27 +1067,30 @@ class swarmGrid:
 
     #---------------------------------------------------
     
-    def write_flag_data_learning(self, run, gen, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, deleted_agents_per_step, analysis_dir):
+    def write_flag_data_learning(self, run, gen, nb_eval, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, deleted_agents_per_step, analysis_dir):
 
         from learning_initializations import save_data_to_csv
 
-        file_path = analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv"
+        file_path = analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
         if not (os.path.exists(file_path)):
             os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
-            save_data_to_csv(file_path, [], header = ["Generation", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual", "Deleted_agents_positions"])
-
+            save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual", "Deleted_agents_positions"])
+        
+        if deleted_agents_per_step is None:
+            deleted_agents_per_step = [[] for _ in range(time_steps)]
+        
         data_env_flag = []
         for step in range(time_steps):
-            data_env_flag.append([str(gen), str(nb_ind), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip(), str(deleted_agents_per_step[step]).strip()])
+            data_env_flag.append([str(gen), str(nb_eval), str(nb_ind), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip(), str(deleted_agents_per_step[step]).strip()])
 
         save_data_to_csv(file_path, data_env_flag)
 
     #---------------------------------------------------
         
-    def write_controller_data_for_pogobots(self, run, gen, nb_ind, analysis_file):
+    def write_controller_data_for_pogobots(self, run, gen, nb_eval, nb_ind, analysis_file):
         
         with open (analysis_file, 'w') as f:
-            s = f"// flagAutomata individual controller run {run:03}, gen {gen:03}, nb_ind {nb_ind:03}\n"
+            s = f"// flagAutomata individual controller run {run:03}, gen {gen:05}, eval {nb_eval:07}, nb_ind {nb_ind:03}\n"
             s += self.agent_controller.get_weights_biases_for_pogobots()
             if self.agent_additional_weights:
                 s += f"const double additional_weights[] = {(str(self.agent_additional_weights).replace('[','{')).replace(']','}')};\n"
@@ -1125,7 +1129,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, n, step, flag, fitness, permutated_pos=[], deleted_pos=[], analysis_dir_plots=None):
+    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag, fitness, permutated_pos=[], deleted_pos=[], analysis_dir_plots=None):
         
         fig, ax = plt.subplots()
 
@@ -1199,16 +1203,16 @@ class swarmGrid:
         plt.ylim(-grid_nb_rows+0.5, 0.5)
         
         if setup_name:
-            plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {fitness}", fontsize=12)
+            plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)
             dir_name = analysis_dir_plots+"/"+setup_name+"/flag"
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name, exist_ok=True)
             plt.savefig(f"{dir_name}/{setup_name}_flag_run_{run:03}_best_ind_{nb_ind:03}_n_{n:03}_step_{step:03}.png")
         else:
             if nb_ind is not None:
-                plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, individual {nb_ind}, step {step}.\nFitness (distance to flag target) = {fitness}", fontsize=12)       
-                file_name = f"run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}"
-                dir_name = analysis_dir_plots+"/"+file_name+"/flag"
+                file_name = f"run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}"
+                plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, nb_eval {nb_eval}, individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)       
+                dir_name = analysis_dir_plots+ f"/{file_name}/flag"
                 if not os.path.exists(dir_name):
                     os.makedirs(dir_name, exist_ok=True)
                 plt.savefig(f"{dir_name}/plot_env_flag_{file_name}_step_{step:03}.png")
@@ -1222,7 +1226,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag_fitnesses_from_file(data_flag_file, setup_name, time_window_start, time_window_length, run, nb_ind, ind, n, gen, switch_step, analysis_dir_plots):
+    def plot_flag_fitnesses_from_file(data_flag_file, setup_name, time_window_start, time_window_length, run, nb_ind, ind, n, gen, nb_eval, switch_step, analysis_dir_plots):
 
         df = pd.read_csv(data_flag_file)
 
@@ -1244,17 +1248,17 @@ class swarmGrid:
 
         plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
-        plt.ylabel("Fitness (distance to flag target)", fontsize=12)
+        plt.ylabel("Flags distance", fontsize=12)
 
         if setup_name:
-            plt.title(f"Fitness related to the flag evolution over steps\n{setup_name}, {n} repetitions", fontsize=12)
+            plt.title(f"Flags distance related to the flag development over steps\n{setup_name}, {n} repetitions", fontsize=12)
             dir_name = analysis_dir_plots+"/"+setup_name
             if not (os.path.exists(dir_name)):
                 os.makedirs(dir_name, exist_ok=True)
             plt.savefig(f"{dir_name}/{setup_name}_flag_fitnesses_run_{run:03}_n_{n:03}.png")
         else:
-            plt.title(f"Fitness related to the flag evolution over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=12)
-            plt.savefig(f"{analysis_dir_plots}/run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}/flag_fitnesses_run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}.png")
+            plt.title(f"Flags distance related to the flag development over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=12)
+            plt.savefig(f"{analysis_dir_plots}/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_fitnesses_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}.png")
 
         plt.clf()
         plt.close()
@@ -1277,8 +1281,8 @@ class swarmGrid:
 
         plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
-        plt.ylabel("Fitness (distance to flag target)", fontsize=12)
-        plt.title(f"Fitness related to the flag evolution over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
+        plt.ylabel("Flags distance", fontsize=12)
+        plt.title(f"Flags distance related to the flag development over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
         
         dir_name = analysis_dir_plots+"/"+setup_name
         if not (os.path.exists(dir_name)):

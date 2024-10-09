@@ -2,13 +2,14 @@
     "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process.",
     "evolutionary_settings": {
         "nb_runs": 2,
-        "nb_evals": 120,
+        "nb_evals": 600,
         "env_name info": "env_name in ['flag_automata', 'sliding_puzzle_incremental']",   
         "env_name": "sliding_puzzle_incremental",
         "sliding_puzzle_incremental": {
-            "sliding_puzzle_incremental info": "Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions[1] in the 2nd. The switch generation is deducted from 'switch_eval'.",
-            "sliding_puzzle_incremental_switch_eval": 150,
-            "sliding_puzzle_incremental_nb_deletions": [1, 50],
+            "sliding_puzzle_incremental info": "Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions_ticks[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions_ticks[1] in the 2nd. The switch generation is deducted from 'switch_eval'. Either 'units' or 'percent' must be null.",
+            "sliding_puzzle_incremental_switch_eval": 300,
+            "sliding_puzzle_incremental_nb_deletions_units": [10, 50],
+            "sliding_puzzle_incremental_nb_deletions_percent": null,
             "sliding_puzzle_incremental_proba_move": 0.2
         }
     },
@@ -23,8 +24,8 @@
     "grid info": "flag_patterns in ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']. Set init_cell_state_value as a scalar or null (random).",
     "grid": {
         "flag_pattern": "two_bands",
-        "grid_nb_rows": 10,
-        "grid_nb_cols": 10,
+        "grid_nb_rows": 5,
+        "grid_nb_cols": 5,
         "init_cell_state_value": 0.0
     },
 

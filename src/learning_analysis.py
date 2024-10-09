@@ -6,6 +6,7 @@ from multiprocessing import Pool, cpu_count
 import numpy as np
 import pandas as pd
 from operator import attrgetter
+import bisect
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -75,13 +76,13 @@ def write_single_gen_data(run, gen, nb_evals, population, analysis_dir_data):
  
 #---------------------------------------------------
     
-def write_single_run_data(run, time_run, analysis_dir):
+def write_single_run_data(run, switch_gen, time_run, analysis_dir):
 
     # Save best ever individual data for this single run
     dataset_path = analysis_dir['data']+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv"
     save_best_inds_ever_filename =  analysis_dir['data']+ f"/data_evo_run_{run:03}_best_inds_ever.csv"
     save_best_ind_per_run_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
-    write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename)
+    write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, switch_gen=switch_gen, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename)
 
     # Save time information for this run
     data_evo_all_runs_time = [[str(run), str(time_run), str((time_run+1)/60), str((time_run+1)/3600)]]
@@ -100,6 +101,15 @@ def write_all_runs_data(analysis_dir):
     with open(analysis_dir+"/data_all_runs/data_evo_all_runs_best_inds_ever.csv", 'w') as all_runs_file:
         for i, single_run_dir in enumerate(analysis_single_run_dirs):
             path = analysis_dir+"/"+single_run_dir+"/data/data_evo_"+single_run_dir+"_best_inds_ever.csv"
+            with open(path, 'r') as single_run_file:
+                if i != 0:
+                    next(single_run_file) # ignore the csv headers, keep just the 1st one
+                all_runs_file.write(single_run_file.read())
+
+    # Concatenate 'data_evo_best_inds_per_gen' files of each run in one single file named 'data_evo_all_runs_best_inds_per_gen.csv' placed in 'data_all_runs' directory
+    with open(analysis_dir+"/data_all_runs/data_evo_all_runs_best_inds_per_gen.csv", 'w') as all_runs_file:
+        for i, single_run_dir in enumerate(analysis_single_run_dirs):
+            path = analysis_dir+"/"+single_run_dir+"/data/data_evo_"+single_run_dir+"_best_inds_per_gen.csv"
             with open(path, 'r') as single_run_file:
                 if i != 0:
                     next(single_run_file) # ignore the csv headers, keep just the 1st one
@@ -124,9 +134,9 @@ def write_all_runs_data(analysis_dir):
 
 #---------------------------------------------------
 
-def write_best_inds_ever_and_best_ind_per_run(dataset_path, save_best_inds_ever_filename, save_best_ind_per_run_filename):
+def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_best_inds_ever_filename, save_best_ind_per_run_filename):
 
-    dataset = pd.read_csv(dataset_path)
+    dataset = pd.read_csv(dataset_path) # this dataset contains a line per gen
 
     generations = []
     data_best_inds_ever = []
@@ -139,12 +149,22 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, save_best_inds_ever_
         fit = dataset.loc[index, 'Fitness']
 
         generations.append(gen)
+        
+        if switch_gen and gen == switch_gen: 
+            best_fit_ever_phase1 = best_fit
+            data_best_inds_ever_phase1 = [data_best_inds_ever[-1]]
+            best_fit = np.inf # reset best_fit for phase2
+
         if fit < best_fit:
             best_fit = fit
             data_best_inds_ever.append([str(run).strip(), str(gen).strip(), str(nb_eval).strip(), str(fit).strip(), str(dataset.loc[index, 'Individual']).strip()])
 
     save_data_to_csv(save_best_inds_ever_filename, data_best_inds_ever)
-    save_data_to_csv(save_best_ind_per_run_filename, [data_best_inds_ever[-1]])
+
+    if switch_gen and best_fit_ever_phase1 < best_fit:
+        save_data_to_csv(save_best_ind_per_run_filename, data_best_inds_ever_phase1)
+    else:
+        save_data_to_csv(save_best_ind_per_run_filename, [data_best_inds_ever[-1]])
 
 
 ###########################################################################
@@ -158,26 +178,32 @@ def plot_single_run_data(run, params):
     os.makedirs(params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo", exist_ok=True)
     # os.makedirs(params['analysis_dir']['root']+ f"/run_{run:03}/data/flags_best_inds_ever", exist_ok=True)
 
+    nb_evals = params['evolutionary_settings']['nb_evals']
+    switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval']
+    grid_size = params['grid']['grid_size']
+    nb_deletions = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks']
+
     # Plot_all_pop_fitnesses_boxplot
     dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_all_pop.csv"
     save_filename = params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo/plot_evo_run_{run:03}_all_pop_fitnesses_boxplot.png"
-    plot_all_pop_fitnesses_boxplot(run, dataset_path=dataset_path, save_filename=save_filename)
+    plot_all_pop_fitnesses_boxplot(run, dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, save_filename=save_filename)
 
     # Plot_best_inds_ever
     dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_best_inds_ever.csv"
     save_filename = params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo/plot_evo_run_{run:03}_best_inds_ever.png"
-    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=300, switch_eval=100, save_filename=save_filename)
+    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, save_filename=save_filename)
 
     # Plot_flag_from_file for best individuals ever in a defined range of steps
     dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_best_inds_ever.csv"
     best_inds_ever_dataset = pd.read_csv(dataset_path)
     time_steps = params['environment']['time_steps']
-    steps = range(params['environment']['time_window_start'], params['environment']['time_window_end']) # we plot this steps interval for all individual less the best
+    steps = list(range(params['environment']['time_window_start'], params['environment']['time_window_end'])) # we plot this steps interval for all individual less the best
 
     for index in best_inds_ever_dataset.index: # for each best individual ever less the last one <--- perché ho scritto cio?
         gen = best_inds_ever_dataset.loc[index, 'Generation']
+        nb_eval = best_inds_ever_dataset.loc[index, 'Nb_eval']
         ind = best_inds_ever_dataset.loc[index, 'Individual']
-        dataset = pd.read_csv(params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv")
+        dataset = pd.read_csv(params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv")
         
         dataset_gen = dataset.loc[(dataset.Generation==gen)]
         dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
@@ -204,6 +230,7 @@ def plot_single_run_data(run, params):
                                     run=run,
                                     nb_ind=nb_ind,
                                     gen=gen,
+                                    nb_eval=nb_eval,
                                     n="",
                                     step=step,
                                     flag=flag_list,
@@ -213,16 +240,16 @@ def plot_single_run_data(run, params):
             
                 # Write this individual
                 if step == steps[0]:
-                    file_path = params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}/flag_individual.txt"
+                    file_path = params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_individual.txt"
                     if not os.path.exists(file_path):
                         with open (file_path, 'w') as f:
                             f.write(str(ind))
 
             # data_env_flag.append([str(gen), str(step), str(fitness).strip(), str(time_window_zone).strip(), str(flag_list.tolist()).strip(), str(ind).strip()])
 
-        # save_data_to_csv(params['analysis_dir']['root']+ f"/run_{run:03}/data/flags_best_inds_ever/run_{run:03}_gen_{gen:03}_individual_{nb_ind:03}.csv", data_env_flag, header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
+        # save_data_to_csv(params['analysis_dir']['root']+ f"/run_{run:03}/data/flags_best_inds_ever/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}.csv", data_env_flag, header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
 
-        swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:03}.csv",
+        swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv",
                                                 setup_name=None,
                                                 time_window_start=params['environment']['time_window_start'],
                                                 time_window_length= params['environment']['time_window_end'] - params['environment']['time_window_start'] + 1,
@@ -231,6 +258,7 @@ def plot_single_run_data(run, params):
                                                 ind=ind,
                                                 n="",
                                                 gen=gen,
+                                                nb_eval=nb_eval,
                                                 switch_step=None,
                                                 analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
 
@@ -270,22 +298,29 @@ def get_flag_list_from_dataset_step(dataset, step):
 def plot_all_runs_data(params):
 
     nb_evals = params['evolutionary_settings']['nb_evals']
-    switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval']
+    switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] # switch_eval is the 1st evaluation of the new generation starting after the switch_eval defined in parameters
+    grid_size = params['grid']['grid_size']
+    nb_deletions = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks']
 
     # Plot_best_inds_ever
     dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_inds_ever.csv"
     save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_best_inds_ever.png"
-    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=nb_evals, switch_eval=switch_eval, save_filename=save_filename)
+    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, save_filename=save_filename)
+
+    # Plot_best_inds_per_gen
+    dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_inds_per_gen.csv"
+    save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_best_inds_per_gen.png"
+    plot_best_inds_per_gen(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, with_best_ever_bool=True, save_filename=save_filename)
 
     # Plot fitnesses mean
     dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_fitnesses_stats_per_run_per_gen.csv"
     save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_fitnesses_stats_per_run_per_gen_mean.png"
-    plot_all_pop_fitnesses_mean(dataset_path=dataset_path, nb_evals=nb_evals, switch_eval=switch_eval, save_filename=save_filename)
+    # plot_all_pop_fitnesses_mean(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, save_filename=save_filename)
 
     # Plot fitnesses mean
     dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_fitnesses_stats_per_run_per_gen.csv"
     save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_fitnesses_stats_per_run_per_gen_median.png"
-    plot_all_pop_fitnesses_median(dataset_path=dataset_path, nb_evals=nb_evals, switch_eval=switch_eval, save_filename=save_filename)
+    # plot_all_pop_fitnesses_median(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, save_filename=save_filename)
 
     # Plot flag target
     dataset = pd.read_csv(params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")
@@ -297,6 +332,7 @@ def plot_all_runs_data(params):
                     run=run,
                     nb_ind=None,
                     gen=0,
+                    nb_eval=0,
                     n="",
                     step=0,
                     flag=flag_list,
@@ -308,25 +344,54 @@ def plot_all_runs_data(params):
 
 #---------------------------------------------------
 
-def plot_all_pop_fitnesses_boxplot(run, dataset_path, save_filename):
+def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, nb_deletions, switch_eval, save_filename):
 
     dataset = pd.read_csv(dataset_path)
     dataset = dataset.loc[dataset.Run==run]
 
-    sns.set_theme()
-    sns.boxplot(x='Generation', y='Fitness', data=dataset, color='skyblue')
-
-    plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
-    plt.title("Fitnesses over generations\nall individuals generated", fontsize=14)
-    plt.xlabel("Generation", fontsize=12)
-    plt.ylabel("Fitness", fontsize=12)
-
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
+    nb_gens_to_plot = 20 # number of boxes to display
     generations = dataset['Generation'].unique()
-    if max(generations) > 14:
-        positions = [value for value in generations if value % (int(max(generations)/14))==0]
-        plt.xticks(positions, fontsize=10)
+    pop_size = int(nb_evals/len(generations))
+    gens_to_plot = list(range(generations[0], generations[-1], max(1, int(len(generations)/nb_gens_to_plot))))
+
+    filtered_dataset = dataset[dataset['Generation'].isin(gens_to_plot)]
+    filtered_dataset = filtered_dataset.copy() # create a copy to avoid SettingWithCopyWarning
+    filtered_dataset['Max_evaluation_per_gen'] = pd.to_numeric(filtered_dataset['Generation'].apply(lambda gen: pop_size * (gen + 1))) # nb_eval is here the last evaluation of a given generation, even if the best ind per run per gen was registered in different nb_eval within the same generation
+    evaluations = filtered_dataset['Max_evaluation_per_gen'].unique()
+
+    plt.figure(figsize=(12, 7))
+    sns.set_theme(style='darkgrid')
+    _, ax = plt.subplots()
+    sns.boxplot(x='Max_evaluation_per_gen',
+                y='Fitness',
+                data=filtered_dataset,
+                color='skyblue',
+                medianprops={'color': 'red', 'linewidth': 0.5},
+                width=0.7,
+                ax=ax) # individuals of differents runs with same generation have also same nb_evaluation, so dataset is grouped by "nb_eval" in the "Evaluation" column
+
+    # Plot phase1-phase2 delimeter and max fitness limit
+    x_end = len(evaluations)
+    y = 1
+    if switch_eval:
+        index = bisect.bisect_left(evaluations, switch_eval) # bisect_left returns the 1st index where switch_eval would be inserted to maintain the list order
+        plt.axvline(x=index-0.5, color='r', linestyle='--')
+        y = 1 - (nb_deletions[1]/grid_size)
+        plt.plot([index-0.5, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
+        x_end = index-0.5
+        y = 1 - (nb_deletions[0]/grid_size) 
+    
+    plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
+
+    plt.title("Flags distance over generations\nall individuals generated", fontsize=14)
+    plt.xlabel("Evaluations", fontsize=12)
+    plt.ylabel("Flags distance", fontsize=12)
+
+    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    ax.set_xticks(range(0, len(evaluations))) # important: boxplot boxes locations are incremental number from 0 to N=len(evaluations)
+    pace = int(len(evaluations) / 7) # number of labels to display, for lisibility
+    evaluations_labels = [str(evaluations[i]) if i%pace == 0 else "" for i in range(0, len(evaluations))]
+    ax.set_xticklabels(evaluations_labels)
 
     plt.savefig(save_filename)
     plt.clf()
@@ -334,31 +399,39 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, save_filename):
 
 #---------------------------------------------------
 
-def plot_best_inds_ever(dataset_path, nb_evals, switch_eval, save_filename):
+def plot_best_inds_ever(dataset_path, nb_evals, grid_size, nb_deletions, switch_eval, save_filename):
 
     dataset = pd.read_csv(dataset_path)
 
-    max_eval = dataset['Nb_eval'].max()
     runs = dataset['Run'].unique()
     for run in runs:
         evals = dataset.loc[dataset.Run==run, 'Nb_eval'].tolist()
         best_fitnesses_ever = dataset.loc[dataset.Run==run,'Fitness'].tolist()
 
         # Make all plot lines last until x=nb_evals
-        if evals[-1] != max_eval: 
-            evals.append(max_eval)
+        if evals[-1] != nb_evals:
+            evals.append(nb_evals)
             best_fitnesses_ever.append(best_fitnesses_ever[-1])
 
         plt.step(evals, best_fitnesses_ever, where='post', label= f"run {run}") # plot
 
+    # Plot phase1-phase2 delimeter and max fitness limit
+    x_end = nb_evals
+    y = 1
     if switch_eval:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
+        y = 1 - (nb_deletions[1]/grid_size)
+        plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
+        x_end = switch_eval
+        y = 1 - (nb_deletions[0]/grid_size)
+    
+    plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
 
-    plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
-    plt.title("Fitnesses over generations\nbest individuals ever", fontsize=14)
+    plt.title("Flags distance over generations\nbest individuals ever", fontsize=14)
     plt.xlabel("Evaluations", fontsize=12)
-    plt.ylabel("Fitness", fontsize=12)
+    plt.ylabel("Flags distance", fontsize=12)
     plt.legend()
 
     plt.savefig(save_filename)
@@ -367,7 +440,75 @@ def plot_best_inds_ever(dataset_path, nb_evals, switch_eval, save_filename):
 
 #---------------------------------------------------
 
-def plot_all_pop_fitnesses_mean(dataset_path, nb_evals, switch_eval, save_filename):
+def plot_best_inds_per_gen(dataset_path, nb_evals, grid_size, nb_deletions, switch_eval, with_best_ever_bool, save_filename):
+
+    dataset = pd.read_csv(dataset_path)
+
+    nb_gens_to_plot = 20 # number of boxes to display
+    generations = dataset['Generation'].unique()
+    pop_size = int(nb_evals/len(generations))
+    gens_to_plot = list(range(generations[0], generations[-1], max(1, int(len(generations)/nb_gens_to_plot))))
+
+    filtered_dataset = dataset[dataset['Generation'].isin(gens_to_plot)]
+    filtered_dataset = filtered_dataset.copy() # create a copy to avoid SettingWithCopyWarning
+    filtered_dataset['Max_evaluation_per_gen'] = pd.to_numeric(filtered_dataset['Generation'].apply(lambda gen: pop_size * (gen + 1))) # nb_eval is here the last evaluation of a given generation, even if the best ind per run per gen was registered in different nb_eval within the same generation
+    evaluations = filtered_dataset['Max_evaluation_per_gen'].unique()
+
+    plt.figure(figsize=(12, 7))
+    # sns.set_theme(style='whitegrid')
+    sns.set_theme(style='darkgrid')
+    _, ax = plt.subplots()
+    sns.boxplot(x='Max_evaluation_per_gen',
+                y='Fitness',
+                data=filtered_dataset,
+                color='skyblue',
+                medianprops={'color': 'red', 'linewidth': 0.5},
+                width=0.7,
+                ax=ax) # individuals of differents runs with same generation have also same nb_evaluation, so dataset is grouped by "nb_eval" in the "Evaluation" column
+
+    # Plot phase1-phase2 delimeter and max fitness limit
+    x_end = len(evaluations)
+    y = 1
+    if switch_eval:
+        index = bisect.bisect_left(evaluations, switch_eval) # bisect_left returns the 1st index where switch_eval would be inserted to maintain the list order
+        plt.axvline(x=index-0.5, color='r', linestyle='--')
+        y = 1 - (nb_deletions[1]/grid_size)
+        plt.plot([index-0.5, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
+        x_end = index-0.5
+        y = 1 - (nb_deletions[0]/grid_size)
+
+    plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
+
+    # Plot best inds ever
+    if with_best_ever_bool:
+        best_fitnesses_per_gen_ever = []
+        best_fitnesses_per_gen_dataset = filtered_dataset.loc[filtered_dataset.groupby('Max_evaluation_per_gen')['Fitness'].idxmin()]
+        best_fitnesses_per_gen_list = best_fitnesses_per_gen_dataset['Fitness'].tolist() # list of the min fitness for a same gen/nb_eval, among all runs
+        best_fit = np.inf
+        index = bisect.bisect_left(evaluations, switch_eval) # bisect_left returns the 1st index where switch_eval would be inserted to maintain the list order
+        for i, fit in enumerate(best_fitnesses_per_gen_list):
+            if fit < best_fit or i == index:
+                best_fit = fit
+            best_fitnesses_per_gen_ever.append(best_fit)
+
+        plt.step(range(0, len(evaluations)), best_fitnesses_per_gen_ever, where='post', label= f"run {run}") # plot
+
+    plt.title("Flags distance over generations\nbest individuals distributions over evolution", fontsize=14)
+    plt.xlabel("Evaluations", fontsize=12)
+    plt.ylabel("Flags distance", fontsize=12)
+    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    ax.set_xticks(range(0, len(evaluations))) # important: boxplot boxes locations are incremental number from 0 to N=len(evaluations)
+    pace = int(len(evaluations) / 7) # number of labels to display, for lisibility
+    evaluations_labels = [str(evaluations[i]) if i%pace == 0 else "" for i in range(0, len(evaluations))]
+    ax.set_xticklabels(evaluations_labels)
+
+    plt.savefig(save_filename)
+    plt.clf()
+    plt.close()
+
+#---------------------------------------------------
+
+def plot_all_pop_fitnesses_mean(dataset_path, nb_evals, grid_size, nb_deletions, switch_eval, save_filename):
 
     dataset = pd.read_csv(dataset_path)
 
@@ -380,14 +521,23 @@ def plot_all_pop_fitnesses_mean(dataset_path, nb_evals, switch_eval, save_filena
         plt.plot(evals, fitnesses_means, label= f"run {run}")
         plt.fill_between(x=evals, y1=fitnesses_quantile25, y2=fitnesses_quantile75, alpha=0.6)
 
+    # Plot phase1-phase2 delimeter and max fitness limit
+    x_end = nb_evals
+    y = 1
     if switch_eval:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
+        y = 1 - (nb_deletions[1]/grid_size)
+        plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
+        x_end = switch_eval
+        y = 1 - (nb_deletions[0]/grid_size)
+    
+    plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
 
-    plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
-    plt.title("Fitnesses over generations\nmean, quantile25 and quantile75 of all individuals fitnesses per generation", fontsize=12)
+    plt.title("Flags distance over generations\nmean, quantile25 and quantile75 of all individuals fitnesses per generation", fontsize=12)
     plt.xlabel("Evaluations", fontsize=12)
-    plt.ylabel("Fitness", fontsize=12)
+    plt.ylabel("Flags distance", fontsize=12)
     plt.legend()
 
     plt.savefig(save_filename)
@@ -396,7 +546,7 @@ def plot_all_pop_fitnesses_mean(dataset_path, nb_evals, switch_eval, save_filena
 
 #---------------------------------------------------
 
-def plot_all_pop_fitnesses_median(dataset_path, nb_evals, switch_eval, save_filename):
+def plot_all_pop_fitnesses_median(dataset_path, nb_evals, grid_size, nb_deletions, switch_eval, save_filename):
 
     dataset = pd.read_csv(dataset_path)
 
@@ -409,14 +559,24 @@ def plot_all_pop_fitnesses_median(dataset_path, nb_evals, switch_eval, save_file
         plt.plot(evals, fitnesses_medians, label= f"run {run}")
         plt.fill_between(x=evals, y1=fitnesses_quantile25, y2=fitnesses_quantile75, alpha=0.6)
 
+    # Plot phase1-phase2 delimeter and max fitness limit
+    x_end = nb_evals
+    y = 1
     if switch_eval:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
+        y = 1 - (nb_deletions[1]/grid_size)
+        plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
+        x_end = switch_eval
+        y = 1 - (nb_deletions[0]/grid_size)
+    
+    plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
 
-    plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+
+    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
-    plt.title("Fitnesses over generations\nmedian, quantile25 and quantile75 of all individuals fitnesses per generation", fontsize=12)
+    plt.title("Flags distance over generations\nmedian, quantile25 and quantile75 of all individuals fitnesses per generation", fontsize=12)
     plt.xlabel("Evaluations", fontsize=12)
-    plt.ylabel("Fitness", fontsize=12)
+    plt.ylabel("Flags distance", fontsize=12)
     plt.legend()
 
     plt.savefig(save_filename)

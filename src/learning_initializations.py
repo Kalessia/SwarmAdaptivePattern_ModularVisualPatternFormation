@@ -29,9 +29,6 @@ def check_params_validity(params):
         print(f"Error in learning_initializations.py - Parameters nb_runs, grid_nb_rows, grid_nb_cols, nb_neuronsPerInputs, nb_neuronsPerOutputs and time_steps must be > 0")
         exit_bool = True
     
-    if params['evolutionary_settings']['env_name'] != "sliding_puzzle_incremental":
-        params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = None # used in learning_analysis.py to plot the switch eval line (setups delimiter)
-
     #---------------------------------------------------
 
     params['nn_controller']['nb_neuronsPerInputs'] = int(params['nn_controller']['nb_neuronsPerInputs'])
@@ -45,6 +42,7 @@ def check_params_validity(params):
 
     params['grid']['grid_nb_rows'] = int(params['grid']['grid_nb_rows'])
     params['grid']['grid_nb_cols'] = int(params['grid']['grid_nb_cols'])
+    params['grid']['grid_size'] = params['grid']['grid_nb_rows'] * params['grid']['grid_nb_cols']
 
     if params['grid']['init_cell_state_value'] is not None:
         params['grid']['init_cell_state_value'] = float(params['grid']['init_cell_state_value'])
@@ -52,6 +50,28 @@ def check_params_validity(params):
             print(f"Error in learning_initializations.py - Parameter init_cell_state_value must be in [0.0, 1.0]")
             exit_bool = True
 
+    #---------------------------------------------------
+
+    if params['evolutionary_settings']['env_name'] != "sliding_puzzle_incremental":
+        params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = None # used in learning_analysis.py to plot the switch eval line (setups delimiter)
+
+    if params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
+        if params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units'] is None:
+            if not isinstance(params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'], list):
+                print(f"Error in learning_initializations.py - Parameter sliding_puzzle_incremental_nb_deletions_percent must be a list")
+                params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'] = []
+                exit_bool = True
+            params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(params['grid']['grid_size']*tick_percent/100) for tick_percent in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent']]
+        else:
+            if params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'] is not None:
+                print(f"Error in learning_initializations.py - Either 'sliding_puzzle_incremental_nb_deletions_units' or 'sliding_puzzle_incremental_nb_deletions_percent' must be null.")
+                exit_bool = True
+            if not isinstance(params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units'], list):
+                print(f"Error in learning_initializations.py - Parameter sliding_puzzle_incremental_nb_deletions_units must be a list")
+                params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units'] = []
+                exit_bool = True
+            params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(tick_unit) for tick_unit in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units']]
+    
     #---------------------------------------------------
 
     params['environment']['time_steps'] = int(params['environment']['time_steps'])
@@ -134,7 +154,7 @@ def set_env(params):
             },
             'env_boundaries': None,
             'toolbox_cmaes': {
-                'centroid': list(np.random.uniform(-4, 4, params['evolutionary_settings']['ind_size'])),
+                'centroid': list(np.random.uniform(-1, 1, params['evolutionary_settings']['ind_size'])),
                 'sigma': 0.5
             }
         },
@@ -157,7 +177,7 @@ def set_env(params):
             },
             'env_boundaries': None,
             'toolbox_cmaes': {
-                'centroid': list(np.random.uniform(-4, 4, params['evolutionary_settings']['ind_size'])),
+                'centroid': list(np.random.uniform(-1, 1, params['evolutionary_settings']['ind_size'])),
                 'sigma': 0.5
             }
         }

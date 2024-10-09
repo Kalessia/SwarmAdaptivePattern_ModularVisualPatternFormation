@@ -34,7 +34,7 @@ def init_all_runs_analysis(learning_analysis_dir_root, params):
     if os.path.exists(learning_analysis_dir_root+"/plots_all_runs/plot_env_flag_target.png"): # forse meglio copiare la flag e ricrearla?
         shutil.copyfile(learning_analysis_dir_root+"/plots_all_runs/plot_env_flag_target.png", params['analysis_dir']['root']+"/plots_all_runs/plot_env_flag_target.png")
                     
-    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_all_runs_time.csv", [], header = ["Run", "Time(s)"])
+    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_all_runs_time.csv", [], header = ["Run", "Time(s)", "Time(min)", "Time(h)"])
     
     return params
 
@@ -52,7 +52,8 @@ def init_one_run_analysis(run, best_ind, best_ind_run, params):
     os.makedirs(params['analysis_dir']['data']+"/original_flag_copied_from_learning", exist_ok=True)
     dataset = pd.read_csv(params['analysis_dir']['root'].replace("/swarm", "/learning") + "/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
     gen = dataset.loc[(dataset.Run==best_ind_run),['Generation']].values.tolist()[0][0]
-    source_path = params['analysis_dir']['root'].replace("/swarm", "/learning") + f"/run_{best_ind_run:03}/data/data_env_flag/data_env_flag_run_{best_ind_run:03}_gen_{gen:03}.csv"
+    nb_eval = dataset.loc[(dataset.Run==best_ind_run),['Nb_eval']].values.tolist()[0][0]
+    source_path = params['analysis_dir']['root'].replace("/swarm", "/learning") + f"/run_{best_ind_run:03}/data/data_env_flag/data_env_flag_run_{best_ind_run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
     shutil.copyfile(source_path, params['analysis_dir']['data']+ f"/original_flag_copied_from_learning/data_original_flag_copied_from_learning_flag_n_000.csv")
 
     file_path = params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/flag_individual.txt"
@@ -107,8 +108,8 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                 nb_rows = params['grid_nb_rows']
                 nb_cols = params['grid_nb_cols']
                 if setup_name.startswith("setup_scalability"):
-                    setup_name_chunks = re.split(r'[_x]', setup_name)
-                    nb_rows = int(setup_name_chunks[2]) # original: setup_scalability_NxM
+                    setup_name_chunks = re.split(r'[_x]', setup_name) # original setup_name: setup_scalability_NxM
+                    nb_rows = int(setup_name_chunks[2])
                     nb_cols = int(setup_name_chunks[3])
                     switch_step = None
 

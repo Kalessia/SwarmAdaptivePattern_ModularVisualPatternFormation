@@ -39,24 +39,38 @@ def check_params_validity(grid_size, params):
         exit_bool = True
 
     if params['setup_permutation']['setup_permutation_bool']:
-        if not isinstance(params['setup_permutation']['setup_permutation_ticks_percent'], list):
-            print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_percent must be a list")
-            exit_bool = True
-
         if params['setup_permutation']['setup_permutation_ticks_units'] is None:
+            if not isinstance(params['setup_permutation']['setup_permutation_ticks_percent'], list):
+                print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_percent must be a list")
+                params['setup_permutation']['setup_permutation_ticks_percent'] = []
+                exit_bool = True
             permutation_ticks = [int(grid_size*tick_percent/100) for tick_percent in params['setup_permutation']['setup_permutation_ticks_percent']]
         else:
+            if params['setup_permutation']['setup_permutation_ticks_percent'] is not None:
+                print(f"Error in learning_initializations.py - Either 'setup_permutation_ticks_units' or 'setup_permutation_ticks_percent' must be null.")
+                exit_bool = True
+            if not isinstance(params['setup_permutation']['setup_permutation_ticks_units'], list):
+                print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_units must be a list")
+                params['setup_permutation']['setup_permutation_ticks_units'] = []
+                exit_bool = True
             permutation_ticks = [int(tick_unit) for tick_unit in params['setup_permutation']['setup_permutation_ticks_units']]
         params['setup_permutation']['permutation_ticks'] = [val if val % 2 == 0 else val - 1 for val in permutation_ticks] # permutation_ticks must be even
 
     if params['setup_deletion']['setup_deletion_bool']:
-        if not isinstance(params['setup_deletion']['setup_deletion_ticks_percent'], list):
-            print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_percent must be a list")
-            exit_bool = True
-
         if params['setup_deletion']['setup_deletion_ticks_units'] is None:
+            if not isinstance(params['setup_deletion']['setup_deletion_ticks_percent'], list):
+                print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_percent must be a list")
+                params['setup_deletion']['setup_deletion_ticks_percent'] = []
+                exit_bool = True
             params['setup_deletion']['deletion_ticks'] = [int(grid_size*tick_percent/100) for tick_percent in params['setup_deletion']['setup_deletion_ticks_percent']]
         else:
+            if params['setup_deletion']['setup_deletion_ticks_percent'] is not None:
+                print(f"Error in learning_initializations.py - Either 'setup_permutation_ticks_units' or 'setup_permutation_ticks_percent' must be null.")
+                exit_bool = True
+            if not isinstance(params['setup_deletion']['setup_deletion_ticks_units'], list):
+                print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_units must be a list")
+                params['setup_deletion']['setup_deletion_ticks_units'] = []
+                exit_bool = True
             params['setup_deletion']['deletion_ticks'] = [int(tick_unit) for tick_unit in params['setup_deletion']['setup_deletion_ticks_units']]
 
     if params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
