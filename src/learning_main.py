@@ -19,8 +19,9 @@ def cmaES_EvoAlgorithm(run, learning_params):
     # Initialization
     time_run = time.time()
     learning_params = init_one_run_analysis(run, learning_params)
-    toolbox = init_toolbox(learning_params)
+    toolbox, strategy = init_toolbox(learning_params)
     best_fit = np.inf
+    best_covariance_matrix = None
     gen = -1
     nb_eval = 1
     switch_gen = None
@@ -38,21 +39,25 @@ def cmaES_EvoAlgorithm(run, learning_params):
     # Main evolutionary loop
     while(nb_eval < learning_params['evolutionary_settings']['nb_evals']): # while the max budjet of allowed evaluations is not reached
 
-        gen += 1 # each while iteration correspond to a new evolutionary generation
+        gen += 1 # each while iteration correspond to a new evolutionary generation, and 1 gen = pop_size evals. 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
         pop_size = len(population)
 
         # In case of sliding_puzzle incremental learning, we switch from the 1st to the 2nd setup
-        if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental" and nb_eval >= learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] and not(executed_once_bool): # here, nb_eval is the last eval of the previous generation. The 'switch_gen' is the generation following the one where switch_eval actuelly occured.
+        # At this point, nb_eval is the last eval of the previous generation. The 'switch_gen' is the generation following the one where switch_eval actually occured
+        if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental" \
+        and nb_eval >= learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] \
+        and not(executed_once_bool):
             learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = nb_eval # switch_eval is the 1st evaluation of this new generation
             switch_gen = gen
             sliding_puzzle_nb_deletions = sliding_puzzle_incremental_nb_deletions_ticks[1]
             best_fit = np.inf # reset best_fit to save best_individuals data for the 2nd setup starting at this generation
             population = best_pop # NB: the cmaes covariance matrix has changed from this older best population
+            strategy.C = np.copy(best_covariance_matrix)
             executed_once_bool = True
 
         nb_evals = list(range(nb_eval, nb_eval+pop_size))
-        nb_eval += pop_size # 1 gen = pop_size evals. Important: this line has to be executed after the 'incremental' condition above, to catch correctly nb_eval>switch_eval in the current generation et not in the following one
+        nb_eval += pop_size # important: this line has to be executed after the 'incremental' condition above, to catch correctly nb_eval>switch_eval in the current generation et not in the following one
 
 
         # DEAP CMAES
@@ -68,6 +73,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
             if fit[0] < best_fit:
                 best_fit = fit[0]
                 best_pop = population
+                best_covariance_matrix = np.copy(strategy.C)
 
         write_single_gen_data(run, gen, nb_evals, population, learning_params['analysis_dir']['data'])
 

@@ -104,6 +104,7 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                 if setup_name.startswith("setup_deletion") or setup_name.startswith("setup_sliding_puzzle"):
                     deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
                     deleted_pos = eval(deleted_pos)
+                    nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
 
                 nb_rows = params['grid_nb_rows']
                 nb_cols = params['grid_nb_cols']
@@ -119,12 +120,14 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                                     run=run,
                                     nb_ind=best_ind_run,
                                     gen=None,
+                                    nb_eval=None,
                                     n=n,
                                     step=step,
                                     flag=flag_list,
                                     fitness=fitness,
                                     permutated_pos=permutated_pos,
                                     deleted_pos=deleted_pos,
+                                    nb_moves_per_step=nb_moves_per_step,
                                     analysis_dir_plots=params['analysis_dir']['plots'])
 
             if setup_name == "original_flag_copied_from_learning":
@@ -135,6 +138,31 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                                                       run=run,
                                                       switch_step=switch_step,
                                                       analysis_dir_plots=params['analysis_dir']['plots'])
+    
+        if setup_name.startswith("setup_deletion") or setup_name.startswith("setup_sliding_puzzle"):
+            swarmGrid.plot_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
+                                              setup_name=setup_name,
+                                              run=run,
+                                              grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
+                                              switch_step=switch_step,
+                                              analysis_dir_plots=params['analysis_dir']['plots'])
+
+            swarmGrid.plot_multi_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
+                                                    setup_name=setup_name,
+                                                    run=run,
+                                                    grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
+                                                    switch_step=switch_step,
+                                                    analysis_dir_plots=params['analysis_dir']['plots'])
+            
+    if params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool']:
+        data_flag_dirs = []
+        learning_ticks = params['setup_sliding_puzzle_phase1_VS_phase2']['learning_ticks_units']
+        data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}")])
+        data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")])
+        swarmGrid.plot_merged_multi_flag_fitnesses_from_file(data_flag_dirs=data_flag_dirs,
+                                                            setups_names=[f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}", f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}"],
+                                                            run=run,
+                                                            analysis_dir_plots=params['analysis_dir']['plots'])
 
     time_run = time.time() - time_run_ind
     print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Completed. Execution time: {time_run} seconds")
@@ -183,7 +211,7 @@ if (__name__ == "__main__"):
     params['with_parallelization_nb_free_cores'] = args.with_parallelization_nb_free_cores
     params['plot_with_animation_bool'] = args.plot_with_animation_bool
 
-    best_ind_per_run_dict = get_best_ind_per_run_dict(dataset_path=params['analysis_dir']['root'].replace("/swarm", "/learning")+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
+    best_ind_per_run_dict = get_best_ind_per_run_dict(dataset_path=params['analysis_dir']['root'].replace("/swarm", "/learning")+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv")
 
     # Launch plots
     if params['with_parallelization_bool']:

@@ -18,7 +18,7 @@ def plot_animations_from_dir(dir_images):
 
 dirs_images_list = [
 
-"/home/kalessia/flagAutomata/src/simulationAnalysis/sliding_puzzle_incremental_2024-09-26_19-44-22_two_bands_10x10/learning/run_000/plots/env/run_000_gen_004_individual_000/flag"
+"/home/kalessia/flagAutomata/src/simulationAnalysis/sliding_puzzle_incremental_2024-10-09_11-07-22_two_bands_16x16/swarm/run_000/best_ind_001/plots/setup_sliding_puzzle_20/flag"
 
 ]
 

@@ -44,7 +44,7 @@ def check_params_validity(grid_size, params):
                 print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_percent must be a list")
                 params['setup_permutation']['setup_permutation_ticks_percent'] = []
                 exit_bool = True
-            permutation_ticks = [int(grid_size*tick_percent/100) for tick_percent in params['setup_permutation']['setup_permutation_ticks_percent']]
+            permutation_ticks = [int(grid_size*tick_percent) for tick_percent in params['setup_permutation']['setup_permutation_ticks_percent']]
         else:
             if params['setup_permutation']['setup_permutation_ticks_percent'] is not None:
                 print(f"Error in learning_initializations.py - Either 'setup_permutation_ticks_units' or 'setup_permutation_ticks_percent' must be null.")
@@ -62,7 +62,7 @@ def check_params_validity(grid_size, params):
                 print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_percent must be a list")
                 params['setup_deletion']['setup_deletion_ticks_percent'] = []
                 exit_bool = True
-            params['setup_deletion']['deletion_ticks'] = [int(grid_size*tick_percent/100) for tick_percent in params['setup_deletion']['setup_deletion_ticks_percent']]
+            params['setup_deletion']['deletion_ticks'] = [int(grid_size*tick_percent) for tick_percent in params['setup_deletion']['setup_deletion_ticks_percent']]
         else:
             if params['setup_deletion']['setup_deletion_ticks_percent'] is not None:
                 print(f"Error in learning_initializations.py - Either 'setup_permutation_ticks_units' or 'setup_permutation_ticks_percent' must be null.")
@@ -89,19 +89,38 @@ def check_params_validity(grid_size, params):
 
 #---------------------------------------------------
 
-def get_best_ind_per_run_dict(dataset_path=None):
+def get_best_ind_per_run_dict(dataset_path):
 
     best_ind_per_run_dict = {}
     dataset = pd.read_csv(dataset_path)
 
+    learning_phase = dataset['Learning_phase'].max() # the last phase
     runs = sorted(dataset['Run'].unique())
     for run in runs:
-        ind = dataset.loc[(dataset.Run==run), 'Individual'].values.tolist()[0]
+        ind = dataset.loc[(dataset.Run==run) & (dataset.Learning_phase==learning_phase), 'Individual'].values.tolist()[0]
         ind = str(ind).replace('[', '').replace(']', '').strip()
         ind = list(np.asarray(ind.split(','), dtype=np.float64))
         best_ind_per_run_dict[run] = ind
 
     return best_ind_per_run_dict
+
+#---------------------------------------------------
+
+def get_best_ind_per_run_per_phase_dict(dataset_path=None):
+
+    best_ind_per_run_per_phase_dict = {}
+    dataset = pd.read_csv(dataset_path)
+
+    runs = sorted(dataset['Run'].unique())
+    for run in runs:
+        best_ind_per_run_per_phase_dict[run] = []
+        for phase in [1, 2]:
+            ind = dataset.loc[(dataset.Run == run) & (dataset.Learning_phase == phase), 'Individual'].values.tolist()[0]
+            ind = str(ind).replace('[', '').replace(']', '').strip()
+            ind = list(np.asarray(ind.split(','), dtype=np.float64))
+            best_ind_per_run_per_phase_dict[run].append(ind)
+
+    return best_ind_per_run_per_phase_dict
 
 #---------------------------------------------------
 
@@ -144,6 +163,13 @@ def copy_params_from_learning(learning_params, swarm_params):
 
     swarm_params['learning_modes'] = learning_params['learning_modes']
     swarm_params['learning_with_noise_std'] = learning_params['learning_options']['learning_with_noise']['learning_with_noise_std']
+
+    if swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool'] and learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
+        swarm_params['setup_sliding_puzzle_phase1_VS_phase2'].update({
+            'learning_bool': True,
+            'learning_ticks_units': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'],
+            'learning_proba_move': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move'], 
+        })
 
     swarm_params['best_ind_ever'], swarm_params['best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
     swarm_params['flag_target'] = get_flag_target(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")

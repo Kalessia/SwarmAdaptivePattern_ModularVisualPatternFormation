@@ -299,7 +299,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_
         
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=None, analysis_dir=analysis_dir)
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=None, nb_moves_per_step=None, analysis_dir=analysis_dir)
         env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
@@ -350,6 +350,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 
     agents_to_delete = []
     deleted_agents_per_step = []
+    nb_moves_per_step = []
 
     agents = env.get_agents()
     agents_to_delete = random.sample(agents, sliding_puzzle_nb_deletions)
@@ -359,7 +360,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
         in_t_window_zone_bool = False
         flag = env.get_flag_from_grid()
         flags.append(env.convert_flag_to_list(flag))
-        flags_distance = env.eval_flags_distance(flag) #check
+        flags_distance = env.eval_flags_distance(flag)
         deleted_agents_per_step.append([a.pos for a in agents_to_delete])
         
         if step >= time_window_start and step <= time_window_end:
@@ -369,14 +370,15 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
         flags_distances.append(flags_distance)
         in_t_window_zone_bools.append(in_t_window_zone_bool)
 
-        env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
+        nb_moves = env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
                                                     sliding_puzzle_proba_move=sliding_puzzle_proba_move,
                                                     with_noise_bool=with_noise_bool,
                                                     noise_std=noise_std)
+        nb_moves_per_step.append(nb_moves)
 
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
         env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     # Restore original grid
@@ -477,7 +479,7 @@ class swarmGrid:
 
         flag_target = {}
 
-        if flag_pattern == "two_bands":
+        if flag_pattern == "two-bands":
             vertical_threshold = np.floor(self.grid_nb_cols*2/5)
 
             for cell in self.grid_map_pos_agent.keys():
@@ -487,7 +489,7 @@ class swarmGrid:
                     flag_target[cell] = 1.0 # white
 
 
-        elif flag_pattern == "three_bands":
+        elif flag_pattern == "three-bands":
             horizontal_threshold_upper = int(self.grid_nb_rows/3)
             horizontal_threshold_lower = int(self.grid_nb_rows/3*2)
 
@@ -500,9 +502,9 @@ class swarmGrid:
                     flag_target[cell] = 1.0 # white in the middle region
 
 
-        elif flag_pattern == "centered_disc" or flag_pattern == "not_centered_disc" or flag_pattern == "centered_circle":
+        elif flag_pattern == "centered-disc" or flag_pattern == "not-centered-disc":
             center = (np.floor(self.grid_nb_rows/2), np.floor(self.grid_nb_cols/2))
-            if flag_pattern == "not_centered_disc":
+            if flag_pattern == "not-centered-disc":
                 center = (center[0]+1, center[1]+1)
 
             for cell in self.grid_map_pos_agent.keys():
@@ -523,7 +525,7 @@ class swarmGrid:
                         flag_target[cell] = 1.0 # white
 
 
-        elif flag_pattern == "half_discs":
+        elif flag_pattern == "half-discs":
             center = (np.floor(self.grid_nb_rows/2), np.floor(self.grid_nb_cols/2))
             radius = np.floor(min(self.grid_nb_rows/2, self.grid_nb_cols/2))
 
@@ -540,9 +542,9 @@ class swarmGrid:
                         flag_target[cell] = 0.0 # black
 
 
-        elif flag_pattern == "centered_half_discs" or flag_pattern == "not_centered_half_discs":
+        elif flag_pattern == "centered-half-discs" or flag_pattern == "not-centered-half-discs":
             center = (np.floor(self.grid_nb_rows/2), np.floor(self.grid_nb_cols/2))
-            if flag_pattern == "not_centered_half_discs":
+            if flag_pattern == "not-centered-half-discs":
                 center = (center[0]+1, center[1]+1)
 
             for cell in self.grid_map_pos_agent.keys():
@@ -628,6 +630,7 @@ class swarmGrid:
 
     def step_random_async_update_sliding_puzzle(self, agents_to_delete, sliding_puzzle_proba_move, with_noise_bool=False, noise_std=None):
         global verbose_str
+        nb_moves_per_step = 0
         agents = self.get_agents()
         np.random.shuffle(agents) # random update order
 
@@ -639,13 +642,14 @@ class swarmGrid:
             empty_neighbouring_cells_list = [pos for pos in neighbouring_cells if self.grid_map_pos_agent[pos] == None]
             np.random.shuffle(empty_neighbouring_cells_list) # random order
 
-            # For each empty cell in the agent neighborhood, the agent tries to occupe its position
+            # For each empty cell in the agent neighborhood, this agent tries to occupe its position
             # If this agent moves in an empty cell, than the grid is updated and the other empty cells to try are ignored
             for empty_pos in empty_neighbouring_cells_list:
                 if random.random() < sliding_puzzle_proba_move:
+                    nb_moves_per_step += 1
 
                     # Movement of the deleted/hidden agent, from the empty cell to the this-agent position
-                    agent_to_delete = [a for a in agents_to_delete if a.pos == empty_pos][0]
+                    agent_to_delete = [a for a in agents_to_delete if a.pos == empty_pos][0] 
                     agent_to_delete.pos = agent.pos
 
                     # Movement of this agent, from its position to the empty cell
@@ -660,6 +664,8 @@ class swarmGrid:
             # Random async update of this agent state
             state = self.compute_agent_state(agent=agent)
             agent.set_state(state, with_noise_bool, noise_std)
+
+        return nb_moves_per_step
 
     #---------------------------------------------------
 
@@ -714,27 +720,33 @@ class swarmGrid:
             flags = []
 
             for step in range(time_steps):
-                flag = self.get_flag_from_grid()
-                flags.append(flag)
 
                 if setup_name != "setup_ind_consistency_learning_conditions" and step == switch_step-1:
                 
                     if setup_name == "setup_ind_consistency_random_init_states": # this setup represents noisy perturbation on initialization
                         self.init_agents_state(random_init_bool=True)
+                        flag = self.get_flag_from_grid()
+                        flags.append(flag)
                         continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
                     if setup_name == "setup_ind_consistency_random_async_update_states": # this setup represents perturbation on the update order
                         switch_step_with_random_async_update_bool = True
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
+                            flag = self.get_flag_from_grid()
+                            flags.append(flag)
                             continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
                 self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
                           with_noise_bool=with_noise_bool,
                           noise_std=noise_std)
+                
+                flag = self.get_flag_from_grid()
+                flags.append(flag)
+
             
             # Save flags for this run
-            self.write_flag_data_swarm(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
+            self.write_flag_data_swarm(setup_name=setup_name, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], nb_moves_per_step=[], analysis_dir=analysis_dir)
 
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -754,22 +766,27 @@ class swarmGrid:
                 flags = []
 
                 for step in range(time_steps):
-                    flag = self.get_flag_from_grid()
-                    flags.append(flag)
 
                     if step == switch_step-1:
                         with_noise_bool = True
                         noise_std = tick
+
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
+                            flag = self.get_flag_from_grid()
+                            flags.append(flag)
                             continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
                     self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
                               with_noise_bool=with_noise_bool,
                               noise_std=noise_std)
+                    
+                    flag = self.get_flag_from_grid()
+                    flags.append(flag)
+
                 
                 # Save flags for this run
-                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], nb_moves_per_step=[], analysis_dir=analysis_dir)
         
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -794,9 +811,6 @@ class swarmGrid:
                     verbose_str += f"\nStarting setup_permutation n={n} tick={tick}"
 
                 for step in range(time_steps):
-                    flag = self.get_flag_from_grid()
-                    flags.append(flag)
-                    permutated_agents_per_step.append([a.pos for a in agents_to_permutate])
 
                     if step == switch_step-1:
                         agents = self.get_agents()
@@ -808,16 +822,22 @@ class swarmGrid:
                         
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
-                            # permutated_agents_per_step.append(permutated_agents)
-                        
-                        continue # don't execute the following self.step update line, as we just updated the grid with the permutation and eventually the reset_env
+                            permutated_agents_per_step.append([a.pos for a in agents_to_permutate])                    
+                            flag = self.get_flag_from_grid()
+                            flags.append(flag)
+                            continue # don't execute the following self.step update line, as we just updated the grid with the permutation and eventually the reset_env
 
                     self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
                               with_noise_bool=with_noise_bool,
                               noise_std=noise_std)
+                    
+                    permutated_agents_per_step.append([a.pos for a in agents_to_permutate])                    
+                    flag = self.get_flag_from_grid()
+                    flags.append(flag)
+
 
                 # Save flags for this run
-                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=permutated_agents_per_step, deleted_agents_per_step=[], analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=permutated_agents_per_step, deleted_agents_per_step=[], nb_moves_per_step=[], analysis_dir=analysis_dir)
 
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -841,9 +861,6 @@ class swarmGrid:
                 deleted_agents_per_step = []
 
                 for step in range(time_steps):
-                    flag = self.get_flag_from_grid()
-                    flags.append(flag)
-                    deleted_agents_per_step.append([a.pos for a in agents_to_delete])
 
                     if step == switch_step-1:
                         agents = self.get_agents()
@@ -853,15 +870,22 @@ class swarmGrid:
 
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
-                            # deleted_agents_per_step.append(agents_to_delete) # check si besoin de cette ligne
+                            deleted_agents_per_step.append(agents_to_delete)
+                            flag = self.get_flag_from_grid()
+                            flags.append(flag)
                             continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
                     self.step(random_async_update_bool=switch_step_with_random_async_update_bool,
                               with_noise_bool=with_noise_bool,
                               noise_std=noise_std)
+                    
+                    deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+                    flag = self.get_flag_from_grid()
+                    flags.append(flag)
+                
                 
                 # Save flags for this run
-                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=[], analysis_dir=analysis_dir)
             
                 # Restore original grid
                 self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
@@ -877,7 +901,7 @@ class swarmGrid:
         for n in range(nb_repetitions):
             deleted_map_pos_agent = {}
 
-            # This code is similar to setup_deletion as it manage the deletion of tiles:
+            # This code is similar to setup_deletion as it manages the deletion of tiles:
             # Their position will be modified in step_random_async_update_sliding_puzzle.
             # In this setup, the automata update is always asynchrone (random_async_update)
             for tick in sliding_puzzle_ticks:
@@ -888,11 +912,9 @@ class swarmGrid:
                 flags = []
                 agents_to_delete = []
                 deleted_agents_per_step = []
+                nb_moves_per_step = []
 
                 for step in range(time_steps):
-                    flag = self.get_flag_from_grid()
-                    flags.append(flag)
-                    deleted_agents_per_step.append([a.pos for a in agents_to_delete])
 
                     if step == switch_step-1:
                         agents = self.get_agents()
@@ -902,19 +924,86 @@ class swarmGrid:
 
                         if switch_step_with_reset_env_bool:
                             self.init_agents_state()
-                            # deleted_agents_per_step.append(agents_to_delete)
+                            nb_moves_per_step.append(0)
+                            deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+                            flag = self.get_flag_from_grid()
+                            flags.append(flag)
                             continue # don't execute the following self.step update line, as we just updated the grid in this condition
 
-                    self.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
-                                                                sliding_puzzle_proba_move=sliding_puzzle_proba_move,
-                                                                with_noise_bool=with_noise_bool,
-                                                                noise_std=noise_std)
+                    nb_moves = self.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
+                                                                            sliding_puzzle_proba_move=sliding_puzzle_proba_move,
+                                                                            with_noise_bool=with_noise_bool,
+                                                                            noise_std=noise_std)
+                    nb_moves_per_step.append(nb_moves)
+                    deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+                    flag = self.get_flag_from_grid()
+                    flags.append(flag)
+
 
                 # Save flags for this run
-                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir)
+                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir, nb_moves_per_step=nb_moves_per_step)
             
                 # Restore original grid
                 self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
+
+        with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+            f.write(verbose_str)
+            verbose_str = ""
+
+    #---------------------------------------------------
+
+    @staticmethod
+    def setup_sliding_puzzle_phase1_VS_phase2(run, setup_name, nb_repetitions, sliding_puzzle_learning_best_inds_per_phase, sliding_puzzle_learning_ticks, sliding_puzzle_learning_proba_move, 
+                                              grid_nb_rows, grid_nb_cols, learning_modes, learning_with_noise_std, flag_pattern, init_cell_state_value, nn_controller, time_steps,analysis_dir):
+        global verbose_str
+        for n in range(nb_repetitions):
+            for best_ind_per_phase, phase in zip(sliding_puzzle_learning_best_inds_per_phase, [1, 2]): # sliding_puzzle_learning_best_inds_per_phase = [best ind phase1, best ind phase2]
+
+                # Grid creation with a new best ind
+                new_env = init_swarmGrid_env(grid_nb_rows=grid_nb_rows,
+                                             grid_nb_cols=grid_nb_cols,
+                                             learning_modes=learning_modes,
+                                             learning_with_noise_std=learning_with_noise_std,
+                                             flag_pattern=flag_pattern,
+                                             flag_target=None,
+                                             init_cell_state_value=init_cell_state_value,
+                                             nn_controller=nn_controller,
+                                             agent_controller_weights=best_ind_per_phase,
+                                             verbose_debug_bool=False,
+                                             analysis_dir=analysis_dir)
+
+                # This code is similar to setup_deletion as it manages the deletion of tiles:
+                # Their position will be modified in step_random_async_update_sliding_puzzle.
+                # In this setup, the automata update is always asynchrone (random_async_update)
+                for tick in sliding_puzzle_learning_ticks:
+                    setup_name_tick_phase = f"{setup_name}_{tick}_phase{phase}"
+                    with_noise_bool = new_env.learning_with_noise_bool
+                    noise_std = new_env.learning_with_noise_std
+                    new_env.init_agents_state()
+                    flags = []
+                    deleted_agents_per_step = []
+                    nb_moves_per_step = []
+
+                    agents = new_env.get_agents()
+                    agents_to_delete = random.sample(agents, tick)
+                    deleted_map_pos_agent = new_env.delete_agent(agents_to_delete=agents_to_delete)
+
+                    for _ in range(time_steps):
+                        nb_moves = new_env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
+                                                                                   sliding_puzzle_proba_move=sliding_puzzle_learning_proba_move,
+                                                                                   with_noise_bool=with_noise_bool,
+                                                                                   noise_std=noise_std)
+                        nb_moves_per_step.append(nb_moves)
+                        deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+                        flag = new_env.get_flag_from_grid()
+                        flags.append(flag)
+
+                    # Save flags for this run
+                    new_env.write_flag_data_swarm(setup_name=setup_name_tick_phase, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
+                
+                    # Restore original grid
+                    new_env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
+
 
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -934,16 +1023,16 @@ class swarmGrid:
                 
                 # Grid creation with a new size
                 new_env = init_swarmGrid_env(grid_nb_rows=tick[0],
-                                        grid_nb_cols=tick[1],
-                                        learning_modes=learning_modes,
-                                        learning_with_noise_std=learning_with_noise_std,
-                                        flag_pattern=flag_pattern,
-                                        flag_target=None,
-                                        init_cell_state_value=init_cell_state_value,
-                                        nn_controller=nn_controller,
-                                        agent_controller_weights=agent_controller_weights,
-                                        verbose_debug_bool=False,
-                                        analysis_dir=analysis_dir)
+                                            grid_nb_cols=tick[1],
+                                            learning_modes=learning_modes,
+                                            learning_with_noise_std=learning_with_noise_std,
+                                            flag_pattern=flag_pattern,
+                                            flag_target=None,
+                                            init_cell_state_value=init_cell_state_value,
+                                            nn_controller=nn_controller,
+                                            agent_controller_weights=agent_controller_weights,
+                                            verbose_debug_bool=False,
+                                            analysis_dir=analysis_dir)
 
                 switch_step_with_random_async_update_bool = new_env.learning_random_async_update_states_bool
                 with_noise_bool = new_env.learning_with_noise_bool
@@ -952,12 +1041,12 @@ class swarmGrid:
                 flags = []
 
                 for _ in range(time_steps):
+                    new_env.step(random_async_update_bool=switch_step_with_random_async_update_bool,
+                                 with_noise_bool=with_noise_bool,
+                                 noise_std=noise_std)
+                    
                     flag = new_env.get_flag_from_grid()
                     flags.append(flag)
-
-                    new_env.step(random_async_update_bool=switch_step_with_random_async_update_bool,
-                            with_noise_bool=with_noise_bool,
-                            noise_std=noise_std)
                 
                 # Save flags for this run
                 new_env.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=[], analysis_dir=analysis_dir)
@@ -1067,21 +1156,22 @@ class swarmGrid:
 
     #---------------------------------------------------
     
-    def write_flag_data_learning(self, run, gen, nb_eval, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, deleted_agents_per_step, analysis_dir):
+    def write_flag_data_learning(self, run, gen, nb_eval, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, deleted_agents_per_step, nb_moves_per_step, analysis_dir):
 
         from learning_initializations import save_data_to_csv
 
         file_path = analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
         if not (os.path.exists(file_path)):
             os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
-            save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual", "Deleted_agents_positions"])
+            save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual", "Deleted_agents_positions", "Nb_moves"])
         
         if deleted_agents_per_step is None:
             deleted_agents_per_step = [[] for _ in range(time_steps)]
+            nb_moves_per_step = [[] for _ in range(time_steps)]
         
         data_env_flag = []
         for step in range(time_steps):
-            data_env_flag.append([str(gen), str(nb_eval), str(nb_ind), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip(), str(deleted_agents_per_step[step]).strip()])
+            data_env_flag.append([str(gen), str(nb_eval), str(nb_ind), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip(), str(deleted_agents_per_step[step]).strip(), str(nb_moves_per_step[step]).strip()])
 
         save_data_to_csv(file_path, data_env_flag)
 
@@ -1099,7 +1189,7 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def write_flag_data_swarm(self, setup_name, run, n, time_steps, flags, permutated_agents_per_step, deleted_agents_per_step, analysis_dir):
+    def write_flag_data_swarm(self, setup_name, run, n, time_steps, flags, permutated_agents_per_step, deleted_agents_per_step, nb_moves_per_step, analysis_dir):
 
         from learning_initializations import save_data_to_csv
 
@@ -1118,8 +1208,8 @@ class swarmGrid:
                 data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(permutated_agents_per_step[step]).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Permutated_agents_positions"]
             elif deleted_agents_per_step:
-                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(deleted_agents_per_step[step]).strip()])
-                header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Deleted_agents_positions"]
+                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(deleted_agents_per_step[step]).strip(), str(nb_moves_per_step[step]).strip()])
+                header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Deleted_agents_positions", "Nb_moves"]
             else:
                 data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"]
@@ -1129,7 +1219,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag, fitness, permutated_pos=[], deleted_pos=[], analysis_dir_plots=None):
+    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag, fitness, permutated_pos=[], deleted_pos=[], nb_moves_per_step=0, analysis_dir_plots=None):
         
         fig, ax = plt.subplots()
 
@@ -1147,7 +1237,7 @@ class swarmGrid:
             y_deleted = [-pos[0] for pos in deleted_pos]
 
         if grid_nb_rows <= 10 and grid_nb_cols <= 10:
-            for row, col in [pos for pos in grid_pos if pos not in deleted_pos]: # works?
+            for row, col in [pos for pos in grid_pos if pos not in deleted_pos]:
                 for neighbor_pos in [(row-1, col), (row, col-1), (row, col+1), (row+1, col)]:
                     if swarmGrid.is_pos_valid(grid_nb_rows, grid_nb_cols, neighbor_pos) and neighbor_pos not in deleted_pos:
                         ax.plot([col, neighbor_pos[1]], [-row, -neighbor_pos[0]], color='black', linestyle=':', zorder=1)
@@ -1157,7 +1247,6 @@ class swarmGrid:
         x = []
         y = []
         grey_values = []
-
         for p, pos in enumerate(grid_pos):
             grey_value = flag[p]
 
@@ -1172,21 +1261,26 @@ class swarmGrid:
                 else:
                     circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
 
-                if pos in permutated_pos: # works?
+                if pos in permutated_pos:
                     circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:green', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
 
-                if pos in deleted_pos: # works?
+                if pos in deleted_pos:
                     circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
                 
                 ax.add_patch(circle)
 
                 if grid_nb_rows < 6 and grid_nb_cols < 6:
                     ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(grey_value,2)), color='black', va='center', ha='center')
-                            
-                plt.axis('off')
+                
+                # Hide axis lines and ticks, but still show labels
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['left'].set_visible(False)
+                ax.spines['bottom'].set_visible(False)
+
 
         if grid_nb_rows > 10 or grid_nb_cols > 10:
-            colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # Black to light blue
+            colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black to light blue
             cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
             plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
 
@@ -1195,15 +1289,19 @@ class swarmGrid:
 
             if deleted_pos:
                 plt.scatter(x_deleted, y_deleted, c='tab:red') # deleted agents
-                                      
-            plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+       
 
         ax.set_aspect('equal')
         plt.xlim(-0.5, grid_nb_cols-0.5)
         plt.ylim(-grid_nb_rows+0.5, 0.5)
-        
+        plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        plt.xlabel(f"nb moves during this step = {nb_moves_per_step}", fontsize=12)
+
+
         if setup_name:
-            plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)
+            plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=10)
             dir_name = analysis_dir_plots+"/"+setup_name+"/flag"
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name, exist_ok=True)
@@ -1236,7 +1334,7 @@ class swarmGrid:
         x = dataset['Step'].tolist()
         y = dataset['Flags_distance'].tolist()
 
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
 
         plt.plot(x, y)
 
@@ -1274,16 +1372,17 @@ class swarmGrid:
             x = dataset['Step'].tolist()
             y = dataset['Flags_distance'].tolist()
             n = data_flag_file.split("n_")[1].split(".csv")[0]
-            plt.plot(x, y, label=n)
+            plt.plot(x, y, label=f"n_{n}")
 
-            if switch_step:
+            if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
                 plt.axvline(x=switch_step, color='r', linestyle='--')
 
         plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Flags distance", fontsize=12)
         plt.title(f"Flags distance related to the flag development over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
-        
+        plt.legend()
+
         dir_name = analysis_dir_plots+"/"+setup_name
         if not (os.path.exists(dir_name)):
             os.makedirs(dir_name, exist_ok=True)
@@ -1291,3 +1390,93 @@ class swarmGrid:
 
         plt.clf()
         plt.close()
+
+    #---------------------------------------------------
+
+    @staticmethod
+    def plot_nb_moves_from_file(data_flag_dir, setup_name, run, grid_size, switch_step, analysis_dir_plots):
+
+        data_flag_files = os.listdir(data_flag_dir)
+        for data_flag_file in data_flag_files:
+            dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
+            x = dataset['Step'].tolist()
+            y = dataset['Nb_moves'].tolist()
+            n = data_flag_file.split("n_")[1].split(".csv")[0]
+            plt.plot(x, y, label=f"n_{n}")
+
+            if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
+                plt.axvline(x=switch_step, color='r', linestyle='--')
+
+            plt.ylim(-0.1, grid_size) # 0 and 1 are respectively min and max values of flag distance
+            plt.xlabel("Steps", fontsize=12)
+            plt.ylabel("Nb moves", fontsize=12)
+            plt.title(f"Number of agents' moves related to the flag development over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
+            plt.legend()
+
+            dir_name = analysis_dir_plots+"/"+setup_name
+            if not (os.path.exists(dir_name)):
+                os.makedirs(dir_name, exist_ok=True)
+            plt.savefig(f"{dir_name}/{setup_name}_flag_nb_moves_run_{run:03}_n_{n}.png")
+
+            plt.clf()
+            plt.close()
+
+    #---------------------------------------------------
+
+    @staticmethod
+    def plot_multi_nb_moves_from_file(data_flag_dir, setup_name, run, grid_size, switch_step, analysis_dir_plots):
+
+        data_flag_files = os.listdir(data_flag_dir)
+        for data_flag_file in data_flag_files:
+            dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
+            x = dataset['Step'].tolist()
+            y = dataset['Nb_moves'].tolist()
+            n = data_flag_file.split("n_")[1].split(".csv")[0]
+            plt.plot(x, y, label=f"n_{n}")
+
+        if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
+            plt.axvline(x=switch_step, color='r', linestyle='--')
+
+        plt.ylim(-0.1, grid_size) # 0 and 1 are respectively min and max values of flag distance
+        plt.xlabel("Steps", fontsize=12)
+        plt.ylabel("Nb moves", fontsize=12)
+        plt.title(f"Number of agents' moves related to the flag development over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
+        plt.legend()
+
+        dir_name = analysis_dir_plots+"/"+setup_name
+        if not (os.path.exists(dir_name)):
+            os.makedirs(dir_name, exist_ok=True)
+        plt.savefig(f"{dir_name}/{setup_name}_flag_nb_moves_run_{run:03}.png")
+
+        plt.clf()
+        plt.close()
+
+    #---------------------------------------------------
+
+    @staticmethod
+    def plot_merged_multi_flag_fitnesses_from_file(data_flag_dirs, setups_names, run, analysis_dir_plots):
+
+        plot_colors = ['#0173b2', '#de8f05'] # blue, orange
+        for setup, data_flag_dirs_phase1_and_phase2 in enumerate(data_flag_dirs): # data_flag_dirs = [[data setup0 phase1, data setup0 phase2], [data setup1 phase1, data setup1 phase2]]
+            for phase, data_flag_dir in enumerate(data_flag_dirs_phase1_and_phase2):
+                data_flag_files = os.listdir(data_flag_dir)
+                for data_flag_file in data_flag_files:
+                    dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
+                    x = dataset['Step'].tolist()
+                    y = dataset['Flags_distance'].tolist()
+                    n = data_flag_file.split("n_")[1].split(".csv")[0]
+                    plt.plot(x, y, color=plot_colors[phase], label=f"best_ind_phase_{phase+1}" if n == "000" else "")
+
+            plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
+            plt.xlabel("Steps", fontsize=12)
+            plt.ylabel("Flags distance", fontsize=12)
+            plt.title(f"Flags distance related to the flag development over steps. Run {run}\n{setups_names[setup]}, {len(data_flag_files)} repetitions", fontsize=12)
+            plt.legend()
+
+            dir_name = f"{analysis_dir_plots}/{setups_names[setup]}"
+            if not (os.path.exists(dir_name)):
+                os.makedirs(dir_name, exist_ok=True)
+            plt.savefig(f"{dir_name}/{setups_names[setup]}_merged_flag_fitnesses_run_{run:03}.png")
+
+            plt.clf()
+            plt.close()

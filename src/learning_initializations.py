@@ -61,7 +61,7 @@ def check_params_validity(params):
                 print(f"Error in learning_initializations.py - Parameter sliding_puzzle_incremental_nb_deletions_percent must be a list")
                 params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'] = []
                 exit_bool = True
-            params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(params['grid']['grid_size']*tick_percent/100) for tick_percent in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent']]
+            params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(params['grid']['grid_size']*tick_percent) for tick_percent in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent']]
         else:
             if params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'] is not None:
                 print(f"Error in learning_initializations.py - Either 'sliding_puzzle_incremental_nb_deletions_units' or 'sliding_puzzle_incremental_nb_deletions_percent' must be null.")
@@ -107,7 +107,7 @@ def check_params_validity(params):
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
 
-    patterns = ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']
+    patterns = ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs']
     if params['grid']['flag_pattern'] not in patterns:
         print(f"Error in learning_initializations.py - The flag_pattern parameter must be one of the following: {patterns}")
         exit_bool = True
@@ -217,7 +217,7 @@ def init_toolbox(params):
     toolbox.register("generate", strategy.generate, creator.Individual)
     toolbox.register("update", strategy.update)
 
-    return toolbox
+    return toolbox, strategy
 
 
 ###########################################################################

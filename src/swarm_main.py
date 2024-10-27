@@ -2,6 +2,7 @@ import time
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
+import itertools
 
 import json
 
@@ -16,7 +17,7 @@ sep = "\n################################################\n"
 # Swarm simulation
 ###########################################################################
 
-def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
+def swarm_simulation(run, best_ind, best_ind_run, best_inds_per_run_per_phase, swarm_params):
     print(f"swarm_simulation run n.{run}, best_ind_{best_ind_run} [{best_ind[0]}, ...] - Starting")
 
     # Initializations
@@ -107,6 +108,27 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
                                  switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
                                  analysis_dir=swarm_params['analysis_dir'])
         
+    # setup_sliding_puzzle_phase1_VS_phase2
+    if swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool'] and swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['learning_bool']:
+        setup_name = "setup_sliding_puzzle_phase1_VS_phase2"
+        sliding_puzzle_learning_ticks = [int(tick_unit) for tick_unit in swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['learning_ticks_units']]
+        setups += [f"{setup_name}_{tick}_phase{phase}" for tick, phase in list(itertools.product(sliding_puzzle_learning_ticks, [1,2]))]
+        swarmGrid.setup_sliding_puzzle_phase1_VS_phase2(run=run,
+                                                        setup_name=setup_name,
+                                                        nb_repetitions=swarm_params['nb_repetitions'],
+                                                        sliding_puzzle_learning_best_inds_per_phase=best_inds_per_run_per_phase,
+                                                        sliding_puzzle_learning_ticks=sliding_puzzle_learning_ticks,
+                                                        sliding_puzzle_learning_proba_move=swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move'],
+                                                        grid_nb_rows=swarm_params['grid_nb_rows'],
+                                                        grid_nb_cols=swarm_params['grid_nb_cols'],
+                                                        learning_modes=swarm_params['learning_modes'],
+                                                        learning_with_noise_std=swarm_params['learning_with_noise_std'],
+                                                        flag_pattern=swarm_params['flag_pattern'],
+                                                        init_cell_state_value=swarm_params['init_cell_state_value'],
+                                                        nn_controller=swarm_params['controller'],
+                                                        time_steps=swarm_params['time_steps'],
+                                                        analysis_dir=swarm_params['analysis_dir'])
+        
     # setup scalability
     if swarm_params['setup_scalability']['setup_scalability_bool']:
         setup_name = "setup_scalability"
@@ -141,18 +163,18 @@ def swarm_simulation(run, best_ind, best_ind_run, swarm_params):
 ###########################################################################
 
 def worker(task):
-    run, best_ind, best_ind_run, swarm_params = task
-    return swarm_simulation(run=run, best_ind=best_ind, best_ind_run=best_ind_run, swarm_params=swarm_params)
+    run, best_ind, best_ind_run, best_inds_per_run_per_phase, swarm_params = task
+    return swarm_simulation(run=run, best_ind=best_ind, best_ind_run=best_ind_run, best_inds_per_run_per_phase=best_inds_per_run_per_phase, swarm_params=swarm_params)
 
 #---------------------------------------------------
 
-def parallelize_processes(nb_runs, best_ind_per_run_dict, swarm_params):
+def parallelize_processes(nb_runs, best_ind_per_run_dict, best_ind_per_run_per_phase_dict, swarm_params):
     
     # Create a queue of tasks to execute
     task_queue = []
     for run in range(nb_runs):
         for best_ind_run in best_ind_per_run_dict:
-            task_queue.append((run, best_ind_per_run_dict[best_ind_run], best_ind_run, swarm_params.copy()))
+            task_queue.append((run, best_ind_per_run_dict[best_ind_run], best_ind_run, best_ind_per_run_per_phase_dict[best_ind_run], swarm_params.copy()))
 
     # Create a Pool with the number of available cores
     available_cores = cpu_count() - swarm_params['with_parallelization_nb_free_cores']
@@ -184,15 +206,16 @@ if (__name__ == "__main__"):
     check_params_validity(grid_size=learning_params['grid']['grid_nb_rows']*learning_params['grid']['grid_nb_cols'], params=swarm_params)
     swarm_params = init_all_runs_analysis(learning_analysis_dir_root=learning_params['analysis_dir']['root'], params=swarm_params)
     swarm_params = copy_params_from_learning(learning_params=learning_params, swarm_params=swarm_params)
-    best_ind_per_run_dict = get_best_ind_per_run_dict(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
+    best_ind_per_run_dict = get_best_ind_per_run_dict(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv")
+    best_ind_per_run_per_phase_dict = get_best_ind_per_run_per_phase_dict(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv")
 
     # Launch the Swarm simulation with parallelization over runs and individuals OR sequentially
     if swarm_params['with_parallelization_bool']:
-        swarm_params = parallelize_processes(nb_runs=swarm_params['nb_runs'], best_ind_per_run_dict=best_ind_per_run_dict, swarm_params=swarm_params)
+        swarm_params = parallelize_processes(nb_runs=swarm_params['nb_runs'], best_ind_per_run_dict=best_ind_per_run_dict, best_ind_per_run_per_phase_dict=best_ind_per_run_per_phase_dict, swarm_params=swarm_params)
     else:
         for run in range(swarm_params['nb_runs']):
             for best_ind_run in best_ind_per_run_dict:
-                swarm_params = swarm_simulation(run=run, best_ind=best_ind_per_run_dict[best_ind_run], best_ind_run=best_ind_run, swarm_params=swarm_params.copy())
+                swarm_params = swarm_simulation(run=run, best_ind=best_ind_per_run_dict[best_ind_run], best_ind_run=best_ind_run, best_inds_per_run_per_phase=best_ind_per_run_per_phase_dict[best_ind_run], swarm_params=swarm_params.copy())
 
     # Save a trace of used parameters for this simulation in swarm_params.json
     swarm_params['best_ind_ever'] = np.array(swarm_params['best_ind_ever']).tolist()

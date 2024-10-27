@@ -9,8 +9,8 @@
             "sliding_puzzle_incremental info": "Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions_ticks[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions_ticks[1] in the 2nd. The switch generation is deducted from 'switch_eval'. Either 'units' or 'percent' must be null.",
             "sliding_puzzle_incremental_switch_eval": 7000,
             "sliding_puzzle_incremental_nb_deletions_units": null,
-            "sliding_puzzle_incremental_nb_deletions_percent": [0, 5],
-            "sliding_puzzle_incremental_proba_move": 0.2
+            "sliding_puzzle_incremental_nb_deletions_percent": [0.0, 0.1],
+            "sliding_puzzle_incremental_proba_move": 0.1
         }
     },
 
@@ -21,9 +21,9 @@
         "nb_neuronsPerOutputs": 2
     },
 
-    "grid info": "flag_patterns in ['two_bands', 'three_bands', 'centered_disc', 'not_centered_disc', 'centered_half_discs', 'not_centered_half_discs']. Set init_cell_state_value as a scalar or null (random).",
+    "grid info": "flag_patterns in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs']. Set init_cell_state_value as a scalar or null (random).",
     "grid": {
-        "flag_pattern": "two_bands",
+        "flag_pattern": "two-bands",
         "grid_nb_rows": 16,
         "grid_nb_cols": 16,
         "init_cell_state_value": 0.0

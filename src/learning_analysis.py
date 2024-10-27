@@ -34,7 +34,8 @@ def init_all_runs_analysis(params):
     os.makedirs(params['analysis_dir']['root']+"/plots_all_runs", exist_ok=True)
 
     save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_time.csv", [], header = ["Run", "Time(s)", "Time(min)", "Time(h)"])
-    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv", [], header = ["Run", "Generation", "Nb_eval", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv", [], header = ["Run", "Generation", "Nb_eval", "Learning_phase", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv", [], header = ["Run", "Generation", "Nb_eval", "Learning_phase", "Fitness", "Individual"])
     
     return params
 
@@ -51,7 +52,7 @@ def init_one_run_analysis(run, params):
     # Create headers for files to update at each generation of each run
     save_data_to_csv(params['analysis_dir']['data']+ f"/data_evo_run_{run:03}_all_pop.csv", [], header = ["Run", "Generation", "Nb_eval", "Fitness", "Individual"])
     save_data_to_csv(params['analysis_dir']['data']+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv", [], header = ["Run", "Generation", "Nb_eval", "Fitness", "Individual"])
-    save_data_to_csv(params['analysis_dir']['data']+ f"/data_evo_run_{run:03}_best_inds_ever.csv", [], header = ["Run", "Generation", "Nb_eval", "Fitness", "Individual"])
+    save_data_to_csv(params['analysis_dir']['data']+ f"/data_evo_run_{run:03}_best_inds_ever.csv", [], header = ["Run", "Generation", "Nb_eval", "Learning_phase", "Fitness", "Individual"])
 
     return params
 
@@ -82,7 +83,8 @@ def write_single_run_data(run, switch_gen, time_run, analysis_dir):
     dataset_path = analysis_dir['data']+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv"
     save_best_inds_ever_filename =  analysis_dir['data']+ f"/data_evo_run_{run:03}_best_inds_ever.csv"
     save_best_ind_per_run_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
-    write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, switch_gen=switch_gen, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename)
+    save_best_ind_per_run_per_phase_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv"
+    write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, switch_gen=switch_gen, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename, save_best_ind_per_run_per_phase_filename=save_best_ind_per_run_per_phase_filename)
 
     # Save time information for this run
     data_evo_all_runs_time = [[str(run), str(time_run), str((time_run+1)/60), str((time_run+1)/3600)]]
@@ -134,13 +136,14 @@ def write_all_runs_data(analysis_dir):
 
 #---------------------------------------------------
 
-def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_best_inds_ever_filename, save_best_ind_per_run_filename):
+def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_best_inds_ever_filename, save_best_ind_per_run_filename, save_best_ind_per_run_per_phase_filename):
 
     dataset = pd.read_csv(dataset_path) # this dataset contains a line per gen
 
     generations = []
     data_best_inds_ever = []
     best_fit = np.inf
+    learning_phase = 1
 
     for index in dataset.index:
         run = dataset.loc[index, 'Run']
@@ -151,20 +154,26 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_bes
         generations.append(gen)
         
         if switch_gen and gen == switch_gen: 
+            learning_phase = 2
             best_fit_ever_phase1 = best_fit
             data_best_inds_ever_phase1 = [data_best_inds_ever[-1]]
             best_fit = np.inf # reset best_fit for phase2
 
         if fit < best_fit:
             best_fit = fit
-            data_best_inds_ever.append([str(run).strip(), str(gen).strip(), str(nb_eval).strip(), str(fit).strip(), str(dataset.loc[index, 'Individual']).strip()])
+            data_best_inds_ever.append([str(run).strip(), str(gen).strip(), str(nb_eval).strip(), str(learning_phase).strip(), str(fit).strip(), str(dataset.loc[index, 'Individual']).strip()])
 
-    save_data_to_csv(save_best_inds_ever_filename, data_best_inds_ever)
 
-    if switch_gen and best_fit_ever_phase1 < best_fit:
-        save_data_to_csv(save_best_ind_per_run_filename, data_best_inds_ever_phase1)
-    else:
-        save_data_to_csv(save_best_ind_per_run_filename, [data_best_inds_ever[-1]])
+    # Select and write the data about the individual with the best fitness per run 
+    best_fit_per_run = [data_best_inds_ever[-1]]
+    if switch_gen is not None:
+        save_data_to_csv(save_best_ind_per_run_per_phase_filename, data_best_inds_ever_phase1)
+        if best_fit_ever_phase1 < best_fit:
+            best_fit_per_run = data_best_inds_ever_phase1
+
+    save_data_to_csv(save_best_inds_ever_filename, data_best_inds_ever) # "/data_evo_run_{run:03}_best_inds_ever.csv"
+    save_data_to_csv(save_best_ind_per_run_filename, best_fit_per_run) # "/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
+    save_data_to_csv(save_best_ind_per_run_per_phase_filename, [data_best_inds_ever[-1]]) # "/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv"
 
 
 ###########################################################################
@@ -219,9 +228,9 @@ def plot_single_run_data(run, params):
             # time_window_zone = dataset.loc[(dataset.Step==step),['Time_window_zone']].values.tolist()[0][0]
             
             # if deleted pos in file, if incremental learning
-            deleted_pos = []
             deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
             deleted_pos = eval(deleted_pos)
+            nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
 
             if step in steps:
                 swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
@@ -236,6 +245,7 @@ def plot_single_run_data(run, params):
                                     flag=flag_list,
                                     fitness=fitness,
                                     deleted_pos=deleted_pos,
+                                    nb_moves_per_step=nb_moves_per_step,
                                     analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
             
                 # Write this individual
