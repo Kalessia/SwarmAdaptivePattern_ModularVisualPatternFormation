@@ -153,11 +153,17 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_bes
 
         generations.append(gen)
         
-        if switch_gen and gen == switch_gen: 
+        if switch_gen is not None and gen == switch_gen:
+            if switch_gen == 0:
+                best_fit_ever_phase1 = fit
+                data_best_inds_ever_phase1 = [[str(run).strip(), str(gen).strip(), str(nb_eval).strip(), str(1).strip(), str(fit).strip(), str(dataset.loc[index, 'Individual']).strip()]]
+            else:
+                best_fit_ever_phase1 = best_fit
+                data_best_inds_ever_phase1 = [data_best_inds_ever[-1]]
+            
             learning_phase = 2
-            best_fit_ever_phase1 = best_fit
-            data_best_inds_ever_phase1 = [data_best_inds_ever[-1]]
             best_fit = np.inf # reset best_fit for phase2
+
 
         if fit < best_fit:
             best_fit = fit
@@ -180,7 +186,7 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_bes
 # Plot data functions
 ###########################################################################
                 
-def plot_single_run_data(run, params):
+def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incremental" cela crushes???
 
     time_run = time.time()
     print(f"learning_analysis plots for the single run n.{run} - Started")
@@ -227,7 +233,7 @@ def plot_single_run_data(run, params):
             fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]
             # time_window_zone = dataset.loc[(dataset.Step==step),['Time_window_zone']].values.tolist()[0][0]
             
-            # if deleted pos in file, if incremental learning
+            # TODO if deleted pos in file, if incremental learning ?
             deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
             deleted_pos = eval(deleted_pos)
             nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
@@ -271,7 +277,15 @@ def plot_single_run_data(run, params):
                                                 nb_eval=nb_eval,
                                                 switch_step=None,
                                                 analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
-
+        
+        # TODO: le nom du dossier de sauvegarde n'est pas bon, il faudrait un plot par flag??? Evitabile
+        # if params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
+        #     swarmGrid.plot_learning_sliding_puzzle_nb_moves_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv",
+        #                                                run=run,
+        #                                                grid_size=params['grid']['grid_nb_rows']*params['grid']['grid_nb_cols'],
+        #                                                analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
+            
+            
     # Animation of: plot all the flag steps of the last best individual ever
     if params['plot_with_animation_bool']:
         dir = params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/"
@@ -383,7 +397,7 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, nb_de
     # Plot phase1-phase2 delimeter and max fitness limit
     x_end = len(evaluations)
     y = 1
-    if switch_eval:
+    if switch_eval is not None:
         index = bisect.bisect_left(evaluations, switch_eval) # bisect_left returns the 1st index where switch_eval would be inserted to maintain the list order
         plt.axvline(x=index-0.5, color='r', linestyle='--')
         y = 1 - (nb_deletions[1]/grid_size)
@@ -428,7 +442,7 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, nb_deletions, switch_
     # Plot phase1-phase2 delimeter and max fitness limit
     x_end = nb_evals
     y = 1
-    if switch_eval:
+    if switch_eval is not None:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
         y = 1 - (nb_deletions[1]/grid_size)
         plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
@@ -479,7 +493,7 @@ def plot_best_inds_per_gen(dataset_path, nb_evals, grid_size, nb_deletions, swit
     # Plot phase1-phase2 delimeter and max fitness limit
     x_end = len(evaluations)
     y = 1
-    if switch_eval:
+    if switch_eval is not None:
         index = bisect.bisect_left(evaluations, switch_eval) # bisect_left returns the 1st index where switch_eval would be inserted to maintain the list order
         plt.axvline(x=index-0.5, color='r', linestyle='--')
         y = 1 - (nb_deletions[1]/grid_size)
@@ -534,7 +548,7 @@ def plot_all_pop_fitnesses_mean(dataset_path, nb_evals, grid_size, nb_deletions,
     # Plot phase1-phase2 delimeter and max fitness limit
     x_end = nb_evals
     y = 1
-    if switch_eval:
+    if switch_eval is not None:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
         y = 1 - (nb_deletions[1]/grid_size)
         plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
@@ -572,7 +586,7 @@ def plot_all_pop_fitnesses_median(dataset_path, nb_evals, grid_size, nb_deletion
     # Plot phase1-phase2 delimeter and max fitness limit
     x_end = nb_evals
     y = 1
-    if switch_eval:
+    if switch_eval is not None:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
         y = 1 - (nb_deletions[1]/grid_size)
         plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2

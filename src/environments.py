@@ -1393,6 +1393,30 @@ class swarmGrid:
 
     #---------------------------------------------------
 
+    # @staticmethod # TODO: not used for now
+    # def plot_learning_sliding_puzzle_nb_moves_from_file(data_flag_file, run, grid_size, analysis_dir_plots):
+
+    #     setup_name = "learning_sliding_puzzle"
+    #     dataset = pd.read_csv(data_flag_file)
+    #     x = dataset['Step'].tolist()
+    #     y = dataset['Nb_moves'].tolist()
+    #     plt.plot(x, y)
+
+    #     plt.ylim(-0.1, grid_size) # 0 and 1 are respectively min and max values of flag distance
+    #     plt.xlabel("Steps", fontsize=12)
+    #     plt.ylabel("Nb moves", fontsize=12)
+    #     plt.title(f"Number of agents' moves related to the flag development over steps. Run {run}\n{setup_name}", fontsize=12)
+
+    #     dir_name = analysis_dir_plots+"/"+data_flag_file.replace()
+    #     if not (os.path.exists(dir_name)):
+    #         os.makedirs(dir_name, exist_ok=True)
+    #     plt.savefig(f"{dir_name}/{setup_name}_flag_nb_moves_run_{run:03}.png")
+
+    #     plt.clf()
+    #     plt.close()
+
+    #---------------------------------------------------
+
     @staticmethod
     def plot_nb_moves_from_file(data_flag_dir, setup_name, run, grid_size, switch_step, analysis_dir_plots):
 
@@ -1403,6 +1427,7 @@ class swarmGrid:
             y = dataset['Nb_moves'].tolist()
             n = data_flag_file.split("n_")[1].split(".csv")[0]
             plt.plot(x, y, label=f"n_{n}")
+
 
             if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
                 plt.axvline(x=switch_step, color='r', linestyle='--')

@@ -18,11 +18,11 @@ plot_with_animation_bool=False
 
 # If you want to launch a swarm simulation or to plot learning figures for a specific learning simulation, write the corresponding path in the following line
 # exemple path: "simulationAnalysis/flag_automata_2024-04-29_21-44-08_disc_9x9/learning"
-learning_analysis_dir="simulationAnalysis/sliding_puzzle_incremental_2024-10-25_03-08-11_two_bands_16x16/learning"
+learning_analysis_dir="simulationAnalysis/sliding_puzzle_incremental_2024-10-27_22-30-47_two-bands_5x5/learning"
 
 # If you want to plot figures for a specific swarm simulation, write the corresponding path in the following line
 # exemple path: "simulationAnalysis/flag_automata_2024-05-02_05-45-47_disc_65x65/swarm"
-swarm_analysis_dir="simulationAnalysis/sliding_puzzle_incremental_2024-10-25_03-08-11_two_bands_16x16/swarm"
+swarm_analysis_dir="simulationAnalysis/sliding_puzzle_incremental_2024-10-27_22-30-47_two-bands_5x5/swarm"
 
 
 ###########################################################################

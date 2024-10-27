@@ -21,6 +21,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
     learning_params = init_one_run_analysis(run, learning_params)
     toolbox, strategy = init_toolbox(learning_params)
     best_fit = np.inf
+    best_pop = None
     best_covariance_matrix = None
     gen = -1
     nb_eval = 1
@@ -52,8 +53,9 @@ def cmaES_EvoAlgorithm(run, learning_params):
             switch_gen = gen
             sliding_puzzle_nb_deletions = sliding_puzzle_incremental_nb_deletions_ticks[1]
             best_fit = np.inf # reset best_fit to save best_individuals data for the 2nd setup starting at this generation
-            population = best_pop # NB: the cmaes covariance matrix has changed from this older best population
-            strategy.C = np.copy(best_covariance_matrix)
+            population = best_pop or population # NB: the cmaes covariance matrix has changed from this older best population
+            reset_covariance_matrix = best_covariance_matrix or np.copy(strategy.C)
+            strategy.C = np.copy(reset_covariance_matrix)
             executed_once_bool = True
 
         nb_evals = list(range(nb_eval, nb_eval+pop_size))
