@@ -46,15 +46,15 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
         # In case of sliding_puzzle incremental learning, we switch from the 1st to the 2nd setup
         # At this point, nb_eval is the last eval of the previous generation. The 'switch_gen' is the generation following the one where switch_eval actually occured
-        if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental" \
-        and nb_eval >= learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] \
-        and not(executed_once_bool):
+        if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental" and not(executed_once_bool) \
+        and (nb_eval >= learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] \
+        or ((learning_params['evolutionary_settings']['nb_evals'] - nb_eval) < pop_size)):
             learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = nb_eval # switch_eval is the 1st evaluation of this new generation
             switch_gen = gen
             sliding_puzzle_nb_deletions = sliding_puzzle_incremental_nb_deletions_ticks[1]
             best_fit = np.inf # reset best_fit to save best_individuals data for the 2nd setup starting at this generation
-            population = best_pop or population # NB: the cmaes covariance matrix has changed from this older best population
-            reset_covariance_matrix = best_covariance_matrix or np.copy(strategy.C)
+            population = best_pop if best_pop is not None else population # NB: the cmaes covariance matrix has changed from this older best population
+            reset_covariance_matrix = best_covariance_matrix if best_covariance_matrix is not None else np.copy(strategy.C)
             strategy.C = np.copy(reset_covariance_matrix)
             executed_once_bool = True
 

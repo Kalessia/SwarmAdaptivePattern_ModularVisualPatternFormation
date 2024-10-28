@@ -112,7 +112,7 @@ def get_best_ind_per_run_per_phase_dict(dataset_path=None):
     dataset = pd.read_csv(dataset_path)
 
     runs = sorted(dataset['Run'].unique())
-    phases = runs = sorted(dataset['Learning_phase'].unique())
+    phases = sorted(dataset['Learning_phase'].unique())
     for run in runs:
         best_ind_per_run_per_phase_dict[run] = []
         for phase in phases:

@@ -158,9 +158,13 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
         data_flag_dirs = []
         learning_ticks = params['setup_sliding_puzzle_phase1_VS_phase2']['learning_ticks_units']
         data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}")])
-        data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")])
+        setups_names = [f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}"]
+        if learning_ticks[1] != learning_ticks[0]:
+            data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")])
+            setups_names.append(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")
+
         swarmGrid.plot_merged_multi_flag_fitnesses_from_file(data_flag_dirs=data_flag_dirs,
-                                                            setups_names=[f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}", f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}"],
+                                                            setups_names=setups_names,
                                                             run=run,
                                                             analysis_dir_plots=params['analysis_dir']['plots'])
 

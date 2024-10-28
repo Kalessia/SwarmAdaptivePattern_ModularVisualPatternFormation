@@ -1371,7 +1371,7 @@ class swarmGrid:
             dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
             x = dataset['Step'].tolist()
             y = dataset['Flags_distance'].tolist()
-            n = data_flag_file.split("n_")[1].split(".csv")[0]
+            n = int(data_flag_file.split("n_")[1].split(".csv")[0])
             plt.plot(x, y, label=f"n_{n}")
 
             if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
@@ -1425,7 +1425,7 @@ class swarmGrid:
             dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
             x = dataset['Step'].tolist()
             y = dataset['Nb_moves'].tolist()
-            n = data_flag_file.split("n_")[1].split(".csv")[0]
+            n = int(data_flag_file.split("n_")[1].split(".csv")[0])
             plt.plot(x, y, label=f"n_{n}")
 
 
@@ -1441,7 +1441,7 @@ class swarmGrid:
             dir_name = analysis_dir_plots+"/"+setup_name
             if not (os.path.exists(dir_name)):
                 os.makedirs(dir_name, exist_ok=True)
-            plt.savefig(f"{dir_name}/{setup_name}_flag_nb_moves_run_{run:03}_n_{n}.png")
+            plt.savefig(f"{dir_name}/{setup_name}_flag_nb_moves_run_{run:03}_n_{n:03}.png")
 
             plt.clf()
             plt.close()
@@ -1456,7 +1456,7 @@ class swarmGrid:
             dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
             x = dataset['Step'].tolist()
             y = dataset['Nb_moves'].tolist()
-            n = data_flag_file.split("n_")[1].split(".csv")[0]
+            n = int(data_flag_file.split("n_")[1].split(".csv")[0])
             plt.plot(x, y, label=f"n_{n}")
 
         if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
@@ -1489,8 +1489,8 @@ class swarmGrid:
                     dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
                     x = dataset['Step'].tolist()
                     y = dataset['Flags_distance'].tolist()
-                    n = data_flag_file.split("n_")[1].split(".csv")[0]
-                    plt.plot(x, y, color=plot_colors[phase], label=f"best_ind_phase_{phase+1}" if n == "000" else "")
+                    n = int(data_flag_file.split("n_")[1].split(".csv")[0])
+                    plt.plot(x, y, color=plot_colors[phase], label=f"best_ind_phase_{phase+1}" if n == 0 else "")
 
             plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
             plt.xlabel("Steps", fontsize=12)

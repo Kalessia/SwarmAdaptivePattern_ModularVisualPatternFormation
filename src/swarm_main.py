@@ -92,7 +92,7 @@ def swarm_simulation(run, best_ind, best_ind_run, best_inds_per_run_per_phase, s
                            switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
                            switch_step_with_random_async_update_bool=swarm_params['switch_step_with_random_async_update_bool'],
                            analysis_dir=swarm_params['analysis_dir'])
-        
+
     # setup_sliding_puzzle
     if swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
         setup_name = "setup_sliding_puzzle"
@@ -107,7 +107,7 @@ def swarm_simulation(run, best_ind, best_ind_run, best_inds_per_run_per_phase, s
                                  switch_step=swarm_params['switch_step'],
                                  switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
                                  analysis_dir=swarm_params['analysis_dir'])
-        
+
     # setup_sliding_puzzle_phase1_VS_phase2
     if swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool'] and swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['learning_bool']:
         setup_name = "setup_sliding_puzzle_phase1_VS_phase2"
