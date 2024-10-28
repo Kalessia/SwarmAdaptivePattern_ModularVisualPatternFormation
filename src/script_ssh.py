@@ -1,6 +1,6 @@
 import paramiko
 import subprocess
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 
 
 def work_to_execute_at_distance(pc_name, host, username, password):

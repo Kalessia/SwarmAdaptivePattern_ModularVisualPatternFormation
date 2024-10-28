@@ -7,7 +7,7 @@
         "env_name": "sliding_puzzle_incremental",
         "sliding_puzzle_incremental": {
             "sliding_puzzle_incremental info": "Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions_ticks[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions_ticks[1] in the 2nd. The switch generation is deducted from 'switch_eval'. Either 'units' or 'percent' must be null.",
-            "sliding_puzzle_incremental_switch_eval": 0,
+            "sliding_puzzle_incremental_switch_eval": 14000,
             "sliding_puzzle_incremental_nb_deletions_units": null,
             "sliding_puzzle_incremental_nb_deletions_percent": [0.0, 0.1],
             "sliding_puzzle_incremental_proba_move": 0.1
