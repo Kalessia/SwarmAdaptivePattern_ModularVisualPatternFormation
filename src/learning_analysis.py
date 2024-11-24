@@ -224,7 +224,7 @@ def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incr
         dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
         nb_ind = dataset['Nb_ind'].unique()[0]
 
-        if index == best_inds_ever_dataset.index[-1]: # we plot all steps for the last (the best) individual
+        if index == best_inds_ever_dataset.index[-3]: # we plot all steps for the last (the best) individual
             steps = dataset['Step'].unique()
 
         # data_env_flag = []

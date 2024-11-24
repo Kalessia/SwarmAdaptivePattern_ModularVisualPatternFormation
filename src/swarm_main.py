@@ -96,16 +96,17 @@ def swarm_simulation(run, best_ind, best_ind_run, best_inds_per_run_per_phase, s
     # setup_sliding_puzzle
     if swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
         setup_name = "setup_sliding_puzzle"
-        sliding_puzzle_ticks = [int(tick_unit) for tick_unit in swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_units']]
-        setups += [setup_name+"_"+str(tick) for tick in sliding_puzzle_ticks]
+        sliding_puzzle_ticks = swarm_params['setup_sliding_puzzle']['deletion_ticks']
+        setups += [ f"{setup_name}_deletions{tick}_fluidity{proba_move}" for tick, proba_move in list(itertools.product(sliding_puzzle_ticks, swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move']))]
+       
         env.setup_sliding_puzzle(run=run,
                                  setup_name=setup_name,
                                  nb_repetitions=swarm_params['nb_repetitions'],
                                  sliding_puzzle_ticks=sliding_puzzle_ticks,
-                                 sliding_puzzle_proba_move=swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'],
+                                 sliding_puzzle_probas_move=swarm_params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'],
                                  time_steps=swarm_params['time_steps'],
-                                 switch_step=swarm_params['switch_step'],
-                                 switch_step_with_reset_env_bool=swarm_params['switch_step_with_reset_env_bool'],
+                                 time_window_start=swarm_params['time_window_start'],
+                                 time_window_end=swarm_params['time_window_end'],
                                  analysis_dir=swarm_params['analysis_dir'])
 
     # setup_sliding_puzzle_phase1_VS_phase2

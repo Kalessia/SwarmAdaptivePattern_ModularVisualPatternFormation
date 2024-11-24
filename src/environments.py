@@ -632,7 +632,7 @@ class swarmGrid:
         global verbose_str
         nb_moves_per_step = 0
         agents = self.get_agents()
-        np.random.shuffle(agents) # random update order
+        np.random.shuffle(agents) # random update order (async update)
 
         for agent in agents:
 
@@ -896,55 +896,58 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def setup_sliding_puzzle(self, run, setup_name, nb_repetitions, sliding_puzzle_ticks, sliding_puzzle_proba_move, time_steps, switch_step, switch_step_with_reset_env_bool, analysis_dir):
+    def setup_sliding_puzzle(self, run, setup_name, nb_repetitions, sliding_puzzle_ticks, sliding_puzzle_probas_move, time_steps, time_window_start, time_window_end, analysis_dir):
         global verbose_str
-        for n in range(nb_repetitions):
-            deleted_map_pos_agent = {}
+        for proba_move in sliding_puzzle_probas_move:
+            for n in range(nb_repetitions):
+                deleted_map_pos_agent = {}
 
-            # This code is similar to setup_deletion as it manages the deletion of tiles:
-            # Their position will be modified in step_random_async_update_sliding_puzzle.
-            # In this setup, the automata update is always asynchrone (random_async_update)
-            for tick in sliding_puzzle_ticks:
-                setup_name_tick = setup_name+"_"+str(tick)
-                with_noise_bool = self.learning_with_noise_bool
-                noise_std = self.learning_with_noise_std
-                self.init_agents_state()
-                flags = []
-                agents_to_delete = []
-                deleted_agents_per_step = []
-                nb_moves_per_step = []
+                # This code is similar to setup_deletion as it manages the deletion of tiles:
+                # Their position will be modified in step_random_async_update_sliding_puzzle.
+                # In this setup, the automata update is always asynchrone (random_async_update)
+                for tick in sliding_puzzle_ticks:
+                    
+                    setup_name_tick = f"{setup_name}_deletions{tick}_fluidity{proba_move}"
+                    with_noise_bool = self.learning_with_noise_bool
+                    noise_std = self.learning_with_noise_std
+                    self.init_agents_state()
+                    flags = []
+                    flags_distance = 0.0
+                    sum_flags_distances = 0.0
+                    agents_to_delete = []
+                    deleted_agents_per_step = []
+                    nb_moves_per_step = []
 
-                for step in range(time_steps):
+                    agents = self.get_agents()
+                    agents_to_delete = random.sample(agents, tick)
+                    deleted_map_pos_agent = self.delete_agent(agents_to_delete=agents_to_delete)
 
-                    if step == switch_step-1:
-                        agents = self.get_agents()
-                        nb_deletions = tick - len(deleted_map_pos_agent)
-                        agents_to_delete = list(deleted_map_pos_agent.values()) + random.sample(agents, nb_deletions) # old + new chosen agents
-                        deleted_map_pos_agent = self.delete_agent(agents_to_delete=agents_to_delete)
+                    for step in range(time_steps):
+                        deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+                        flag = self.get_flag_from_grid()
+                        flags.append(flag)
 
-                        if switch_step_with_reset_env_bool:
-                            self.init_agents_state()
-                            nb_moves_per_step.append(0)
-                            deleted_agents_per_step.append([a.pos for a in agents_to_delete])
-                            flag = self.get_flag_from_grid()
-                            flags.append(flag)
-                            continue # don't execute the following self.step update line, as we just updated the grid in this condition
+                        if step >= time_window_start and step <= time_window_end:
+                            sum_flags_distances += env.eval_flags_distance(flag)
 
-                    nb_moves = self.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
-                                                                            sliding_puzzle_proba_move=sliding_puzzle_proba_move,
-                                                                            with_noise_bool=with_noise_bool,
-                                                                            noise_std=noise_std)
-                    nb_moves_per_step.append(nb_moves)
-                    deleted_agents_per_step.append([a.pos for a in agents_to_delete])
-                    flag = self.get_flag_from_grid()
-                    flags.append(flag)
+                        nb_moves = self.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
+                                                                                sliding_puzzle_proba_move=proba_move,
+                                                                                with_noise_bool=with_noise_bool,
+                                                                                noise_std=noise_std)
+                        nb_moves_per_step.append(nb_moves)
 
 
-                # Save flags for this run
-                self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir, nb_moves_per_step=nb_moves_per_step)
-            
-                # Restore original grid
-                self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
+                    mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
+
+                    # Save flags for this run
+                    self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir, nb_moves_per_step=nb_moves_per_step)
+                
+                    # Save stats for this repetition
+                    self.write_sliding_puzzle_repetitions(setup_name=setup_name, setup_name_tick=setup_name_tick, run=run, deletions=tick, proba_move=proba_move, n=n, mean_tw_flags_distances=mean_tw_flags_distances, analysis_dir=analysis_dir)
+
+                    # Restore original grid
+                    self.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent)
+
 
         with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
             f.write(verbose_str)
@@ -952,11 +955,46 @@ class swarmGrid:
 
     #---------------------------------------------------
 
+    def write_sliding_puzzle_repetitions(self, setup_name, setup_name_tick, run, deletions, proba_move, n, mean_tw_flags_distances, analysis_dir):
+
+        from learning_initializations import save_data_to_csv
+
+        dir_name = f"{analysis_dir['data']}/data_all_repetitions/{setup_name}"
+        file_name = f"/data_{setup_name}_stats_per_repetition.csv"
+        if not (os.path.exists(dir_name)):
+            os.makedirs(dir_name, exist_ok=True)
+            save_data_to_csv(dir_name+file_name, [], header=["Run", "Setup", "Deletions", "Fluidity", "N", "Flags_distance"])
+
+        data_one_repetition = [str(run), setup_name_tick, str(deletions), str(proba_move), str(n), str(mean_tw_flags_distances).strip()]
+        save_data_to_csv(dir_name+file_name, [data_one_repetition])
+
+    #---------------------------------------------------
+
     @staticmethod
     def setup_sliding_puzzle_phase1_VS_phase2(run, setup_name, nb_repetitions, sliding_puzzle_learning_best_inds_per_phase, sliding_puzzle_learning_ticks, sliding_puzzle_learning_proba_move, 
                                               grid_nb_rows, grid_nb_cols, learning_modes, learning_with_noise_std, flag_pattern, init_cell_state_value, nn_controller, time_steps,analysis_dir):
         global verbose_str
+
+        # best_ind del=0 file 20-04-58 : 10,791,9493,1,0.0,"[-0.012560697342902754, -2.4218532064886547, -11.284764996702298, -3.83551410035861, 0.083622246643351, 5.5113126967703066, -0.0027867433240647416, -11.629436788302101, 5.009320936447007, -17.704798393117848, -10.896845332860472, -24.493805009057088, 2.5093953686045802, 5.108077537144663, 13.560729551675559, 1.3333431480092919]"
+        # best_ind del=0.1 file 22-47-36 : 3,723,8677,2,0.0210600459373937,"[0.7551013499973216, -0.8099165077998569, 0.39403386311516464, -3.0751653808831234, -1.5472970783237112, 0.12214498389552143, 0.4242082294164468, -1.004712399587744, -4.648831756659906, -0.6800924749548437, -0.7739346754676364, 0.6693057234261393, -0.6723684639597962, 1.755774979565761, -1.171903351840752, 0.07096918320204165]"
+        # best_ind del=[0.0, 0.1] file 22-46-52 : 6,792,9506,2,0.0115501975350683,"[-0.9489165395619286, -0.5070084158891089, -3.307401823857753, 1.2321234062873245, -0.6437943140104423, -0.5373127755880184, -1.2178955303840306, -0.9360873065469761, 1.9483769709668306, 0.581890195712445, -2.7724818107110933, -4.384791894596162, 0.7172862086219275, -0.04168444524174454, 2.29416315533213, -0.7267384958587466]"
+
+        # sliding_puzzle_learning_best_inds_per_phase = [
+        #     [-0.012560697342902754, -2.4218532064886547, -11.284764996702298, -3.83551410035861, 0.083622246643351, 5.5113126967703066, -0.0027867433240647416, -11.629436788302101, 5.009320936447007, -17.704798393117848, -10.896845332860472, -24.493805009057088, 2.5093953686045802, 5.108077537144663, 13.560729551675559, 1.3333431480092919],
+        #     [0.7551013499973216, -0.8099165077998569, 0.39403386311516464, -3.0751653808831234, -1.5472970783237112, 0.12214498389552143, 0.4242082294164468, -1.004712399587744, -4.648831756659906, -0.6800924749548437, -0.7739346754676364, 0.6693057234261393, -0.6723684639597962, 1.755774979565761, -1.171903351840752, 0.07096918320204165],
+        #     [-0.9489165395619286, -0.5070084158891089, -3.307401823857753, 1.2321234062873245, -0.6437943140104423, -0.5373127755880184, -1.2178955303840306, -0.9360873065469761, 1.9483769709668306, 0.581890195712445, -2.7724818107110933, -4.384791894596162, 0.7172862086219275, -0.04168444524174454, 2.29416315533213, -0.7267384958587466]
+        # ]
+
+        # best_ind del=[0.0, 0.15] file 04-09-13 : 9,1085,13025,2,0.0203556016817295,"[-2.3281762977773464, 1.0897984741831388, -3.4380823318850102, -5.364419682576576, 0.6450558907808008, 7.277072552073939, -2.3197060681368376, -0.2268261857899258, -2.682882037659171, -4.3759456639819065, -2.8980748544702246, 3.508211315465028, 2.0592799284359655, 1.7388241842799008, -0.8434797482496187, 4.358683203841405]"
+        # best_ind del=0.15 file 04-13-33 : 0,1166,13998,2,0.045280784863846,"[-0.7838250959482946, -0.7064742791885482, -1.2267676994042034, -1.8622634802345577, -0.4974216044177394, 0.1125867910423979, 0.26435862083172573, -1.0407262077118675, 0.965503030713558, 0.8680916996522677, 0.12551901135563304, -0.46385517149270317, -1.0230676163591752, -0.7711729763800076, 0.6248420517282114, 0.1715900060404594]"
+
+        # sliding_puzzle_learning_best_inds_per_phase = [
+        #     [-2.3281762977773464, 1.0897984741831388, -3.4380823318850102, -5.364419682576576, 0.6450558907808008, 7.277072552073939, -2.3197060681368376, -0.2268261857899258, -2.682882037659171, -4.3759456639819065, -2.8980748544702246, 3.508211315465028, 2.0592799284359655, 1.7388241842799008, -0.8434797482496187, 4.358683203841405],
+        #     [-0.7838250959482946, -0.7064742791885482, -1.2267676994042034, -1.8622634802345577, -0.4974216044177394, 0.1125867910423979, 0.26435862083172573, -1.0407262077118675, 0.965503030713558, 0.8680916996522677, 0.12551901135563304, -0.46385517149270317, -1.0230676163591752, -0.7711729763800076, 0.6248420517282114, 0.1715900060404594]
+        # ]
+        
         for n in range(nb_repetitions):
+            # for best_ind_per_phase, phase in zip(sliding_puzzle_learning_best_inds_per_phase, [1, 2, 3]): # sliding_puzzle_learning_best_inds_per_phase = [best ind phase1, best ind phase2]
             for best_ind_per_phase, phase in zip(sliding_puzzle_learning_best_inds_per_phase, [1, 2]): # sliding_puzzle_learning_best_inds_per_phase = [best ind phase1, best ind phase2]
 
                 # Grid creation with a new best ind
@@ -976,6 +1014,7 @@ class swarmGrid:
                 # Their position will be modified in step_random_async_update_sliding_puzzle.
                 # In this setup, the automata update is always asynchrone (random_async_update)
                 for tick in sliding_puzzle_learning_ticks:
+                    # setup_name_tick_phase = f"{setup_name}_control_{tick}_phase{phase}"
                     setup_name_tick_phase = f"{setup_name}_{tick}_phase{phase}"
                     with_noise_bool = new_env.learning_with_noise_bool
                     noise_std = new_env.learning_with_noise_std
@@ -1355,7 +1394,7 @@ class swarmGrid:
                 os.makedirs(dir_name, exist_ok=True)
             plt.savefig(f"{dir_name}/{setup_name}_flag_fitnesses_run_{run:03}_n_{n:03}.png")
         else:
-            plt.title(f"Flags distance related to the flag development over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=12)
+            plt.title(f"Flags distance related to the flag development over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=10)
             plt.savefig(f"{analysis_dir_plots}/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_fitnesses_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}.png")
 
         plt.clf()
@@ -1505,3 +1544,37 @@ class swarmGrid:
 
             plt.clf()
             plt.close()
+
+
+    #---------------------------------------------------
+
+    # @staticmethod
+    # def plot_merged_multi_flag_fitnesses_from_file(data_flag_dirs, setups_names, run, analysis_dir_plots):
+
+    #     plot_colors = ['#0173b2', '#de8f05', '#cc78bc'] # blue, orange
+    #     labels = ["best_ind d=1.0", "best_ind d=0.9", "best_ind d=1.0 -> d=0.9"]
+    #     for setup, data_flag_dirs_phase1_and_phase2 in enumerate(data_flag_dirs): # data_flag_dirs = [[data setup0 phase1, data setup0 phase2], [data setup1 phase1, data setup1 phase2]]
+    #         for phase, data_flag_dir in enumerate(data_flag_dirs_phase1_and_phase2):
+    #             data_flag_files = os.listdir(data_flag_dir)
+    #             for data_flag_file in data_flag_files:
+    #                 dataset = pd.read_csv(data_flag_dir+"/"+data_flag_file)
+    #                 x = dataset['Step'].tolist()
+    #                 y = dataset['Flags_distance'].tolist()
+    #                 n = int(data_flag_file.split("n_")[1].split(".csv")[0])
+    #                 plt.plot(x, y, color=plot_colors[phase], label=labels[phase] if n == 0 else "")
+    #                 print(labels[phase], data_flag_dir)
+
+    #         plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
+    #         plt.xlabel("Steps", fontsize=12)
+    #         plt.ylabel("Flags distance", fontsize=12)
+    #         plt.title(f"Flags distance related to the flag development over steps. Run {run}\n{setups_names[setup]}, {len(data_flag_files)} repetitions", fontsize=12)
+    #         plt.legend()
+
+    #         dir_name = f"{analysis_dir_plots}/{setups_names[setup]}"
+    #         if not (os.path.exists(dir_name)):
+    #             os.makedirs(dir_name, exist_ok=True)
+    #         plt.savefig(f"{dir_name}/{setups_names[setup]}_control_merged_flag_fitnesses_run_{run:03}.png")
+
+    #         plt.clf()
+    #         plt.close()
+

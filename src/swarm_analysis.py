@@ -3,6 +3,9 @@ import time
 import shutil
 from multiprocessing import Pool, cpu_count
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import pandas as pd
 import numpy as np
 import re
@@ -79,7 +82,18 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
     os.makedirs(params['analysis_dir']['plots']+"/original_flag_copied_from_learning", exist_ok=True)
     setups = params['setups'] + ["original_flag_copied_from_learning"]
 
+    # setups = [f"setup_sliding_puzzle_phase1_VS_phase2_control_0_phase1",
+    #           f"setup_sliding_puzzle_phase1_VS_phase2_control_0_phase2",
+    #           f"setup_sliding_puzzle_phase1_VS_phase2_control_0_phase3",
+    #           f"setup_sliding_puzzle_phase1_VS_phase2_control_25_phase1",
+    #           f"setup_sliding_puzzle_phase1_VS_phase2_control_25_phase2",
+    #           f"setup_sliding_puzzle_phase1_VS_phase2_control_25_phase3"]
+
     for setup_name in setups:
+
+        if params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
+            break 
+
         for n in range(params['nb_repetitions']):
             data_flag_file = params['analysis_dir']['data']+ f"/{setup_name}/data_{setup_name}_flag_n_{n:03}.csv"
             dataset = pd.read_csv(data_flag_file)
@@ -133,35 +147,84 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
             if setup_name == "original_flag_copied_from_learning":
                 break # there is only one repetition for this file to plot
         
-        swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
-                                                      setup_name=setup_name,
-                                                      run=run,
-                                                      switch_step=switch_step,
-                                                      analysis_dir_plots=params['analysis_dir']['plots'])
+        # swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
+        #                                               setup_name=setup_name,
+        #                                               run=run,
+        #                                               switch_step=switch_step,
+        #                                               analysis_dir_plots=params['analysis_dir']['plots'])
     
-        if setup_name.startswith("setup_deletion") or setup_name.startswith("setup_sliding_puzzle"):
-            swarmGrid.plot_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
-                                              setup_name=setup_name,
-                                              run=run,
-                                              grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
-                                              switch_step=switch_step,
-                                              analysis_dir_plots=params['analysis_dir']['plots'])
+        # if setup_name.startswith("setup_deletion") or setup_name.startswith("setup_sliding_puzzle"):
+        #     swarmGrid.plot_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
+        #                                       setup_name=setup_name,
+        #                                       run=run,
+        #                                       grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
+        #                                       switch_step=switch_step,
+        #                                       analysis_dir_plots=params['analysis_dir']['plots'])
 
-            swarmGrid.plot_multi_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
-                                                    setup_name=setup_name,
-                                                    run=run,
-                                                    grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
-                                                    switch_step=switch_step,
-                                                    analysis_dir_plots=params['analysis_dir']['plots'])
-            
+        #     swarmGrid.plot_multi_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
+        #                                             setup_name=setup_name,
+        #                                             run=run,
+        #                                             grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
+        #                                             switch_step=switch_step,
+        #                                             analysis_dir_plots=params['analysis_dir']['plots'])
+
+
+    if params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
+
+        df = pd.read_csv(f"{params['analysis_dir']['data']}/data_all_repetitions/setup_sliding_puzzle/data_setup_sliding_puzzle_stats_per_repetition.csv")
+
+        y_labels = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'], reverse=True) # fluidity (p_move)
+        ticks_percent = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent'], reverse=True)
+        x_labels = [1-x for x in ticks_percent] # density = ( (grid_size - nb_deletions) / grid_size)
+        data = pd.DataFrame(np.nan, index=y_labels, columns=x_labels)
+
+        max_mean_fitnesses = 0.0
+        for tick_percent in ticks_percent:
+            for p_move in y_labels: 
+
+                density = 1.0 - tick_percent
+                if density == 1.0:
+                    p_move = 0.0 # if density is max, agents can't move
+
+                deletions = int( (params['grid_nb_rows'] * params['grid_nb_cols']) * tick_percent)
+                mean_fit_over_repetitions = df.loc[(df.Deletions==deletions) & (df.Fluidity==p_move), 'Flags_distance'].mean()
+                data.loc[p_move, density] = mean_fit_over_repetitions
+                max_mean_fitnesses = max(mean_fit_over_repetitions, max_mean_fitnesses)
+
+        sns.set_theme(style='dark')
+        heatmap_plot = sns.heatmap(data, annot=False, annot_kws={"size": 9}, fmt=".3f", cmap="Blues", cbar=True, linewidths=0.5, linecolor='white', vmin=0.0, vmax=max_mean_fitnesses) # annot=True to show fit values on cells
+
+        # Add a red rectangle around the learning setup parameters case (ideal generalization environment)
+        rect_pos_col = data.columns.get_loc(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1])
+        rect_pos_row = data.index.get_loc(params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move'])
+        rect = plt.Rectangle((rect_pos_col, rect_pos_row), 1, 1, fill=False, edgecolor='red', linewidth=3)
+        heatmap_plot.add_patch(rect)
+
+        plt.xlabel("Density of the system", fontsize=12)
+        plt.ylabel("Fluidity of the system", fontsize=12)
+        plt.title(f"Generalization experiences overview\nin sliding puzzle {params['flag_pattern']} {params['grid_nb_rows']}x{params['grid_nb_cols']} best_ind_{best_ind_run:03}", fontsize=12)
+
+        dir_name = f"{params['analysis_dir']['plots']}/plot_all_repetitions"
+        if not (os.path.exists(dir_name)):
+            os.makedirs(dir_name, exist_ok=True)
+        plt.savefig(f"{dir_name}/plot_sliding_puzzle_incremental_{params['flag_pattern']}_{params['grid_nb_rows']}x{params['grid_nb_cols']}_best_ind_{best_ind_run:03}_generalization_density_fluidity.png")
+
+        plt.clf()
+        plt.close()
+
+
     if params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool']:
         data_flag_dirs = []
         learning_ticks = params['setup_sliding_puzzle_phase1_VS_phase2']['learning_ticks_units']
         data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}")])
+        # data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[0]}")])
         setups_names = [f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}"]
+        # setups_names = [f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[0]}"]
         if learning_ticks[1] != learning_ticks[0]:
             data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")])
+            # data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[1]}")])
             setups_names.append(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")
+            # setups_names.append(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[1]}")
 
         swarmGrid.plot_merged_multi_flag_fitnesses_from_file(data_flag_dirs=data_flag_dirs,
                                                             setups_names=setups_names,

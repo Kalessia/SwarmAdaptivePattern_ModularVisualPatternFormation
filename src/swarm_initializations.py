@@ -16,6 +16,8 @@ def check_params_validity(grid_size, params):
 
     params['nb_runs'] = int(params['nb_runs'])
     params['time_steps'] = int(params['time_steps'])
+    params['time_window_start'] = int(params['time_window_start'])
+    params['time_window_end'] = int(params['time_window_end'])
     params['switch_step'] = int(params['switch_step'])
     params['nb_repetitions'] = int(params['nb_repetitions'])
     params['with_parallelization_nb_free_cores'] = int(params['with_parallelization_nb_free_cores'])
@@ -74,14 +76,18 @@ def check_params_validity(grid_size, params):
             params['setup_deletion']['deletion_ticks'] = [int(tick_unit) for tick_unit in params['setup_deletion']['setup_deletion_ticks_units']]
 
     if params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
-        if not isinstance(params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_units'], list):
-            print(f"Error in swarm_initializations.py - Parameter setup_sliding_puzzle_ticks_units must be a list")
+        if not isinstance(params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent'], list) \
+        or not isinstance(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'], list):
+            print(f"Error in swarm_initializations.py - Parameter setup_sliding_puzzle_ticks_percent and setup_sliding_puzzle_probas_move must be lists")
+            params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent'] = []
             exit_bool = True
-        
-        params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'] = float(params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'])
-        if params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'] < 0.0 or params['setup_sliding_puzzle']['setup_sliding_puzzle_proba_move'] > 1.0:
-            print(f"Error in swarm_initializations.py - Parameter setup_sliding_puzzle_proba_move must be in [0.0, 1.0]")
-            exit_bool = True
+        params['setup_sliding_puzzle']['deletion_ticks'] = [int(grid_size*tick_percent) for tick_percent in params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent']]
+
+        for p, proba_move in enumerate(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move']):
+            params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'][p] = float(proba_move)
+            if params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'][p] < 0.0 or params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'][p] > 1.0:
+                print(f"Error in swarm_initializations.py - Each parameter in setup_sliding_puzzle_probas_move must be in [0.0, 1.0]")
+                exit_bool = True
     
     if exit_bool:
         print("learning_main stopped. Please correct the entry parameter in swarm_params.json before restart.")
@@ -165,9 +171,11 @@ def copy_params_from_learning(learning_params, swarm_params):
     swarm_params['learning_modes'] = learning_params['learning_modes']
     swarm_params['learning_with_noise_std'] = learning_params['learning_options']['learning_with_noise']['learning_with_noise_std']
 
-    if swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool'] and learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
+    # if swarm_params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool'] and learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
+    if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
         swarm_params['setup_sliding_puzzle_phase1_VS_phase2'].update({
             'learning_bool': True,
+            'learning_nb_deletions_percent': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'],
             'learning_ticks_units': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'],
             'learning_proba_move': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move'], 
         })

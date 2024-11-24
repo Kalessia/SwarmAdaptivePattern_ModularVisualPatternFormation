@@ -13,10 +13,10 @@ def work_to_execute_at_distance(pc_name, host, username, password):
         #---------------------------------------------------
 
         cmd1 = "cd ~/Documents/flagAutomata/src && ./launch.sh" # launch the flagAutomata code
-        cmd2 = f'sshpass -p {password} rsync -avz {username}@{host}:/home/loi/Documents/flagAutomata/src/simulationAnalysis/ /home/kalessia/flagAutomata/src/simulationAnalysis/'
+        cmd2 = f'sshpass -p {password} rsync -avz {username}@{host}:/home/loi/Documents/flagAutomata/src/simulationAnalysis/ /home/kalessia/flagAutomata/src/simulationAnalysis/sliding_puzzle_direct_learning_two-bands_16x16/'
         cmd3 = "pkill -f python3" # kill python processes
 
-        cmd_to_execute = [cmd1, cmd2]
+        cmd_to_execute = [cmd2]
 
         #---------------------------------------------------
 
