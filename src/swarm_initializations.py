@@ -100,7 +100,7 @@ def get_best_ind_per_run_dict(dataset_path):
     best_ind_per_run_dict = {}
     dataset = pd.read_csv(dataset_path)
 
-    learning_phase = dataset['Learning_phase'].max() # the last phase
+    learning_phase = dataset['Learning_phase'].min() # the last phase
     runs = sorted(dataset['Run'].unique())
     for run in runs:
         ind = dataset.loc[(dataset.Run==run) & (dataset.Learning_phase==learning_phase), 'Individual'].values.tolist()[0]

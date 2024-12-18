@@ -3,6 +3,8 @@ import time
 import shutil
 from multiprocessing import Pool, cpu_count
 
+import matplotlib
+matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -91,9 +93,6 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
 
     for setup_name in setups:
 
-        if params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
-            break 
-
         for n in range(params['nb_repetitions']):
             data_flag_file = params['analysis_dir']['data']+ f"/{setup_name}/data_{setup_name}_flag_n_{n:03}.csv"
             dataset = pd.read_csv(data_flag_file)
@@ -128,21 +127,21 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                     nb_cols = int(setup_name_chunks[3])
                     switch_step = None
 
-                swarmGrid.plot_flag(grid_nb_rows=nb_rows,
-                                    grid_nb_cols=nb_cols,
-                                    setup_name=setup_name,
-                                    run=run,
-                                    nb_ind=best_ind_run,
-                                    gen=None,
-                                    nb_eval=None,
-                                    n=n,
-                                    step=step,
-                                    flag=flag_list,
-                                    fitness=fitness,
-                                    permutated_pos=permutated_pos,
-                                    deleted_pos=deleted_pos,
-                                    nb_moves_per_step=nb_moves_per_step,
-                                    analysis_dir_plots=params['analysis_dir']['plots'])
+                # swarmGrid.plot_flag(grid_nb_rows=nb_rows,
+                #                     grid_nb_cols=nb_cols,
+                #                     setup_name=setup_name,
+                #                     run=run,
+                #                     nb_ind=best_ind_run,
+                #                     gen=None,
+                #                     nb_eval=None,
+                #                     n=n,
+                #                     step=step,
+                #                     flag=flag_list,
+                #                     fitness=fitness,
+                #                     permutated_pos=permutated_pos,
+                #                     deleted_pos=deleted_pos,
+                #                     nb_moves_per_step=nb_moves_per_step,
+                #                     analysis_dir_plots=params['analysis_dir']['plots'])
 
             if setup_name == "original_flag_copied_from_learning":
                 break # there is only one repetition for this file to plot
@@ -175,14 +174,14 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
 
         y_labels = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'], reverse=True) # fluidity (p_move)
         ticks_percent = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent'], reverse=True)
-        x_labels = [1-x for x in ticks_percent] # density = ( (grid_size - nb_deletions) / grid_size)
+        x_labels = [round((1-x), 2) for x in ticks_percent] # density = ( (grid_size - nb_deletions) / grid_size)
         data = pd.DataFrame(np.nan, index=y_labels, columns=x_labels)
 
         max_mean_fitnesses = 0.0
         for tick_percent in ticks_percent:
-            for p_move in y_labels: 
+            for p_move in y_labels:
 
-                density = 1.0 - tick_percent
+                density = round((1.0-tick_percent), 2)
                 if density == 1.0:
                     p_move = 0.0 # if density is max, agents can't move
 

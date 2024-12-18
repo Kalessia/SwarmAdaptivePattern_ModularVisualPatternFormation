@@ -4,9 +4,12 @@ import random
 import numpy as np
 import pandas as pd
 
+import matplotlib
+matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
+from flags_distance_methods import convert_flag_to_image, get_images_distance_MSE, get_images_distance_SSIM, get_images_distance_CLIP
 
 
 ###########################################################################
@@ -27,7 +30,7 @@ def sigmoid(x):
 
 
 
-def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, verbose_debug_bool, analysis_dir):
+def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, verbose_debug_bool, analysis_dir):
     
     global verbose_debug, env
 
@@ -39,6 +42,7 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, learning_with
         env = swarmGrid(grid_nb_rows=grid_nb_rows,
                         grid_nb_cols=grid_nb_cols,
                         learning_modes=learning_modes,
+                        flags_distance_mode=flags_distance_mode,
                         learning_with_noise_std=learning_with_noise_std,
                         flag_pattern=flag_pattern,
                         flag_target=flag_target,
@@ -268,6 +272,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_
     env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
                              grid_nb_cols=env_eval_function_params['grid_nb_cols'],
                              learning_modes=[],
+                             flags_distance_mode=env_eval_function_params['flags_distance_mode'],
                              learning_with_noise_std=None,
                              flag_pattern=env_eval_function_params['flag_pattern'],
                              flag_target=env_eval_function_params['flag_target'],
@@ -330,6 +335,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
     env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
                              grid_nb_cols=env_eval_function_params['grid_nb_cols'],
                              learning_modes=[],
+                             flags_distance_mode=env_eval_function_params['flags_distance_mode'],
                              learning_with_noise_std=None,
                              flag_pattern=env_eval_function_params['flag_pattern'],
                              flag_target=env_eval_function_params['flag_target'],
@@ -396,7 +402,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 ###########################################################################
 
 class swarmGrid:
-    def __init__(self, grid_nb_rows, grid_nb_cols, learning_modes, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller) -> None:
+    def __init__(self, grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller) -> None:
       
         self.grid_nb_rows = grid_nb_rows
         self.grid_nb_cols = grid_nb_cols
@@ -417,6 +423,7 @@ class swarmGrid:
         self.learning_random_async_update_states_bool = True if "learning_random_async_update_states_bool" in learning_modes else False
         self.learning_with_noise_bool = True if "learning_with_noise_bool" in learning_modes else False
         self.learning_with_noise_std = learning_with_noise_std
+        self.flags_distance_mode = flags_distance_mode
         
         self.default_missing_neighbor_state = 0.0
         self.grid_map_pos_agent = None
@@ -1051,7 +1058,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def setup_scalability(run, setup_name, nb_repetitions, scalability_ticks, learning_modes, learning_with_noise_std, flag_pattern, init_cell_state_value, nn_controller,
+    def setup_scalability(run, setup_name, nb_repetitions, scalability_ticks, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, init_cell_state_value, nn_controller,
                          agent_controller_weights, time_steps, analysis_dir):
 
         global verbose_str
@@ -1064,6 +1071,7 @@ class swarmGrid:
                 new_env = init_swarmGrid_env(grid_nb_rows=tick[0],
                                             grid_nb_cols=tick[1],
                                             learning_modes=learning_modes,
+                                            flags_distance_mode=flags_distance_mode,
                                             learning_with_noise_std=learning_with_noise_std,
                                             flag_pattern=flag_pattern,
                                             flag_target=None,
@@ -1167,16 +1175,53 @@ class swarmGrid:
     
     #---------------------------------------------------
 
-    def eval_flags_distance(self, flag):
-        sum_states = 0.0
+    # def eval_flags_distance(self, flag):
+
+    #     if self.flags_distance_mode == "MSE":
+    #         sum_states = 0.0
+    #         positions = self.grid_map_pos_agent.keys() # all positions in the grid
+    #         assert len(positions) == self.grid_size, f"\eval_flags_distance, len(positions) {len(positions)} != grid_size {self.grid_size}"
+    #         for p, pos in enumerate(positions):
+    #             if self.grid_map_pos_agent[pos] is not None:
+    #                 sum_states += (self.flag_target[p] - flag[pos])**2
+    #         flags_distance = sum_states/self.grid_size
+
+    #     elif self.flags_distance_mode == "SSIM": # flags_distance in [0 = most similar, 2 = strong dissimilarity]
+    #         flag_list = self.convert_flag_to_list(flag)
+    #         img1 = convert_flag_to_image(flag=flag_list, grid_nb_rows=self.grid_nb_rows, grid_nb_cols=self.grid_nb_cols)
+    #         img2 = convert_flag_to_image(flag=self.flag_target, grid_nb_rows=self.grid_nb_rows, grid_nb_cols=self.grid_nb_cols)
+    #         flags_distance = get_images_distance_SSIM(image_generated=img1, image_ref=img2)
+
+    #     elif self.flags_distance_mode == "CLIP": # flags_distance in [0 = most similar, 2 = strong dissimilarity]
+    #         flag_list = self.convert_flag_to_list(flag)
+    #         img1 = convert_flag_to_image(flag=flag_list, grid_nb_rows=self.grid_nb_rows, grid_nb_cols=self.grid_nb_cols)
+    #         img2 = convert_flag_to_image(flag=self.flag_target, grid_nb_rows=self.grid_nb_rows, grid_nb_cols=self.grid_nb_cols)
+    #         flags_distance = get_images_distance_CLIP(image_generated=img1, image_ref=img2)
         
+    #     else:
+    #         print("Error in eval_flags_distance: invalid flags_distance_mode.")
+
+    #     return flags_distance
+    
+    #---------------------------------------------------
+
+    def eval_flags_distance(self, flag):
+
+        sum_states = 0.0
+        nb_agents = 0
+
         positions = self.grid_map_pos_agent.keys() # all positions in the grid
         assert len(positions) == self.grid_size, f"\eval_flags_distance, len(positions) {len(positions)} != grid_size {self.grid_size}"
         for p, pos in enumerate(positions):
             if self.grid_map_pos_agent[pos] is not None:
                 sum_states += (self.flag_target[p] - flag[pos])**2
+                nb_agents += 1
 
-        flags_distance = sum_states/self.grid_size
+        # flags_distance = sum_states/self.grid_size
+        if nb_agents == 0:
+            return 0.0
+
+        flags_distance = sum_states/nb_agents
         return flags_distance
     
     #---------------------------------------------------

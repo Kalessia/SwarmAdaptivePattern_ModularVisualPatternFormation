@@ -1,12 +1,14 @@
 import os
 import json
+import matplotlib
+matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
 
 
-def plot_sliding_puzzle_incremental_generalization_density_fluidity(experiences_dir_to_plot):
+#def plot_sliding_puzzle_incremental_generalization_density_fluidity(experiences_dir_to_plot):
 
 
 

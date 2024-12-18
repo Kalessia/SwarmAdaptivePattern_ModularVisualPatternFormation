@@ -140,6 +140,7 @@ def set_env(params):
             'eval_function_params': {
                 'grid_nb_rows': params['grid']['grid_nb_rows'],
                 'grid_nb_cols': params['grid']['grid_nb_cols'],
+                'flags_distance_mode': params['evolutionary_settings']['flags_distance_mode'],
                 'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
@@ -163,6 +164,7 @@ def set_env(params):
             'eval_function_params': {
                 'grid_nb_rows': params['grid']['grid_nb_rows'],
                 'grid_nb_cols': params['grid']['grid_nb_cols'],
+                'flags_distance_mode': params['evolutionary_settings']['flags_distance_mode'],
                 'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],

@@ -8,6 +8,8 @@ import pandas as pd
 from operator import attrgetter
 import bisect
 
+import matplotlib
+matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio.v2 as iio

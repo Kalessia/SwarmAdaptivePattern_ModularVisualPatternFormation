@@ -28,6 +28,7 @@ def swarm_simulation(run, best_ind, best_ind_run, best_inds_per_run_per_phase, s
     env = init_swarmGrid_env(grid_nb_rows=swarm_params['grid_nb_rows'],
                              grid_nb_cols=swarm_params['grid_nb_cols'],
                              learning_modes=swarm_params['learning_modes'],
+                             flags_distance_mode=None,
                              learning_with_noise_std=swarm_params['learning_with_noise_std'],
                              flag_pattern=None,
                              flag_target=swarm_params['flag_target'],
