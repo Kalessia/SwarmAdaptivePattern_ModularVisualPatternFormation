@@ -909,6 +909,7 @@ class swarmGrid:
             for n in range(nb_repetitions):
                 deleted_map_pos_agent = {}
 
+                print("controller:", self.agent_controller_weights)
                 # This code is similar to setup_deletion as it manages the deletion of tiles:
                 # Their position will be modified in step_random_async_update_sliding_puzzle.
                 # In this setup, the automata update is always asynchrone (random_async_update)
@@ -933,6 +934,10 @@ class swarmGrid:
                         deleted_agents_per_step.append([a.pos for a in agents_to_delete])
                         flag = self.get_flag_from_grid()
                         flags.append(flag)
+                        # print("env.eval_flags_distance(flag)", env.eval_flags_distance(flag))
+                        # print("\t", flag)
+                        # if step == 3:
+                        #     break
 
                         if step >= time_window_start and step <= time_window_end:
                             sum_flags_distances += env.eval_flags_distance(flag)
@@ -945,6 +950,8 @@ class swarmGrid:
 
 
                     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
+                    # if tick == 230 and proba_move == 0.5:
+                    #     print("mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)", mean_tw_flags_distances, sum_flags_distances, time_window_end, time_window_start)
 
                     # Save flags for this run
                     self.write_flag_data_swarm(setup_name=setup_name_tick, run=run, n=n, time_steps=time_steps, flags=flags, permutated_agents_per_step=[], deleted_agents_per_step=deleted_agents_per_step, analysis_dir=analysis_dir, nb_moves_per_step=nb_moves_per_step)
@@ -973,6 +980,9 @@ class swarmGrid:
             save_data_to_csv(dir_name+file_name, [], header=["Run", "Setup", "Deletions", "Fluidity", "N", "Flags_distance"])
 
         data_one_repetition = [str(run), setup_name_tick, str(deletions), str(proba_move), str(n), str(mean_tw_flags_distances).strip()]
+        if deletions == 230 and proba_move == 0.5:
+            print("mean_tw_flags_distances", n, mean_tw_flags_distances)
+        
         save_data_to_csv(dir_name+file_name, [data_one_repetition])
 
     #---------------------------------------------------
@@ -1165,11 +1175,12 @@ class swarmGrid:
 
     def get_flag_from_grid(self):
         flag = {}
-        for pos in self.grid_map_pos_agent.keys():
-            if self.grid_map_pos_agent[pos]:
+        for pos in self.grid_map_pos_agent.keys(): # salvare la lista per ogni utilizzo
+            if self.grid_map_pos_agent[pos] is not None:
                 flag[pos] = self.grid_map_pos_agent[pos].get_phenotype()
             else:
-                flag[pos] = self.default_missing_neighbor_state
+                # flag[pos] = self.default_missing_neighbor_state
+                flag[pos] = None
 
         return flag
     
@@ -1211,10 +1222,12 @@ class swarmGrid:
         nb_agents = 0
 
         positions = self.grid_map_pos_agent.keys() # all positions in the grid
-        assert len(positions) == self.grid_size, f"\eval_flags_distance, len(positions) {len(positions)} != grid_size {self.grid_size}"
+        # assert len(positions) == self.grid_size, f"\eval_flags_distance, len(positions) {len(positions)} != grid_size {self.grid_size}"
         for p, pos in enumerate(positions):
-            if self.grid_map_pos_agent[pos] is not None:
+            # if self.grid_map_pos_agent[pos] is not None:
+            if flag[pos] is not None:
                 sum_states += (self.flag_target[p] - flag[pos])**2
+                # print("eval_flags_distance:", "pos=", pos, self.flag_target[p], flag[pos], "-->",  ((self.flag_target[p] - flag[pos])**2))
                 nb_agents += 1
 
         # flags_distance = sum_states/self.grid_size
@@ -1222,12 +1235,14 @@ class swarmGrid:
             return 0.0
 
         flags_distance = sum_states/nb_agents
+        # print("eval_flags_distance:", sum_states, "/", nb_agents, "= flags distance", flags_distance) 
         return flags_distance
     
     #---------------------------------------------------
 
     def convert_flag_to_list(self, flag):
-        return list(flag.values())
+        flag_tmp = {k: (v if v is not None else self.default_missing_neighbor_state) for k, v in flag.items()}
+        return list(flag_tmp.values())
 
     #---------------------------------------------------
     
@@ -1287,8 +1302,11 @@ class swarmGrid:
         data_env_flag = []
         for step in range(time_steps):
             flags_distance = self.eval_flags_distance(flags[step])
+            # print(step, flags_distance)
+            # print("\t", flags[step])
 
             if permutated_agents_per_step:
+                #TODO: perché convert flag to list? Non é già list?
                 data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(permutated_agents_per_step[step]).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Permutated_agents_positions"]
             elif deleted_agents_per_step:

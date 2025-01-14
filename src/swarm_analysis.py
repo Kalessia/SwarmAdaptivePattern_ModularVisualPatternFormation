@@ -127,38 +127,38 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                     nb_cols = int(setup_name_chunks[3])
                     switch_step = None
 
-                # swarmGrid.plot_flag(grid_nb_rows=nb_rows,
-                #                     grid_nb_cols=nb_cols,
-                #                     setup_name=setup_name,
-                #                     run=run,
-                #                     nb_ind=best_ind_run,
-                #                     gen=None,
-                #                     nb_eval=None,
-                #                     n=n,
-                #                     step=step,
-                #                     flag=flag_list,
-                #                     fitness=fitness,
-                #                     permutated_pos=permutated_pos,
-                #                     deleted_pos=deleted_pos,
-                #                     nb_moves_per_step=nb_moves_per_step,
-                #                     analysis_dir_plots=params['analysis_dir']['plots'])
+                swarmGrid.plot_flag(grid_nb_rows=nb_rows,
+                                    grid_nb_cols=nb_cols,
+                                    setup_name=setup_name,
+                                    run=run,
+                                    nb_ind=best_ind_run,
+                                    gen=None,
+                                    nb_eval=None,
+                                    n=n,
+                                    step=step,
+                                    flag=flag_list,
+                                    fitness=fitness,
+                                    permutated_pos=permutated_pos,
+                                    deleted_pos=deleted_pos,
+                                    nb_moves_per_step=nb_moves_per_step,
+                                    analysis_dir_plots=params['analysis_dir']['plots'])
 
             if setup_name == "original_flag_copied_from_learning":
                 break # there is only one repetition for this file to plot
         
-        # swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
-        #                                               setup_name=setup_name,
-        #                                               run=run,
-        #                                               switch_step=switch_step,
-        #                                               analysis_dir_plots=params['analysis_dir']['plots'])
+        swarmGrid.plot_multi_flag_fitnesses_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
+                                                    setup_name=setup_name,
+                                                    run=run,
+                                                    switch_step=switch_step,
+                                                    analysis_dir_plots=params['analysis_dir']['plots'])
     
         # if setup_name.startswith("setup_deletion") or setup_name.startswith("setup_sliding_puzzle"):
         #     swarmGrid.plot_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
-        #                                       setup_name=setup_name,
-        #                                       run=run,
-        #                                       grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
-        #                                       switch_step=switch_step,
-        #                                       analysis_dir_plots=params['analysis_dir']['plots'])
+        #                                     setup_name=setup_name,
+        #                                     run=run,
+        #                                     grid_size=params['grid_nb_rows']*params['grid_nb_cols'],
+        #                                     switch_step=switch_step,
+        #                                     analysis_dir_plots=params['analysis_dir']['plots'])
 
         #     swarmGrid.plot_multi_nb_moves_from_file(data_flag_dir=params['analysis_dir']['data']+"/"+setup_name,
         #                                             setup_name=setup_name,
@@ -187,13 +187,14 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
 
                 deletions = int( (params['grid_nb_rows'] * params['grid_nb_cols']) * tick_percent)
                 mean_fit_over_repetitions = df.loc[(df.Deletions==deletions) & (df.Fluidity==p_move), 'Flags_distance'].mean()
+                # print(density, deletions, mean_fit_)
                 data.loc[p_move, density] = mean_fit_over_repetitions
                 max_mean_fitnesses = max(mean_fit_over_repetitions, max_mean_fitnesses)
 
         sns.set_theme(style='dark')
         heatmap_plot = sns.heatmap(data, annot=False, annot_kws={"size": 9}, fmt=".3f", cmap="Blues", cbar=True, linewidths=0.5, linecolor='white', vmin=0.0, vmax=max_mean_fitnesses) # annot=True to show fit values on cells
 
-        # Add a red rectangle around the learning setup parameters case (ideal generalization environment)
+        # Add a red rectangle around the learning setup parameters case (ideal generalization environment) (se c'éééééééééééééééééééééééééééééééééééééééééééééé)
         rect_pos_col = data.columns.get_loc(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1])
         rect_pos_row = data.index.get_loc(params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move'])
         rect = plt.Rectangle((rect_pos_col, rect_pos_row), 1, 1, fill=False, edgecolor='red', linewidth=3)

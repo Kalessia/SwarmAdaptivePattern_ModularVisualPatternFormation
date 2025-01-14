@@ -18,11 +18,11 @@ plot_with_animation_bool=False
 
 # If you want to launch a swarm simulation or to plot learning figures for a specific learning simulation, write the corresponding path in the following line
 # exemple path: "simulationAnalysis/flag_automata_2024-04-29_21-44-08_disc_9x9/learning"
-learning_analysis_dir="simulationAnalysis/sliding_puzzle_direct_learning_two-bands_16x16/sliding_puzzle_incremental_2024-10-28_20-04-58_two-bands_16x16/learning"
+learning_analysis_dir="simulationAnalysis/sliding_puzzle_direct_learning_two-bands_16x16/sliding_puzzle_incremental_2025-01-14_00-32-14_two-bands_16x16/learning"
 
 # If you want to plot figures for a specific swarm simulation, write the corresponding path in the following line
 # exemple path: "simulationAnalysis/flag_automata_2024-05-02_05-45-47_disc_65x65/swarm"
-swarm_analysis_dir="simulationAnalysis/sliding_puzzle_direct_learning_two-bands_16x16/sliding_puzzle_incremental_2024-10-28_20-04-58_two-bands_16x16/swarm"
+swarm_analysis_dir="simulationAnalysis/sliding_puzzle_direct_learning_two-bands_16x16/sliding_puzzle_incremental_2025-01-14_00-32-14_two-bands_16x16/swarm"
 
 
 ###########################################################################
@@ -38,7 +38,7 @@ swarm_analysis_dir="simulationAnalysis/sliding_puzzle_direct_learning_two-bands_
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new swarm simulation. NB: this line modifies the "swarm_analysis_dir" parameter
-# output=$(mktemp); python3 -u swarm_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; swarm_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u swarm_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; swarm_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
