@@ -909,7 +909,9 @@ class swarmGrid:
             for n in range(nb_repetitions):
                 deleted_map_pos_agent = {}
 
-                print("controller:", self.agent_controller_weights)
+                # print("controller:", self.agent_controller_weights)
+
+                
                 # This code is similar to setup_deletion as it manages the deletion of tiles:
                 # Their position will be modified in step_random_async_update_sliding_puzzle.
                 # In this setup, the automata update is always asynchrone (random_async_update)
@@ -980,8 +982,8 @@ class swarmGrid:
             save_data_to_csv(dir_name+file_name, [], header=["Run", "Setup", "Deletions", "Fluidity", "N", "Flags_distance"])
 
         data_one_repetition = [str(run), setup_name_tick, str(deletions), str(proba_move), str(n), str(mean_tw_flags_distances).strip()]
-        if deletions == 230 and proba_move == 0.5:
-            print("mean_tw_flags_distances", n, mean_tw_flags_distances)
+        # if deletions == 230 and proba_move == 0.5:
+        #     print("mean_tw_flags_distances", n, mean_tw_flags_distances)
         
         save_data_to_csv(dir_name+file_name, [data_one_repetition])
 

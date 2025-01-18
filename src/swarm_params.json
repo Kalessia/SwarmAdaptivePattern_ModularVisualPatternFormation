@@ -1,6 +1,6 @@
 {
     "nb_runs": 1,
-    "nb_repetitions": 1,
+    "nb_repetitions": 11,
     "time_steps": 50,
     "time_window_start": 30,
     "time_window_end": 50,
@@ -39,8 +39,8 @@
     "setup_sliding_puzzle info": "always async?",
     "setup_sliding_puzzle": {
         "setup_sliding_puzzle_bool": true,
-        "setup_sliding_puzzle_ticks_percent": [0.0, 0.1, 0.2],
-        "setup_sliding_puzzle_probas_move": [0.0, 0.1, 0.2]
+        "setup_sliding_puzzle_ticks_percent": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        "setup_sliding_puzzle_probas_move": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     },
 
     "setup_sliding_puzzle phase1_VS_phase2_info": "always async? units and move from learning",

@@ -199,6 +199,8 @@ def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incr
     switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval']
     grid_size = params['grid']['grid_size']
     nb_deletions = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks']
+    density = round(1.0-params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'][1], 2)
+    fluidity = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move']
 
     # Plot_all_pop_fitnesses_boxplot
     dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_all_pop.csv"
@@ -208,13 +210,14 @@ def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incr
     # Plot_best_inds_ever
     dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_best_inds_ever.csv"
     save_filename = params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo/plot_evo_run_{run:03}_best_inds_ever.png"
-    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, save_filename=save_filename)
+    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, density=density, fluidity=fluidity, switch_eval=switch_eval, save_filename=save_filename, params=params)
 
     # Plot_flag_from_file for best individuals ever in a defined range of steps
     dataset_path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_evo_run_{run:03}_best_inds_ever.csv"
     best_inds_ever_dataset = pd.read_csv(dataset_path)
     time_steps = params['environment']['time_steps']
-    steps = list(range(params['environment']['time_window_start'], params['environment']['time_window_end'])) # we plot this steps interval for all individual less the best
+    # steps = list(range(params['environment']['time_window_start'], params['environment']['time_window_end'])) # we plot this steps interval for all individual less the best
+    steps = [0, time_steps-5, time_steps-4, time_steps-3, time_steps-2, time_steps-1]
 
     for index in best_inds_ever_dataset.index: # for each best individual ever less the last one <--- perché ho scritto cio?
         gen = best_inds_ever_dataset.loc[index, 'Generation']
@@ -327,11 +330,13 @@ def plot_all_runs_data(params):
     switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] # switch_eval is the 1st evaluation of the new generation starting after the switch_eval defined in parameters
     grid_size = params['grid']['grid_size']
     nb_deletions = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks']
+    density = round(1.0-params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'][1], 2)
+    fluidity = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move']
 
     # Plot_best_inds_ever
     dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_inds_ever.csv"
     save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_best_inds_ever.png"
-    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, switch_eval=switch_eval, save_filename=save_filename)
+    plot_best_inds_ever(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, nb_deletions=nb_deletions, density=density, fluidity=fluidity, switch_eval=switch_eval, save_filename=save_filename, params=params)
 
     # Plot_best_inds_per_gen
     dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_inds_per_gen.csv"
@@ -425,7 +430,7 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, nb_de
 
 #---------------------------------------------------
 
-def plot_best_inds_ever(dataset_path, nb_evals, grid_size, nb_deletions, switch_eval, save_filename):
+def plot_best_inds_ever(dataset_path, nb_evals, grid_size, nb_deletions, density, fluidity, switch_eval, save_filename, params):
 
     dataset = pd.read_csv(dataset_path)
 
@@ -444,18 +449,18 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, nb_deletions, switch_
     # Plot phase1-phase2 delimeter and max fitness limit
     x_end = nb_evals
     y = 1
-    if switch_eval is not None:
-        plt.axvline(x=switch_eval, color='r', linestyle='--')
-        y = 1 - (nb_deletions[1]/grid_size)
-        plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
-        x_end = switch_eval
-        y = 1 - (nb_deletions[0]/grid_size)
+    # if switch_eval is not None:
+    #     plt.axvline(x=switch_eval, color='r', linestyle='--')
+    #     y = 1 - (nb_deletions[1]/grid_size)
+    #     plt.plot([switch_eval, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue') # max fitness limit phase2
+    #     x_end = switch_eval
+    #     y = 1 - (nb_deletions[0]/grid_size)
     
-    plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
+    # plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
 
     plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
-    plt.title("Flags distance over generations\nbest individuals ever", fontsize=14)
+    plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\nsliding puzzle {params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, 11 runs, only best ever", fontsize=12)
     plt.xlabel("Evaluations", fontsize=12)
     plt.ylabel("Flags distance", fontsize=12)
     plt.legend()
@@ -664,5 +669,5 @@ if (__name__ == "__main__"):
         for run in range(params['evolutionary_settings']['nb_runs']):
             plot_single_run_data(run, params)
 
-    write_all_runs_data(args.learning_analysis_dir)
+    # write_all_runs_data(args.learning_analysis_dir)
     plot_all_runs_data(params)

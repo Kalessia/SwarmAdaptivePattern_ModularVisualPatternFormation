@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 import pandas as pd
 import numpy as np
@@ -100,7 +101,8 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
             switch_step = params['switch_step']
             
             if setup_name == "original_flag_copied_from_learning" or setup_name.startswith("setup_sliding_puzzle"):
-                steps = dataset['Step'].unique()
+                # steps = dataset['Step'].unique()
+                steps = [0, params['time_steps']-5, params['time_steps']-4, params['time_steps']-3, params['time_steps']-2, params['time_steps']-1]
 
             for step in steps:
                 flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
@@ -177,7 +179,6 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
         x_labels = [round((1-x), 2) for x in ticks_percent] # density = ( (grid_size - nb_deletions) / grid_size)
         data = pd.DataFrame(np.nan, index=y_labels, columns=x_labels)
 
-        max_mean_fitnesses = 0.0
         for tick_percent in ticks_percent:
             for p_move in y_labels:
 
@@ -189,10 +190,32 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                 mean_fit_over_repetitions = df.loc[(df.Deletions==deletions) & (df.Fluidity==p_move), 'Flags_distance'].mean()
                 # print(density, deletions, mean_fit_)
                 data.loc[p_move, density] = mean_fit_over_repetitions
-                max_mean_fitnesses = max(mean_fit_over_repetitions, max_mean_fitnesses)
 
         sns.set_theme(style='dark')
-        heatmap_plot = sns.heatmap(data, annot=False, annot_kws={"size": 9}, fmt=".3f", cmap="Blues", cbar=True, linewidths=0.5, linecolor='white', vmin=0.0, vmax=max_mean_fitnesses) # annot=True to show fit values on cells
+
+        # Customize with darker settings
+        # plt.rcParams.update({
+        #     # 'axes.facecolor': '#181818',   # Darker plot background
+        #     'axes.facecolor': '#808080',   # Darker plot background
+        #     # 'figure.facecolor': '#101010', # Darker figure background
+        #     # 'axes.edgecolor': '#333333',   # Slightly lighter edges for contrast
+        #     # 'grid.color': '#303030',       # Darker grid lines
+        #     # 'xtick.color': '#CCCCCC',      # Light gray for x-axis ticks
+        #     # 'ytick.color': '#CCCCCC',      # Light gray for y-axis ticks
+        #     # 'axes.labelcolor': '#FFFFFF',  # White for axis labels
+        #     # 'text.color': '#FFFFFF',       # White for any text
+        #     # 'lines.color': '#FFDD44',      # Bright color for lines
+        #     # 'lines.linewidth': 2.0,        # Slightly thicker lines for visibility
+        #     # 'legend.facecolor': '#202020', # Legend background
+        #     # 'legend.edgecolor': '#444444', # Legend edge color
+        # })
+
+        heatmap_plot = sns.heatmap(data, annot=False, annot_kws={"size": 9}, fmt=".3f", cmap="Blues", cbar=True, linewidths=0.5, linecolor='white', vmin=0.0, vmax=1.0) # annot=True to show fit values on cells
+        
+        # Add a crossed rectangle for each not evaluated case
+        for case in [(9, 0), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 6), (9, 7), (9, 8), (9, 9)]: # cases density 1.0, fluidity > 0.0 are crossed
+            crossed_box = plt.Rectangle(case, 1, 1, facecolor='none', edgecolor='grey', hatch='//')
+            heatmap_plot.add_patch(crossed_box)
 
         # Add a red rectangle around the learning setup parameters case (ideal generalization environment) (se c'éééééééééééééééééééééééééééééééééééééééééééééé)
         rect_pos_col = data.columns.get_loc(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1])
@@ -202,7 +225,7 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
 
         plt.xlabel("Density of the system", fontsize=12)
         plt.ylabel("Fluidity of the system", fontsize=12)
-        plt.title(f"Generalization experiences overview\nin sliding puzzle {params['flag_pattern']} {params['grid_nb_rows']}x{params['grid_nb_cols']} best_ind_{best_ind_run:03}", fontsize=12)
+        plt.title(f"Generalization of learning $\\rho$={1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1]}, $\\Phi$={params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move']}, best_ind_{best_ind_run:03}" + f"\nsliding puzzle {params['flag_pattern']} {params['grid_nb_rows']}x{params['grid_nb_cols']}, 11 runs", fontsize=12)
 
         dir_name = f"{params['analysis_dir']['plots']}/plot_all_repetitions"
         if not (os.path.exists(dir_name)):
@@ -213,23 +236,23 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
         plt.close()
 
 
-    if params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool']:
-        data_flag_dirs = []
-        learning_ticks = params['setup_sliding_puzzle_phase1_VS_phase2']['learning_ticks_units']
-        data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}")])
-        # data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[0]}")])
-        setups_names = [f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}"]
-        # setups_names = [f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[0]}"]
-        if learning_ticks[1] != learning_ticks[0]:
-            data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")])
-            # data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[1]}")])
-            setups_names.append(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")
-            # setups_names.append(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[1]}")
+    # if params['setup_sliding_puzzle_phase1_VS_phase2']['setup_sliding_puzzle_phase1_VS_phase2_bool']:
+    #     data_flag_dirs = []
+    #     learning_ticks = params['setup_sliding_puzzle_phase1_VS_phase2']['learning_ticks_units']
+    #     data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}")])
+    #     # data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[0]}")])
+    #     setups_names = [f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[0]}"]
+    #     # setups_names = [f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[0]}"]
+    #     if learning_ticks[1] != learning_ticks[0]:
+    #         data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")])
+    #         # data_flag_dirs.append([f"{params['analysis_dir']['data']}/{setup_name}" for setup_name in setups if setup_name.startswith(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[1]}")])
+    #         setups_names.append(f"setup_sliding_puzzle_phase1_VS_phase2_{learning_ticks[1]}")
+    #         # setups_names.append(f"setup_sliding_puzzle_phase1_VS_phase2_control_{learning_ticks[1]}")
 
-        swarmGrid.plot_merged_multi_flag_fitnesses_from_file(data_flag_dirs=data_flag_dirs,
-                                                            setups_names=setups_names,
-                                                            run=run,
-                                                            analysis_dir_plots=params['analysis_dir']['plots'])
+    #     swarmGrid.plot_merged_multi_flag_fitnesses_from_file(data_flag_dirs=data_flag_dirs,
+    #                                                         setups_names=setups_names,
+    #                                                         run=run,
+    #                                                         analysis_dir_plots=params['analysis_dir']['plots'])
 
     time_run = time.time() - time_run_ind
     print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Completed. Execution time: {time_run} seconds")
