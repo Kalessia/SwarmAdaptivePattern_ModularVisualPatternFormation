@@ -129,21 +129,21 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                     nb_cols = int(setup_name_chunks[3])
                     switch_step = None
 
-                swarmGrid.plot_flag(grid_nb_rows=nb_rows,
-                                    grid_nb_cols=nb_cols,
-                                    setup_name=setup_name,
-                                    run=run,
-                                    nb_ind=best_ind_run,
-                                    gen=None,
-                                    nb_eval=None,
-                                    n=n,
-                                    step=step,
-                                    flag=flag_list,
-                                    fitness=fitness,
-                                    permutated_pos=permutated_pos,
-                                    deleted_pos=deleted_pos,
-                                    nb_moves_per_step=nb_moves_per_step,
-                                    analysis_dir_plots=params['analysis_dir']['plots'])
+                # swarmGrid.plot_flag(grid_nb_rows=nb_rows,
+                #                     grid_nb_cols=nb_cols,
+                #                     setup_name=setup_name,
+                #                     run=run,
+                #                     nb_ind=best_ind_run,
+                #                     gen=None,
+                #                     nb_eval=None,
+                #                     n=n,
+                #                     step=step,
+                #                     flag=flag_list,
+                #                     fitness=fitness,
+                #                     permutated_pos=permutated_pos,
+                #                     deleted_pos=deleted_pos,
+                #                     nb_moves_per_step=nb_moves_per_step,
+                #                     analysis_dir_plots=params['analysis_dir']['plots'])
 
             if setup_name == "original_flag_copied_from_learning":
                 break # there is only one repetition for this file to plot
@@ -218,7 +218,7 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
             heatmap_plot.add_patch(crossed_box)
 
         # Add a red rectangle around the learning setup parameters case (ideal generalization environment) (se c'éééééééééééééééééééééééééééééééééééééééééééééé)
-        rect_pos_col = data.columns.get_loc(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1])
+        rect_pos_col = data.columns.get_loc(round(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1], 2))
         rect_pos_row = data.index.get_loc(params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move'])
         rect = plt.Rectangle((rect_pos_col, rect_pos_row), 1, 1, fill=False, edgecolor='red', linewidth=3)
         heatmap_plot.add_patch(rect)

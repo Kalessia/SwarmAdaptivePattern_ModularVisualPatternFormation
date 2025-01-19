@@ -669,5 +669,5 @@ if (__name__ == "__main__"):
         for run in range(params['evolutionary_settings']['nb_runs']):
             plot_single_run_data(run, params)
 
-    # write_all_runs_data(args.learning_analysis_dir)
+    write_all_runs_data(args.learning_analysis_dir)
     plot_all_runs_data(params)

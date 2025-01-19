@@ -9,7 +9,7 @@ matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
-from flags_distance_methods import convert_flag_to_image, get_images_distance_MSE, get_images_distance_SSIM, get_images_distance_CLIP
+#from flags_distance_methods import convert_flag_to_image, get_images_distance_MSE, get_images_distance_SSIM, get_images_distance_CLIP
 
 
 ###########################################################################
