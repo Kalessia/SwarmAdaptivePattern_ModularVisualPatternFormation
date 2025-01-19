@@ -378,6 +378,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 
         nb_moves = env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
                                                     sliding_puzzle_proba_move=sliding_puzzle_proba_move,
+                                                    nb_intrasteps = 5,
                                                     with_noise_bool=with_noise_bool,
                                                     noise_std=noise_std)
         nb_moves_per_step.append(nb_moves)
@@ -424,6 +425,8 @@ class swarmGrid:
         self.learning_with_noise_bool = True if "learning_with_noise_bool" in learning_modes else False
         self.learning_with_noise_std = learning_with_noise_std
         self.flags_distance_mode = flags_distance_mode
+        
+        self.nb_intrasteps = 5
         
         self.default_missing_neighbor_state = 0.0
         self.grid_map_pos_agent = None
@@ -635,7 +638,7 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def step_random_async_update_sliding_puzzle(self, agents_to_delete, sliding_puzzle_proba_move, with_noise_bool=False, noise_std=None):
+    def step_random_async_update_sliding_puzzle(self, agents_to_delete, sliding_puzzle_proba_move, nb_intrasteps=None, with_noise_bool=False, noise_std=None):
         global verbose_str
         nb_moves_per_step = 0
         agents = self.get_agents()
@@ -671,6 +674,16 @@ class swarmGrid:
             # Random async update of this agent state
             state = self.compute_agent_state(agent=agent)
             agent.set_state(state, with_noise_bool, noise_std)
+
+        if nb_intrasteps is not None:
+            agents = self.get_agents()
+            for intrastep in range(nb_intrasteps - 1): # one state computation per agent has already been done
+                # print("intrastep n.", intrastep)
+                np.random.shuffle(agents) # random update order (async update)
+                for agent in agents:
+                    # Random async update of this agent state
+                    state = self.compute_agent_state(agent=agent)
+                    agent.set_state(state, with_noise_bool, noise_std)
 
         return nb_moves_per_step
 
@@ -946,6 +959,7 @@ class swarmGrid:
 
                         nb_moves = self.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
                                                                                 sliding_puzzle_proba_move=proba_move,
+                                                                                nb_intrasteps = 5,
                                                                                 with_noise_bool=with_noise_bool,
                                                                                 noise_std=noise_std)
                         nb_moves_per_step.append(nb_moves)
@@ -1049,6 +1063,7 @@ class swarmGrid:
                     for _ in range(time_steps):
                         nb_moves = new_env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
                                                                                    sliding_puzzle_proba_move=sliding_puzzle_learning_proba_move,
+                                                                                   nb_intrasteps = 5,
                                                                                    with_noise_bool=with_noise_bool,
                                                                                    noise_std=noise_std)
                         nb_moves_per_step.append(nb_moves)
