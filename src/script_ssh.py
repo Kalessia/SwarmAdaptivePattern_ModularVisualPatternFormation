@@ -13,7 +13,7 @@ def work_to_execute_at_distance(pc_name, host, username, password):
         #---------------------------------------------------
 
         cmd1 = "cd ~/Documents/flagAutomata/src && ./launch.sh" # launch the flagAutomata code
-        cmd2 = f'sshpass -p {password} rsync -avz {username}@{host}:/home/loi/Documents/flagAutomata/src/simulationAnalysis/ /home/kalessia/flagAutomata/src/simulationAnalysis/sliding_puzzle_direct_learning_two-bands_16x16/'
+        cmd2 = f'sshpass -p {password} rsync -avz {username}@{host}:/home/loi/Documents/flagAutomata/src/simulationAnalysis/ /home/kalessia/flagAutomata/src/simulationAnalysis/'
         cmd3 = "pkill -f python3" # kill python processes
 
         cmd_to_execute = [cmd2]
@@ -82,6 +82,7 @@ if __name__ == "__main__":
     # PC list: (pc_name, host, username, password)
     pc_list = [
         ("Dell PC", "192.168.1.18", "loi", "dellSchwarz14!")
+        # ("Dell PC", "192.168.1.124", "loi", "dellSchwarz14!")
         # ("192.168.1.101", "utente2", "password2")  # multi-arena
     ]
 

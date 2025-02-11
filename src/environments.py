@@ -1449,17 +1449,22 @@ class swarmGrid:
             ax.add_patch(rectangle)
 
         plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
-        plt.xlabel("Steps", fontsize=12)
-        plt.ylabel("Flags distance", fontsize=12)
+        plt.yticks([0, 0.5, 1.0], fontsize=18)
+        plt.xticks([0, 25, 49], fontsize=18)
+        plt.xlabel("Steps", fontsize=18)
+        plt.ylabel("Distance", fontsize=18)
 
         if setup_name:
-            plt.title(f"Flags distance related to the flag development over steps\n{setup_name}, {n} repetitions", fontsize=12)
+            plt.title(f"Flags distance related to the flag development over steps\n{setup_name}, {n} repetitions", fontsize=14)
             dir_name = analysis_dir_plots+"/"+setup_name
             if not (os.path.exists(dir_name)):
                 os.makedirs(dir_name, exist_ok=True)
             plt.savefig(f"{dir_name}/{setup_name}_flag_fitnesses_run_{run:03}_n_{n:03}.png")
         else:
-            plt.title(f"Flags distance related to the flag development over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=10)
+            # plt.title(f"Flags distance related to the flag development over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=10)
+            plt.title(f"Dynamic of the best candidate solution\nFlag development over time", fontsize=18)
+            # plt.suptitle(f"Flag development over time", fontsize=18)
+            plt.tight_layout()
             plt.savefig(f"{analysis_dir_plots}/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_fitnesses_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}.png")
 
         plt.clf()

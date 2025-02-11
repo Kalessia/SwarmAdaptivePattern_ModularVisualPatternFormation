@@ -76,6 +76,9 @@ def init_one_run_analysis(run, best_ind, best_ind_run, params):
                 
 def plot_single_run_single_ind_data(run, best_ind_run, params):
 
+    # if best_ind_run != 4:
+    #     return
+
     time_run_ind = time.time()
     print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Starting")
 
@@ -225,7 +228,7 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
 
         plt.xlabel("Density of the system", fontsize=12)
         plt.ylabel("Fluidity of the system", fontsize=12)
-        plt.title(f"Generalization of learning $\\rho$={1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1]}, $\\Phi$={params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move']}, best_ind_{best_ind_run:03}" + f"\nsliding puzzle {params['flag_pattern']} {params['grid_nb_rows']}x{params['grid_nb_cols']}, 11 runs", fontsize=12)
+        plt.title(f"Generalization of learning $\\rho$={round(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1], 2)}, $\\Phi$={params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move']}, best_ind_{best_ind_run:03}" + f"\nsliding puzzle {params['flag_pattern']} {params['grid_nb_rows']}x{params['grid_nb_cols']}, 11 runs", fontsize=12)
 
         dir_name = f"{params['analysis_dir']['plots']}/plot_all_repetitions"
         if not (os.path.exists(dir_name)):

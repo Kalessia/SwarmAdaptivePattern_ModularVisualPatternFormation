@@ -190,6 +190,9 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_bes
                 
 def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incremental" cela crushes???
 
+    # if run != 4 :
+    #     return
+
     time_run = time.time()
     print(f"learning_analysis plots for the single run n.{run} - Started")
     os.makedirs(params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo", exist_ok=True)
@@ -244,20 +247,20 @@ def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incr
             nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
 
             if step in steps:
-                swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
-                                    grid_nb_cols=params['grid']['grid_nb_cols'],
-                                    setup_name=None,
-                                    run=run,
-                                    nb_ind=nb_ind,
-                                    gen=gen,
-                                    nb_eval=nb_eval,
-                                    n="",
-                                    step=step,
-                                    flag=flag_list,
-                                    fitness=fitness,
-                                    deleted_pos=deleted_pos,
-                                    nb_moves_per_step=nb_moves_per_step,
-                                    analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
+                # swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
+                #                     grid_nb_cols=params['grid']['grid_nb_cols'],
+                #                     setup_name=None,
+                #                     run=run,
+                #                     nb_ind=nb_ind,
+                #                     gen=gen,
+                #                     nb_eval=nb_eval,
+                #                     n="",
+                #                     step=step,
+                #                     flag=flag_list,
+                #                     fitness=fitness,
+                #                     deleted_pos=deleted_pos,
+                #                     nb_moves_per_step=nb_moves_per_step,
+                #                     analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
             
                 # Write this individual
                 if step == steps[0]:
@@ -357,19 +360,19 @@ def plot_all_runs_data(params):
     dataset = pd.read_csv(params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")
     flag_list = get_flag_list_from_dataset_step(dataset, 0)
 
-    swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
-                    grid_nb_cols=params['grid']['grid_nb_cols'],
-                    setup_name=None,
-                    run=run,
-                    nb_ind=None,
-                    gen=0,
-                    nb_eval=0,
-                    n="",
-                    step=0,
-                    flag=flag_list,
-                    fitness=0,
-                    deleted_pos=[],
-                    analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
+    # swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
+    #                 grid_nb_cols=params['grid']['grid_nb_cols'],
+    #                 setup_name=None,
+    #                 run=run,
+    #                 nb_ind=None,
+    #                 gen=0,
+    #                 nb_eval=0,
+    #                 n="",
+    #                 step=0,
+    #                 flag=flag_list,
+    #                 fitness=0,
+    #                 deleted_pos=[],
+    #                 analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
     
     print(f"Plots for all the runs completed.")
 
@@ -458,12 +461,16 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, nb_deletions, density
     
     # plt.plot([0, x_end], [y, y], linestyle=':', linewidth=2.0, color='tab:blue', label=f"worst flags dist") # max fitness limit phase1
 
+
     plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
-    plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\nsliding puzzle {params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, 11 runs, only best ever", fontsize=12)
-    plt.xlabel("Evaluations", fontsize=12)
-    plt.ylabel("Flags distance", fontsize=12)
-    plt.legend()
+    plt.yticks([0, 0.5, 1.0], fontsize=18)
+    plt.xticks([0, 7000, 14000], fontsize=18)
+    plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, 11 runs, only best ever", fontsize=18)
+    plt.xlabel("Evaluations", fontsize=18)
+    plt.ylabel("Distance", fontsize=18)
+    plt.legend(loc="upper right") 
+    plt.tight_layout()
 
     plt.savefig(save_filename)
     plt.clf()
