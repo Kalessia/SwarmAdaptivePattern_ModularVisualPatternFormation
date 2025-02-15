@@ -132,21 +132,21 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                     nb_cols = int(setup_name_chunks[3])
                     switch_step = None
 
-                # swarmGrid.plot_flag(grid_nb_rows=nb_rows,
-                #                     grid_nb_cols=nb_cols,
-                #                     setup_name=setup_name,
-                #                     run=run,
-                #                     nb_ind=best_ind_run,
-                #                     gen=None,
-                #                     nb_eval=None,
-                #                     n=n,
-                #                     step=step,
-                #                     flag=flag_list,
-                #                     fitness=fitness,
-                #                     permutated_pos=permutated_pos,
-                #                     deleted_pos=deleted_pos,
-                #                     nb_moves_per_step=nb_moves_per_step,
-                #                     analysis_dir_plots=params['analysis_dir']['plots'])
+                swarmGrid.plot_flag(grid_nb_rows=nb_rows,
+                                    grid_nb_cols=nb_cols,
+                                    setup_name=setup_name,
+                                    run=run,
+                                    nb_ind=best_ind_run,
+                                    gen=None,
+                                    nb_eval=None,
+                                    n=n,
+                                    step=step,
+                                    flag=flag_list,
+                                    fitness=fitness,
+                                    permutated_pos=permutated_pos,
+                                    deleted_pos=deleted_pos,
+                                    nb_moves_per_step=nb_moves_per_step,
+                                    analysis_dir_plots=params['analysis_dir']['plots'])
 
             if setup_name == "original_flag_copied_from_learning":
                 break # there is only one repetition for this file to plot
@@ -177,19 +177,18 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
 
         df = pd.read_csv(f"{params['analysis_dir']['data']}/data_all_repetitions/setup_sliding_puzzle/data_setup_sliding_puzzle_stats_per_repetition.csv")
 
-        y_labels = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'], reverse=True) # fluidity (p_move)
-        ticks_percent = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent'], reverse=True)
-        x_labels = [round((1-x), 2) for x in ticks_percent] # density = ( (grid_size - nb_deletions) / grid_size)
-        data = pd.DataFrame(np.nan, index=y_labels, columns=x_labels)
+        fluidity_ticks = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'], reverse=True) # fluidity = p_move = y_labels
+        density_ticks = sorted(params['setup_sliding_puzzle']['setup_sliding_puzzle_density_ticks'], reverse=True) # x_labels
+        # x_labels = [x for x in density_ticks] # density = ( (grid_size - nb_deletions) / grid_size)
+        data = pd.DataFrame(np.nan, index=fluidity_ticks, columns=density_ticks)
 
-        for tick_percent in ticks_percent:
-            for p_move in y_labels:
+        for density in density_ticks:
+            for p_move in fluidity_ticks:
 
-                density = round((1.0-tick_percent), 2)
                 if density == 1.0:
                     p_move = 0.0 # if density is max, agents can't move
 
-                deletions = int( (params['grid_nb_rows'] * params['grid_nb_cols']) * tick_percent)
+                deletions = int( (params['grid_nb_rows'] * params['grid_nb_cols']) * density)
                 mean_fit_over_repetitions = df.loc[(df.Deletions==deletions) & (df.Fluidity==p_move), 'Flags_distance'].mean()
                 # print(density, deletions, mean_fit_)
                 data.loc[p_move, density] = mean_fit_over_repetitions
@@ -221,14 +220,14 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
             heatmap_plot.add_patch(crossed_box)
 
         # Add a red rectangle around the learning setup parameters case (ideal generalization environment) (se c'éééééééééééééééééééééééééééééééééééééééééééééé)
-        rect_pos_col = data.columns.get_loc(round(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1], 2))
+        rect_pos_col = data.columns.get_loc(params['setup_sliding_puzzle_phase1_VS_phase2']['learning_density_ticks'][1])
         rect_pos_row = data.index.get_loc(params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move'])
         rect = plt.Rectangle((rect_pos_col, rect_pos_row), 1, 1, fill=False, edgecolor='red', linewidth=3)
         heatmap_plot.add_patch(rect)
 
         plt.xlabel("Density of the system", fontsize=12)
         plt.ylabel("Fluidity of the system", fontsize=12)
-        plt.title(f"Generalization of learning $\\rho$={round(1-params['setup_sliding_puzzle_phase1_VS_phase2']['learning_nb_deletions_percent'][1], 2)}, $\\Phi$={params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move']}, best_ind_{best_ind_run:03}" + f"\nsliding puzzle {params['flag_pattern']} {params['grid_nb_rows']}x{params['grid_nb_cols']}, 11 runs", fontsize=12)
+        plt.title(f"Generalization of learning $\\rho$={params['setup_sliding_puzzle_phase1_VS_phase2']['learning_density_ticks'][1]}, $\\Phi$={params['setup_sliding_puzzle_phase1_VS_phase2']['learning_proba_move']}, best_ind_{best_ind_run:03}" + f"\nsliding puzzle {params['flag_pattern']} {params['grid_nb_rows']}x{params['grid_nb_cols']}, 11 runs", fontsize=12)
 
         dir_name = f"{params['analysis_dir']['plots']}/plot_all_repetitions"
         if not (os.path.exists(dir_name)):

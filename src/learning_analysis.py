@@ -30,7 +30,9 @@ def init_all_runs_analysis(params):
 
     # Create the 'analysis_dir' folder
     params['analysis_dir'] = {}
-    params['analysis_dir']['root'] = os.getcwd() +"/simulationAnalysis/"+params['evolutionary_settings']['env_name']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+params['grid']['flag_pattern']+"_"+str(params['grid']['grid_nb_rows'])+"x"+str(params['grid']['grid_nb_cols'])+"/learning"
+    current_directory = os.getcwd()
+    parent_directory = os.path.dirname(current_directory)
+    params['analysis_dir']['root'] = parent_directory +"/data_plots/simulationAnalysis/"+params['evolutionary_settings']['env_name']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+"_"+params['grid']['flag_pattern']+"_"+str(params['grid']['grid_nb_rows'])+"x"+str(params['grid']['grid_nb_cols'])+"/learning"
     os.makedirs(params['analysis_dir']['root'], exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/data_all_runs", exist_ok=True)
     os.makedirs(params['analysis_dir']['root']+"/plots_all_runs", exist_ok=True)
@@ -190,9 +192,6 @@ def write_best_inds_ever_and_best_ind_per_run(dataset_path, switch_gen, save_bes
                 
 def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incremental" cela crushes???
 
-    # if run != 4 :
-    #     return
-
     time_run = time.time()
     print(f"learning_analysis plots for the single run n.{run} - Started")
     os.makedirs(params['analysis_dir']['root']+ f"/run_{run:03}/plots/evo", exist_ok=True)
@@ -202,7 +201,7 @@ def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incr
     switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval']
     grid_size = params['grid']['grid_size']
     nb_deletions = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks']
-    density = round(1.0-params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'][1], 2)
+    density = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'][1]
     fluidity = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move']
 
     # Plot_all_pop_fitnesses_boxplot
@@ -247,20 +246,20 @@ def plot_single_run_data(run, params):  # TODO: si on a un autre setup que "incr
             nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
 
             if step in steps:
-                # swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
-                #                     grid_nb_cols=params['grid']['grid_nb_cols'],
-                #                     setup_name=None,
-                #                     run=run,
-                #                     nb_ind=nb_ind,
-                #                     gen=gen,
-                #                     nb_eval=nb_eval,
-                #                     n="",
-                #                     step=step,
-                #                     flag=flag_list,
-                #                     fitness=fitness,
-                #                     deleted_pos=deleted_pos,
-                #                     nb_moves_per_step=nb_moves_per_step,
-                #                     analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
+                swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
+                                    grid_nb_cols=params['grid']['grid_nb_cols'],
+                                    setup_name=None,
+                                    run=run,
+                                    nb_ind=nb_ind,
+                                    gen=gen,
+                                    nb_eval=nb_eval,
+                                    n="",
+                                    step=step,
+                                    flag=flag_list,
+                                    fitness=fitness,
+                                    deleted_pos=deleted_pos,
+                                    nb_moves_per_step=nb_moves_per_step,
+                                    analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
             
                 # Write this individual
                 if step == steps[0]:
@@ -333,7 +332,7 @@ def plot_all_runs_data(params):
     switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] # switch_eval is the 1st evaluation of the new generation starting after the switch_eval defined in parameters
     grid_size = params['grid']['grid_size']
     nb_deletions = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks']
-    density = round(1.0-params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'][1], 2)
+    density = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'][1]
     fluidity = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move']
 
     # Plot_best_inds_ever
@@ -360,19 +359,19 @@ def plot_all_runs_data(params):
     dataset = pd.read_csv(params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")
     flag_list = get_flag_list_from_dataset_step(dataset, 0)
 
-    # swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
-    #                 grid_nb_cols=params['grid']['grid_nb_cols'],
-    #                 setup_name=None,
-    #                 run=run,
-    #                 nb_ind=None,
-    #                 gen=0,
-    #                 nb_eval=0,
-    #                 n="",
-    #                 step=0,
-    #                 flag=flag_list,
-    #                 fitness=0,
-    #                 deleted_pos=[],
-    #                 analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
+    swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
+                    grid_nb_cols=params['grid']['grid_nb_cols'],
+                    setup_name=None,
+                    run=run,
+                    nb_ind=None,
+                    gen=0,
+                    nb_eval=0,
+                    n="",
+                    step=0,
+                    flag=flag_list,
+                    fitness=0,
+                    deleted_pos=[],
+                    analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
     
     print(f"Plots for all the runs completed.")
 

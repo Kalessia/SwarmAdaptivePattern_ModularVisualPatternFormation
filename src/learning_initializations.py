@@ -9,7 +9,7 @@ import random
 
 import csv
 
-from environments import flag_automata, sliding_puzzle_incremental
+from environments import sliding_puzzle, sliding_puzzle_incremental
 from nn import NeuralNetwork
 
 
@@ -56,22 +56,12 @@ def check_params_validity(params):
         params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = None # used in learning_analysis.py to plot the switch eval line (setups delimiter)
 
     if params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
-        if params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units'] is None:
-            if not isinstance(params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'], list):
-                print(f"Error in learning_initializations.py - Parameter sliding_puzzle_incremental_nb_deletions_percent must be a list")
-                params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'] = []
-                exit_bool = True
-            params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(params['grid']['grid_size']*tick_percent) for tick_percent in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent']]
-        else:
-            if params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'] is not None:
-                print(f"Error in learning_initializations.py - Either 'sliding_puzzle_incremental_nb_deletions_units' or 'sliding_puzzle_incremental_nb_deletions_percent' must be null.")
-                exit_bool = True
-            if not isinstance(params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units'], list):
-                print(f"Error in learning_initializations.py - Parameter sliding_puzzle_incremental_nb_deletions_units must be a list")
-                params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units'] = []
-                exit_bool = True
-            params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(tick_unit) for tick_unit in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_units']]
-    
+        if not isinstance(params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'], list):
+            print(f"Error in learning_initializations.py - Parameter sliding_puzzle_incremental_density_ticks must be a list")
+            params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'] = []
+            exit_bool = True
+        params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(params['grid']['grid_size']*(1.0-tick)) for tick in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks']]
+
     #---------------------------------------------------
 
     params['environment']['time_steps'] = int(params['environment']['time_steps'])
@@ -102,7 +92,7 @@ def check_params_validity(params):
 
     #---------------------------------------------------
 
-    patterns = ['flag_automata', 'sliding_puzzle_incremental']
+    patterns = ['sliding_puzzle', 'sliding_puzzle_incremental']
     if params['evolutionary_settings']['env_name'] not in patterns:
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
@@ -135,8 +125,8 @@ def set_env(params):
         params['evolutionary_settings']['ind_size'] = params['evolutionary_settings']['ind_size'] + 4 # Devert 2011 +4 weights for the Expression function
 
     environments = {
-        'flag_automata': {
-            'eval_function': flag_automata, 
+        'sliding_puzzle': {
+            'eval_function': sliding_puzzle, 
             'eval_function_params': {
                 'grid_nb_rows': params['grid']['grid_nb_rows'],
                 'grid_nb_cols': params['grid']['grid_nb_cols'],
@@ -145,6 +135,7 @@ def set_env(params):
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
                 'controller': nn_controller,
+                'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
                 'time_steps': params['environment']['time_steps'],
                 'time_window_start': params['environment']['time_window_start'],
                 'time_window_end': params['environment']['time_window_end'],
@@ -169,6 +160,7 @@ def set_env(params):
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
                 'controller': nn_controller,
+                'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
                 'time_steps': params['environment']['time_steps'],
                 'time_window_start': params['environment']['time_window_start'],
                 'time_window_end': params['environment']['time_window_end'],

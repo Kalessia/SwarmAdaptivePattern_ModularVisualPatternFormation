@@ -20,8 +20,6 @@ sep = "\n################################################\n"
 def swarm_simulation(run, best_ind, best_ind_run, best_inds_per_run_per_phase, swarm_params):
     print(f"swarm_simulation run n.{run}, best_ind_{best_ind_run} [{best_ind[0]}, ...] - Starting")
 
-    # print(best_ind[0])
-
     # Initializations
     time_run = time.time()
     swarm_params = init_one_run_analysis(run, best_ind, best_ind_run, swarm_params)

@@ -30,7 +30,7 @@ def sigmoid(x):
 
 
 
-def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, verbose_debug_bool, analysis_dir):
+def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, nb_intrasteps, verbose_debug_bool, analysis_dir):
     
     global verbose_debug, env
 
@@ -47,7 +47,8 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distanc
                         flag_pattern=flag_pattern,
                         flag_target=flag_target,
                         init_cell_state_value=init_cell_state_value,
-                        nn_controller=nn_controller)
+                        nn_controller=nn_controller,
+                        nb_intrasteps=nb_intrasteps)
     
     env.write_flag_target_data(analysis_dir) # check emplacement
     
@@ -246,7 +247,7 @@ class agent3Outputs_Devert2011(swarmAgent):
 # Learning evaluation function
 ###########################################################################
 
-def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
+def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
     time_steps = env_eval_function_params['time_steps']
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
@@ -279,6 +280,7 @@ def flag_automata(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_
                              init_cell_state_value=init_cell_state_value,
                              nn_controller=env_eval_function_params['controller'],
                              agent_controller_weights=weights,
+                             nb_intrasteps=env_eval_function_params['nb_intrasteps'],
                              verbose_debug_bool=env_eval_function_params['verbose_debug'],
                              analysis_dir=env_eval_function_params['analysis_dir'])
 
@@ -342,6 +344,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
                              init_cell_state_value=init_cell_state_value,
                              nn_controller=env_eval_function_params['controller'],
                              agent_controller_weights=weights,
+                             nb_intrasteps=env_eval_function_params['nb_intrasteps'],
                              verbose_debug_bool=env_eval_function_params['verbose_debug'],
                              analysis_dir=env_eval_function_params['analysis_dir'])
 
@@ -402,7 +405,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 ###########################################################################
 
 class swarmGrid:
-    def __init__(self, grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller) -> None:
+    def __init__(self, grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, nb_intrasteps) -> None:
       
         self.grid_nb_rows = grid_nb_rows
         self.grid_nb_cols = grid_nb_cols
@@ -411,6 +414,7 @@ class swarmGrid:
         self.agent_controller_weights = None
         self.agent_additional_weights = None
         self.agent_controller = nn_controller
+        self.nb_intrasteps = nb_intrasteps
 
         if nn_controller.output_size == 1:
             self.agent_type = agent1Output
@@ -671,6 +675,19 @@ class swarmGrid:
             # Random async update of this agent state
             state = self.compute_agent_state(agent=agent)
             agent.set_state(state, with_noise_bool, noise_std)
+
+
+        if self.nb_intrasteps is not None:
+            agents = self.get_agents()
+            print(f"intrastep 1/{self.nb_intrasteps} already computed")
+            for intrastep in range(2, self.nb_intrasteps+1): # one state computation per agent has already been done
+                print(f"intrastep {intrastep}/{self.nb_intrasteps} done")
+                np.random.shuffle(agents) # random update order (async update)
+                for agent in agents:
+                    # Random async update of this agent state
+                    state = self.compute_agent_state(agent=agent)
+                    agent.set_state(state, with_noise_bool, noise_std)
+
 
         return nb_moves_per_step
 
@@ -1026,6 +1043,7 @@ class swarmGrid:
                                              init_cell_state_value=init_cell_state_value,
                                              nn_controller=nn_controller,
                                              agent_controller_weights=best_ind_per_phase,
+                                             nb_intrasteps=None,
                                              verbose_debug_bool=False,
                                              analysis_dir=analysis_dir)
 
@@ -1090,6 +1108,7 @@ class swarmGrid:
                                             init_cell_state_value=init_cell_state_value,
                                             nn_controller=nn_controller,
                                             agent_controller_weights=agent_controller_weights,
+                                            nb_intrasteps=None,
                                             verbose_debug_bool=False,
                                             analysis_dir=analysis_dir)
 

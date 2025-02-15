@@ -26,20 +26,19 @@
     "setup_permutation": {
         "setup_permutation_bool": false,
         "setup_permutation_ticks_units": null,
-        "setup_permutation_ticks_percent": [0.1, 0.2, 0.3, 0.4, 0.5]
+        "setup_permutation_density_ticks": [0.1, 0.2, 0.3, 0.4, 0.5]
     },
 
     "setup_deletion info": "",
     "setup_deletion": {
         "setup_deletion_bool": false,
-        "setup_deletion_ticks_units": null,
-        "setup_deletion_ticks_percent": [0.1, 0.2, 0.3, 0.4, 0.5]
+        "setup_deletion_density_ticks": [0.1, 0.2, 0.3, 0.4, 0.5]
     },
 
     "setup_sliding_puzzle info": "always async?",
     "setup_sliding_puzzle": {
         "setup_sliding_puzzle_bool": true,
-        "setup_sliding_puzzle_ticks_percent": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        "setup_sliding_puzzle_density_ticks": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         "setup_sliding_puzzle_probas_move": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     },
 

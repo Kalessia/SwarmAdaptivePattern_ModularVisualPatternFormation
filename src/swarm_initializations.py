@@ -41,47 +41,27 @@ def check_params_validity(grid_size, params):
         exit_bool = True
 
     if params['setup_permutation']['setup_permutation_bool']:
-        if params['setup_permutation']['setup_permutation_ticks_units'] is None:
-            if not isinstance(params['setup_permutation']['setup_permutation_ticks_percent'], list):
-                print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_percent must be a list")
-                params['setup_permutation']['setup_permutation_ticks_percent'] = []
-                exit_bool = True
-            permutation_ticks = [int(grid_size*tick_percent) for tick_percent in params['setup_permutation']['setup_permutation_ticks_percent']]
-        else:
-            if params['setup_permutation']['setup_permutation_ticks_percent'] is not None:
-                print(f"Error in learning_initializations.py - Either 'setup_permutation_ticks_units' or 'setup_permutation_ticks_percent' must be null.")
-                exit_bool = True
-            if not isinstance(params['setup_permutation']['setup_permutation_ticks_units'], list):
-                print(f"Error in swarm_initializations.py - Parameter setup_permutation_ticks_units must be a list")
-                params['setup_permutation']['setup_permutation_ticks_units'] = []
-                exit_bool = True
-            permutation_ticks = [int(tick_unit) for tick_unit in params['setup_permutation']['setup_permutation_ticks_units']]
+        if not isinstance(params['setup_permutation']['setup_permutation_density_ticks'], list):
+            print(f"Error in swarm_initializations.py - Parameter setup_permutation_density_ticks must be a list")
+            params['setup_permutation']['setup_permutation_density_ticks'] = []
+            exit_bool = True
+        permutation_ticks = [int(grid_size*(1.0-tick)) for tick in params['setup_permutation']['setup_permutation_density_ticks']]
         params['setup_permutation']['permutation_ticks'] = [val if val % 2 == 0 else val - 1 for val in permutation_ticks] # permutation_ticks must be even
 
     if params['setup_deletion']['setup_deletion_bool']:
-        if params['setup_deletion']['setup_deletion_ticks_units'] is None:
-            if not isinstance(params['setup_deletion']['setup_deletion_ticks_percent'], list):
-                print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_percent must be a list")
-                params['setup_deletion']['setup_deletion_ticks_percent'] = []
-                exit_bool = True
-            params['setup_deletion']['deletion_ticks'] = [int(grid_size*tick_percent) for tick_percent in params['setup_deletion']['setup_deletion_ticks_percent']]
-        else:
-            if params['setup_deletion']['setup_deletion_ticks_percent'] is not None:
-                print(f"Error in learning_initializations.py - Either 'setup_permutation_ticks_units' or 'setup_permutation_ticks_percent' must be null.")
-                exit_bool = True
-            if not isinstance(params['setup_deletion']['setup_deletion_ticks_units'], list):
-                print(f"Error in swarm_initializations.py - Parameter setup_deletion_ticks_units must be a list")
-                params['setup_deletion']['setup_deletion_ticks_units'] = []
-                exit_bool = True
-            params['setup_deletion']['deletion_ticks'] = [int(tick_unit) for tick_unit in params['setup_deletion']['setup_deletion_ticks_units']]
+        if not isinstance(params['setup_deletion']['setup_deletion_density_ticks'], list):
+            print(f"Error in swarm_initializations.py - Parameter setup_deletion_density_ticks must be a list")
+            params['setup_deletion']['setup_deletion_density_ticks'] = []
+            exit_bool = True
+        params['setup_deletion']['deletion_ticks'] = [int(grid_size*(1.0-tick)) for tick in params['setup_deletion']['setup_deletion_density_ticks']]
 
     if params['setup_sliding_puzzle']['setup_sliding_puzzle_bool']:
-        if not isinstance(params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent'], list) \
+        if not isinstance(params['setup_sliding_puzzle']['setup_sliding_puzzle_density_ticks'], list) \
         or not isinstance(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'], list):
-            print(f"Error in swarm_initializations.py - Parameter setup_sliding_puzzle_ticks_percent and setup_sliding_puzzle_probas_move must be lists")
-            params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent'] = []
+            print(f"Error in swarm_initializations.py - Parameter setup_sliding_puzzle_density_ticks and setup_sliding_puzzle_probas_move must be lists")
+            params['setup_sliding_puzzle']['setup_sliding_puzzle_density_ticks'] = []
             exit_bool = True
-        params['setup_sliding_puzzle']['deletion_ticks'] = [int(grid_size*tick_percent) for tick_percent in params['setup_sliding_puzzle']['setup_sliding_puzzle_ticks_percent']]
+        params['setup_sliding_puzzle']['deletion_ticks'] = [int(grid_size*(1.0-tick)) for tick in params['setup_sliding_puzzle']['setup_sliding_puzzle_density_ticks']]
 
         for p, proba_move in enumerate(params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move']):
             params['setup_sliding_puzzle']['setup_sliding_puzzle_probas_move'][p] = float(proba_move)
@@ -175,7 +155,7 @@ def copy_params_from_learning(learning_params, swarm_params):
     if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
         swarm_params['setup_sliding_puzzle_phase1_VS_phase2'].update({
             'learning_bool': True,
-            'learning_nb_deletions_percent': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_percent'],
+            'learning_density_ticks': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'],
             'learning_ticks_units': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'],
             'learning_proba_move': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move'], 
         })
