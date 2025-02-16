@@ -679,9 +679,9 @@ class swarmGrid:
 
         if self.nb_intrasteps is not None:
             agents = self.get_agents()
-            print(f"intrastep 1/{self.nb_intrasteps} already computed")
+            # print(f"intrastep 1/{self.nb_intrasteps} already computed")
             for intrastep in range(2, self.nb_intrasteps+1): # one state computation per agent has already been done
-                print(f"intrastep {intrastep}/{self.nb_intrasteps} done")
+                # print(f"intrastep {intrastep}/{self.nb_intrasteps} done")
                 np.random.shuffle(agents) # random update order (async update)
                 for agent in agents:
                     # Random async update of this agent state
