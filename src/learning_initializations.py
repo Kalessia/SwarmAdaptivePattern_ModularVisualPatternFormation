@@ -9,7 +9,8 @@ import random
 
 import csv
 
-from environments import sliding_puzzle, sliding_puzzle_incremental
+from environments import sliding_puzzle, sliding_puzzle_incremental, sliding_puzzle_coordinates
+from agents import agent2Outputs, agentCoordinates_gradient
 from nn import NeuralNetwork
 
 
@@ -52,8 +53,11 @@ def check_params_validity(params):
 
     #---------------------------------------------------
 
-    if params['evolutionary_settings']['env_name'] != "sliding_puzzle_incremental":
-        params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = None # used in learning_analysis.py to plot the switch eval line (setups delimiter)
+    # if params['evolutionary_settings']['env_name'] != "sliding_puzzle_incremental":
+    #     params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = None # used in learning_analysis.py to plot the switch eval line (setups delimiter)
+
+    if not params['evolutionary_settings']['sliding_puzzle_nb_intrasteps']:
+        params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'] = None
 
     if params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
         if not isinstance(params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'], list):
@@ -61,6 +65,8 @@ def check_params_validity(params):
             params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'] = []
             exit_bool = True
         params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'] = [int(params['grid']['grid_size']*(1.0-tick)) for tick in params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks']]
+    else:
+        params['evolutionary_settings']['sliding_puzzle_nb_deletions_ticks'] = int(params['grid']['grid_size']*(1.0-params['evolutionary_settings']['sliding_puzzle_density']))
 
     #---------------------------------------------------
 
@@ -92,12 +98,12 @@ def check_params_validity(params):
 
     #---------------------------------------------------
 
-    patterns = ['sliding_puzzle', 'sliding_puzzle_incremental']
+    patterns = ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates']
     if params['evolutionary_settings']['env_name'] not in patterns:
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
 
-    patterns = ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs']
+    patterns = ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'coordinates']
     if params['grid']['flag_pattern'] not in patterns:
         print(f"Error in learning_initializations.py - The flag_pattern parameter must be one of the following: {patterns}")
         exit_bool = True
@@ -115,14 +121,22 @@ def set_env(params):
 
     check_params_validity(params)
 
-    nn_controller = NeuralNetwork(input_size=params['nn_controller']['nb_neuronsPerInputs'],
-                                  hidden_layers=params['nn_controller']['hidden_layers'],
-                                  output_size=params['nn_controller']['nb_neuronsPerOutputs'],
-                                  activation_function='tanh')
-    params['evolutionary_settings']['ind_size'] = nn_controller.weights_biases_size
+    if params['evolutionary_settings']['env_name'] == "sliding_puzzle_coordinates":
+        nn_controller = NeuralNetwork(input_size=4, # one signal from N, W, E, S
+                                    hidden_layers=[2],
+                                    output_size=3,
+                                    activation_function='tanh')
+        params['evolutionary_settings']['ind_size'] = nn_controller.weights_biases_size
+    else:
+        nn_controller = NeuralNetwork(input_size=params['nn_controller']['nb_neuronsPerInputs'],
+                                    hidden_layers=params['nn_controller']['hidden_layers'],
+                                    output_size=params['nn_controller']['nb_neuronsPerOutputs'],
+                                    activation_function='tanh')
+        params['evolutionary_settings']['ind_size'] = nn_controller.weights_biases_size
 
-    if params['nn_controller']['nb_neuronsPerOutputs'] == 3: # Devert 2011
-        params['evolutionary_settings']['ind_size'] = params['evolutionary_settings']['ind_size'] + 4 # Devert 2011 +4 weights for the Expression function
+        if params['nn_controller']['nb_neuronsPerOutputs'] == 3: # Devert 2011
+            params['evolutionary_settings']['ind_size'] = params['evolutionary_settings']['ind_size'] + 4 # Devert 2011 +4 weights for the Expression function
+
 
     environments = {
         'sliding_puzzle': {
@@ -134,7 +148,7 @@ def set_env(params):
                 'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
-                'controller': nn_controller,
+                'controller': [nn_controller],
                 'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
                 'time_steps': params['environment']['time_steps'],
                 'time_window_start': params['environment']['time_window_start'],
@@ -159,7 +173,35 @@ def set_env(params):
                 'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
-                'controller': nn_controller,
+                'agent_type': agent2Outputs,
+                'controller': [nn_controller],
+                'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
+                'time_steps': params['environment']['time_steps'],
+                'time_window_start': params['environment']['time_window_start'],
+                'time_window_end': params['environment']['time_window_end'],
+                'learning_modes': params['learning_modes'],
+                'noise_std': params['learning_options']['learning_with_noise']['learning_with_noise_std'],
+                'verbose_debug': params['verbose_debug'],
+                'analysis_dir': params['analysis_dir']
+            },
+            'env_boundaries': None,
+            'toolbox_cmaes': {
+                'centroid': list(np.random.uniform(-1, 1, params['evolutionary_settings']['ind_size'])),
+                'sigma': 0.5
+            }
+        },
+        'sliding_puzzle_coordinates': {
+            'eval_function': sliding_puzzle_coordinates,
+            'eval_function_params': {
+                'grid_nb_rows': params['grid']['grid_nb_rows'],
+                'grid_nb_cols': params['grid']['grid_nb_cols'],
+                'flags_distance_mode': params['evolutionary_settings']['flags_distance_mode'],
+                'flag_pattern': "coordinates",
+                'flag_target': None,
+                'init_cell_state_value': params['grid']['init_cell_state_value'],
+                'agent_type': agentCoordinates_gradient,
+                'controller': [nn_controller],
+                'nn_controller_stacking_mode': None,
                 'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
                 'time_steps': params['environment']['time_steps'],
                 'time_window_start': params['environment']['time_window_start'],

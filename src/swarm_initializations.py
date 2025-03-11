@@ -157,7 +157,7 @@ def copy_params_from_learning(learning_params, swarm_params):
             'learning_bool': True,
             'learning_density_ticks': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks'],
             'learning_ticks_units': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'],
-            'learning_proba_move': learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move'], 
+            'learning_proba_move': learning_params['evolutionary_settings']['sliding_puzzle_proba_move'], 
         })
 
     swarm_params['best_ind_ever'], swarm_params['best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=learning_params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")

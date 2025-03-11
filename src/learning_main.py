@@ -1,8 +1,12 @@
+import os
 import time
+import random
 from multiprocessing import Pool, cpu_count
 
-from learning_initializations import *
-from learning_analysis import *
+import numpy as np
+
+from learning_initializations import set_env, init_toolbox
+from learning_analysis import init_all_runs_analysis, init_one_run_analysis, write_single_gen_data, write_single_run_data
 
 import json
 
@@ -26,15 +30,9 @@ def cmaES_EvoAlgorithm(run, learning_params):
     gen = -1
     nb_eval = 1
     switch_gen = None
-    sliding_puzzle_nb_deletions = None
-    sliding_puzzle_proba_move = None
+    sliding_puzzle_nb_deletions = learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'][0] if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental" else learning_params['evolutionary_settings']['sliding_puzzle_nb_deletions_ticks']
+    sliding_puzzle_proba_move = learning_params['evolutionary_settings']['sliding_puzzle_proba_move']
     executed_once_bool = False
-
-    # Sliding_puzzle incremental learning parameters
-    if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
-        sliding_puzzle_incremental_nb_deletions_ticks = learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks']
-        sliding_puzzle_nb_deletions = sliding_puzzle_incremental_nb_deletions_ticks[0]
-        sliding_puzzle_proba_move = learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_proba_move']
 
 
     # Main evolutionary loop
@@ -46,12 +44,12 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
         # In case of sliding_puzzle incremental learning, we switch from the 1st to the 2nd setup
         # At this point, nb_eval is the last eval of the previous generation. The 'switch_gen' is the generation following the one where switch_eval actually occured
-        if learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental" and not(executed_once_bool) \
+        if not(executed_once_bool) and learning_params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental" \
         and (nb_eval >= learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] \
         or ((learning_params['evolutionary_settings']['nb_evals'] - nb_eval) < pop_size)):
             learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] = nb_eval # switch_eval is the 1st evaluation of this new generation
             switch_gen = gen
-            sliding_puzzle_nb_deletions = sliding_puzzle_incremental_nb_deletions_ticks[1]
+            sliding_puzzle_nb_deletions = learning_params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_nb_deletions_ticks'][1]
             best_fit = np.inf # reset best_fit to save best_individuals data for the 2nd setup starting at this generation
             population = best_pop if best_pop is not None else population # NB: the cmaes covariance matrix has changed from this older best population
             reset_covariance_matrix = best_covariance_matrix if best_covariance_matrix is not None else np.copy(strategy.C)
@@ -66,7 +64,6 @@ def cmaES_EvoAlgorithm(run, learning_params):
         # To control the stopping criteria: while not any(conditions.values())
         # https://deap.readthedocs.io/en/master/examples/bipop_cmaes.html
         # http://deap.gel.ulaval.ca/doc/default/examples/eda.html
-
         eval_results = toolbox.map(toolbox.evaluate, [run]*pop_size, [gen]*pop_size, nb_evals, list(range(pop_size)), [best_fit]*pop_size, population, [sliding_puzzle_nb_deletions]*pop_size, [sliding_puzzle_proba_move]*pop_size)
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
@@ -122,8 +119,15 @@ def parallelize_processes(nb_runs, learning_params):
 
 if (__name__ == "__main__"):
 
+    print("\nlearning_main running...")
+
+    src_path = os.getcwd()
+    if not src_path.endswith("src"):
+        print(f"learning_main stopped. You run this script from {src_path}. Please run this script from the src directory.")
+        exit()
+
     # Get parameters from config files
-    with open(os.getcwd() +"/learning_params.json", "r") as f:
+    with open(src_path+"/learning_params.json", "r") as f:
         learning_params = json.load(f)
 
     # Initializations
@@ -140,8 +144,9 @@ if (__name__ == "__main__"):
     # Save a trace of used parameters for this simulation in learning_params.json
     del learning_params['env']['eval_function'] # not JSON serializable object
     del learning_params['env']['eval_function_params']['controller'] # not JSON serializable object
+    del learning_params['env']['eval_function_params']['agent_type'] # not JSON serializable object
     with open(learning_params['analysis_dir']['root']+"/learning_params.json", "w") as f:
         json.dump({k:v for k,v in learning_params.items()}, f, indent=2)
 
     # Plots: this line allows the learning_launch.sh script to plot figures
-    print(learning_params['analysis_dir']['root'])
+    print(learning_params['analysis_dir']['root'].replace("/learning", ""))

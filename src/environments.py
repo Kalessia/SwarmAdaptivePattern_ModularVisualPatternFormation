@@ -5,11 +5,14 @@ import numpy as np
 import pandas as pd
 
 import matplotlib
-matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
+matplotlib.use('TkAgg') # Use TkAgg backend instead of QtAgg
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
 #from flags_distance_methods import convert_flag_to_image, get_images_distance_MSE, get_images_distance_SSIM, get_images_distance_CLIP
+
+from agents import *
+from nn import NeuralNetwork
 
 
 ###########################################################################
@@ -30,13 +33,10 @@ def sigmoid(x):
 
 
 
-def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, agent_controller_weights, nb_intrasteps, verbose_debug_bool, analysis_dir):
+def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, agent_type, nn_controller, nn_controller_stacking_mode, agent_controller_weights, nb_intrasteps, verbose_debug_bool, analysis_dir):
     
     global verbose_debug, env
-
     verbose_debug = verbose_debug_bool
-    with open(analysis_dir['root']+"/verbose_debug.txt", 'w') as f: # to replace or erase eventual previous existing content in verbose_debug.txt
-        f.write(verbose_str)
 
     if env is None:
         env = swarmGrid(grid_nb_rows=grid_nb_rows,
@@ -47,14 +47,16 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distanc
                         flag_pattern=flag_pattern,
                         flag_target=flag_target,
                         init_cell_state_value=init_cell_state_value,
+                        agent_type=agent_type,
                         nn_controller=nn_controller,
+                        nn_controller_stacking_mode=nn_controller_stacking_mode,
                         nb_intrasteps=nb_intrasteps)
     
     env.write_flag_target_data(analysis_dir) # check emplacement
     
     # Some genomes could have 2 components, one dedicated to the controller NN and one for other purpose. Ex: in Devert 2011, 4 weights are required for the expression function
     agent_additional_weights = None
-    nn_controller_weights_size = nn_controller.weights_biases_size
+    nn_controller_weights_size = nn_controller[-1].weights_biases_size
     ind_size = len(agent_controller_weights)
     if (ind_size > nn_controller_weights_size):
         agent_controller_weights = agent_controller_weights[:nn_controller_weights_size]
@@ -66,182 +68,6 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distanc
 
     return env
 
-
-###########################################################################
-# Swarm agents
-###########################################################################
-
-class swarmAgent:
-    def __init__(self, pos, size_state, init_cell_state_value=None) -> None:
-
-        self.pos = pos
-        self.size_state = size_state
-        self.init_cell_state_value = init_cell_state_value
-        self.neighbors_NWES = None
-        self.state = None
-
-    #---------------------------------------------------
-    
-    def init_state(self):
-        raise NotImplementedError("Subclasses must implement this method")
-    
-    #---------------------------------------------------
-
-    def set_state(self, vector, with_noise_bool, noise_std):
-
-        if with_noise_bool:
-            state = vector.copy()
-            noise = np.random.normal(0, noise_std, self.size_state) 
-            vector = [self.clip(state[i]+noise[i]) for i in range(self.size_state)] # check  
-
-        self.state = vector
-
-    #---------------------------------------------------
-
-    def clip(self, value):
-        return max(0, min(value, 1))
-
-    #---------------------------------------------------
-
-    def get_state(self):
-        return self.state
-    
-    #---------------------------------------------------
-
-    def get_external_chemicals_to_spread(self):
-        raise NotImplementedError("Subclasses must implement this method")
-    
-    #---------------------------------------------------
-    
-    def get_phenotype(self):
-        raise NotImplementedError("Subclasses must implement this method")
-
-
-###########################################################################
-
-class agent1Output(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
-        self.size_state = 1
-        self.size_chemicals_to_spread = 1
-        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
-        self.init_state()
-
-    #---------------------------------------------------
-
-    def init_state(self, random_init_bool=False):
-        
-        if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(0, 1, self.size_state).tolist()
-        else:
-            self.state = [self.init_cell_state_value] * self.size_state
-
-    #---------------------------------------------------
-
-    def set_state(self, vector, with_noise_bool, noise_std):
-        super().set_state(vector, with_noise_bool, noise_std)
-    
-    #---------------------------------------------------
-
-    def get_external_chemicals_to_spread(self):
-        state = super().get_state()
-        return state # list of floats
-    
-    #---------------------------------------------------
-
-    def get_phenotype(self):
-        state = super().get_state()
-        return (state[0] + 1) / 2 # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale. Issue with sigmoid(state[0]): sigmoid(x) with x in (-1, 1) returned inconvenient bounded result in [0.27, 0.73] and we need phenotype in [0,1]
-
-###########################################################################
-
-class agent2Outputs(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
-        self.size_state = 2
-        self.size_chemicals_to_spread = 1
-        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
-        self.init_state()
-
-    #---------------------------------------------------
-
-    def init_state(self, random_init_bool=False):
-
-        if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
-            self.state[1] = np.abs(self.state[1])
-        else:
-            self.state = [self.init_cell_state_value] * self.size_state
-
-    #---------------------------------------------------
-
-    def set_state(self, vector, with_noise_bool, noise_std):
-        super().set_state(vector, with_noise_bool, noise_std)
-    
-    #---------------------------------------------------
-
-    def get_external_chemicals_to_spread(self):
-        state = super().get_state()
-        return [state[0]] # list of floats
-    
-    #---------------------------------------------------
-
-    def get_phenotype(self):
-        state = super().get_state()
-        return (state[1] + 1) / 2 # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale. Issue with sigmoid(state[1]): sigmoid(x) with x in (-1, 1) returned inconvenient bounded result in [0.27, 0.73] and we need phenotype in [0,1]
-    
-
-###########################################################################
-
-class agent3Outputs_Devert2011(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
-        self.size_state = 3
-        self.size_chemicals_to_spread = 2
-        self.agent_additional_weights = agent_additional_weights
-        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
-        self.init_state()
-
-    #---------------------------------------------------
-
-    def init_state(self, random_init_bool=False):
-        if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist() # Devert, 2011. State in [-1,1] because phenotype is not included in the state
-        else:
-            self.state = [self.init_cell_state_value] * self.size_state
-
-    #---------------------------------------------------
-
-    def set_state(self, vector, with_noise_bool, noise_std):
-        super().set_state(vector, with_noise_bool, noise_std)
-    
-    #---------------------------------------------------
-
-    def get_external_chemicals_to_spread(self): # Devert, 2011. A state is 2 external chemicals + 1 internal chemicals
-        state = super().get_state()
-        return state[:self.size_chemicals_to_spread]
-
-    #---------------------------------------------------
-
-    def get_internal_chemicals(self): # Devert, 2011. A state is 2 external chemicals + 1 internal chemicals
-        state = super().get_state()
-        return state[self.size_chemicals_to_spread:] # list of floats
-    
-    #---------------------------------------------------
-
-    def get_phenotype(self): # Devert, 2011. Expression function
-        state = super().get_state()
-        
-        val = 0
-        for i in range(len(state)):
-            val += self.agent_additional_weights[i] * state[i]
-        val += self.agent_additional_weights[-1] # bias neuron
-
-        return (0.5 * (1 + np.tanh(val))) # float
-    
-    #---------------------------------------------------
-
-    def get_agent_energy(self): # Devert, 2011. Expression function: energy is the square root of the sum of the squared values of chemicals u and v
-        state = super().get_state()
-        return (state[0]**2 + state[1]**2 + state[2]**2)**0.5
-                
 
 ###########################################################################
 # Learning evaluation function
@@ -278,6 +104,7 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
                              flag_pattern=env_eval_function_params['flag_pattern'],
                              flag_target=env_eval_function_params['flag_target'],
                              init_cell_state_value=init_cell_state_value,
+                             agent_type=env_eval_function_params['agent_type'],
                              nn_controller=env_eval_function_params['controller'],
                              agent_controller_weights=weights,
                              nb_intrasteps=env_eval_function_params['nb_intrasteps'],
@@ -342,7 +169,9 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
                              flag_pattern=env_eval_function_params['flag_pattern'],
                              flag_target=env_eval_function_params['flag_target'],
                              init_cell_state_value=init_cell_state_value,
+                             agent_type=env_eval_function_params['agent_type'],
                              nn_controller=env_eval_function_params['controller'],
+                             nn_controller_stacking_mode=None,
                              agent_controller_weights=weights,
                              nb_intrasteps=env_eval_function_params['nb_intrasteps'],
                              verbose_debug_bool=env_eval_function_params['verbose_debug'],
@@ -399,29 +228,115 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 
     return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
 
+#---------------------------------------------------
+
+def sliding_puzzle_coordinates(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
+    time_steps = env_eval_function_params['time_steps']
+    time_window_start = env_eval_function_params['time_window_start']
+    time_window_end = env_eval_function_params['time_window_end']
+
+    init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
+    if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
+        init_cell_state_value = None # None = random state initialization
+
+    random_async_update_bool = False
+    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_modes']:
+        random_async_update_bool = True
+
+    with_noise_bool = False
+    noise_std = None
+    if "learning_with_noise_bool" in env_eval_function_params['learning_modes']:
+        with_noise_bool = True
+        noise_std = env_eval_function_params['noise_std']
+
+    env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
+                             grid_nb_cols=env_eval_function_params['grid_nb_cols'],
+                             learning_modes=[],
+                             flags_distance_mode=env_eval_function_params['flags_distance_mode'],
+                             learning_with_noise_std=None,
+                             flag_pattern=env_eval_function_params['flag_pattern'],
+                             flag_target=env_eval_function_params['flag_target'],
+                             init_cell_state_value=init_cell_state_value,
+                             agent_type=env_eval_function_params['agent_type'],
+                             nn_controller=env_eval_function_params['controller'],
+                             nn_controller_stacking_mode=env_eval_function_params['nn_controller_stacking_mode'],
+                             agent_controller_weights=weights,
+                             nb_intrasteps=env_eval_function_params['nb_intrasteps'],
+                             verbose_debug_bool=env_eval_function_params['verbose_debug'],
+                             analysis_dir=env_eval_function_params['analysis_dir'])
+
+    #self.init_agents_state() # fait at init env
+
+    in_t_window_zone_bools = []
+    flags = []
+
+    flags_distance = 0.0
+    sum_flags_distances = 0.0
+    flags_distances = []
+
+    agents_to_delete = []
+    deleted_agents_per_step = []
+    nb_moves_per_step = []
+
+    agents = env.get_agents()
+    agents_to_delete = random.sample(agents, sliding_puzzle_nb_deletions)
+    deleted_map_pos_agent = env.delete_agent(agents_to_delete=agents_to_delete)
+
+    for step in range(time_steps):
+        in_t_window_zone_bool = False
+        flag = env.get_flag_from_grid()
+        flags.append(env.convert_flag_to_list(flag))
+        flags_distance = env.eval_flags_distance(flag)
+        deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+        
+        if step >= time_window_start and step <= time_window_end:
+            in_t_window_zone_bool = True
+            sum_flags_distances += flags_distance
+
+        flags_distances.append(flags_distance)
+        in_t_window_zone_bools.append(in_t_window_zone_bool)
+        
+        nb_moves = env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
+                                                    sliding_puzzle_proba_move=sliding_puzzle_proba_move,
+                                                    with_noise_bool=with_noise_bool,
+                                                    noise_std=noise_std)
+        nb_moves_per_step.append(nb_moves)
+
+    mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
+    if mean_tw_flags_distances < best_fit:
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
+        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
+
+    # Restore original grid
+    env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent) # i have a new grid each time?
+
+    # Verbose debug
+    global verbose_str
+    with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+        f.write(verbose_str)
+        verbose_str = ""
+
+    return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
+
 
 ###########################################################################
 # Environment swarmGrid
 ###########################################################################
 
 class swarmGrid:
-    def __init__(self, grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, nn_controller, nb_intrasteps) -> None:
+    def __init__(self, grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, agent_type, nn_controller, nn_controller_stacking_mode, nb_intrasteps) -> None:
       
         self.grid_nb_rows = grid_nb_rows
         self.grid_nb_cols = grid_nb_cols
         self.grid_size = grid_nb_rows * grid_nb_cols
 
+        self.agent_controller = nn_controller # list of one or more nn_controllers
+        self.agent_controller_stacking_mode = nn_controller_stacking_mode
         self.agent_controller_weights = None
         self.agent_additional_weights = None
-        self.agent_controller = nn_controller
+        self.agent_type = agent_type
+        self.size_phenotype = None
         self.nb_intrasteps = nb_intrasteps
-
-        if nn_controller.output_size == 1:
-            self.agent_type = agent1Output
-        elif nn_controller.output_size == 2:
-            self.agent_type = agent2Outputs
-        elif nn_controller.output_size == 3:
-            self.agent_type = agent3Outputs_Devert2011
 
         # parameters useful in the swarm application, to restore learning initialization parameters 
         self.learning_random_async_update_states_bool = True if "learning_random_async_update_states_bool" in learning_modes else False
@@ -432,18 +347,18 @@ class swarmGrid:
         self.default_missing_neighbor_state = 0.0
         self.grid_map_pos_agent = None
         self.init_grid(init_cell_state_value)
-
+        
         if flag_target is not None:
             self.flag_target = flag_target
         else:
             self.flag_target = self.build_flag(flag_pattern) # flag_target is a dict pos:phenotype
-        
+
     #---------------------------------------------------
 
     def set_agent_controller_weights(self, agent_controller_weights, agent_additional_weights=None):
         self.agent_controller_weights = agent_controller_weights
         # self.agent_controller.setWeightsFromList(agent_controller_weights)
-        self.agent_controller.set_weights_biases_vectors_from_list(agent_controller_weights)
+        self.agent_controller[-1].set_weights_biases_vectors_from_list(agent_controller_weights)
 
         if self.agent_type == agent3Outputs_Devert2011:
             self.agent_additional_weights = agent_additional_weights
@@ -463,6 +378,7 @@ class swarmGrid:
         
         self.grid_map_pos_agent = grid_map_pos_agent
         self.update_agent_neighbors()
+        self.size_phenotype = agent.size_phenotype # possiamo definirlo anke dopo il target...
 
     #---------------------------------------------------
     
@@ -487,7 +403,6 @@ class swarmGrid:
     #---------------------------------------------------
             
     def build_flag(self, flag_pattern):
-
         flag_target = {}
 
         if flag_pattern == "two-bands":
@@ -587,6 +502,19 @@ class swarmGrid:
                         else:
                             flag_target[cell] = 0.0 # black
 
+
+        elif flag_pattern == "coordinates":
+            assert self.size_phenotype == 2
+            for cell in self.grid_map_pos_agent.keys():
+                flag_target[cell] = [round((1.0 / (self.grid_nb_cols-1)) * cell[1], 2), # linear_gradient_left_right = x component
+                                    round((1.0 / (self.grid_nb_rows-1)) * cell[0], 2)] # linear_gradient_up_down = y component
+
+
+        # Verbose debug
+        if verbose_debug:
+            global verbose_str
+            verbose_str += f"\n<build_flag> - Flag pattern just built: {flag_pattern}.\n{self.convert_flag_to_list(flag_target)}"
+
         return self.convert_flag_to_list(flag_target)
 
     #---------------------------------------------------
@@ -614,8 +542,8 @@ class swarmGrid:
         global verbose_str
         agents = self.get_agents() # ordered update
 
-        if random_async_update_bool:
-            np.random.shuffle(agents) # random update
+        if random_async_update_bool: # async_update
+            np.random.shuffle(agents) # random order
 
             for agent in agents:
                 state = self.compute_agent_state(agent=agent)
@@ -628,14 +556,14 @@ class swarmGrid:
                 grid_map_agent_state_tmp[agent] = state
 
             if verbose_debug:
-                verbose_str += f"\n<step> sync update. Grid states at t-1: {self.get_flag_from_grid()}"
-                verbose_str += f"\n<step> sync update. Temporary grid states at t: {grid_map_agent_state_tmp.values()}"
+                verbose_str += f"\n<step> - Synchronous update of the states. Grid states at t-1: {self.get_flag_from_grid()}"
+                verbose_str += f"\n<step> - Synchronous update of the states. Temporary grid states at t: {grid_map_agent_state_tmp.values()}"
 
             for agent in agents:
                 agent.set_state(grid_map_agent_state_tmp[agent], with_noise_bool, noise_std)
 
             if verbose_debug:
-                verbose_str += f"\n<step> sync update. Grid states at t+1: {self.get_flag_from_grid()}"
+                verbose_str += f"\n<step> - Synchronous update of the states. Grid states at t+1: {self.get_flag_from_grid()}"
 
     #---------------------------------------------------
 
@@ -671,22 +599,31 @@ class swarmGrid:
                     # Update the neighbors list of each agent
                     self.update_agent_neighbors()
                     break # the agent has already moved once, other empty cells to try are ignored
-
+            
             # Random async update of this agent state
             state = self.compute_agent_state(agent=agent)
             agent.set_state(state, with_noise_bool, noise_std)
+        
+        if verbose_debug:
+            verbose_str += f"\n<step_random_async_update_sliding_puzzle> - Asynchronous update of the states done"
 
 
+        # Computing the remaining intrasteps
         if self.nb_intrasteps is not None:
             agents = self.get_agents()
-            # print(f"intrastep 1/{self.nb_intrasteps} already computed")
+
+            if verbose_debug:
+                verbose_str += f"\n<step_random_async_update_sliding_puzzle> - Intrastep 1/{self.nb_intrasteps} already computed"
+
             for intrastep in range(2, self.nb_intrasteps+1): # one state computation per agent has already been done
-                # print(f"intrastep {intrastep}/{self.nb_intrasteps} done")
-                np.random.shuffle(agents) # random update order (async update)
+                # Random asynchronous update of the agent states (random update order)
+                np.random.shuffle(agents)
                 for agent in agents:
-                    # Random async update of this agent state
                     state = self.compute_agent_state(agent=agent)
                     agent.set_state(state, with_noise_bool, noise_std)
+
+                if verbose_debug:
+                    verbose_str += f"\n<step_random_async_update_sliding_puzzle> - Intrastep {intrastep}/{self.nb_intrasteps} done"
 
 
         return nb_moves_per_step
@@ -705,10 +642,13 @@ class swarmGrid:
     #---------------------------------------------------
 
     def compute_agent_state(self, agent):
-        
+        global verbose_str
+
         if agent is None: # check
+            print("ça arrive?")
             return
 
+        # Get controller inputs
         neighbors_states = []
         for neighbor in agent.neighbors_NWES: # est il à jour? calcolarlo ora?
             if neighbor is not None: # si il a un id, il y a l'agent? tjr?
@@ -719,18 +659,28 @@ class swarmGrid:
         if (self.agent_type == agent3Outputs_Devert2011):
             neighbors_states += agent.get_internal_chemicals()
         
-        # print("final neighbors states", neighbors_states, "len neighbors states", len(neighbors_states))
 
-        # print("compute_agent_state: agent.pos:", agent.pos, ", its neighbors:", agent.neighbors_NWES, "neighbors states:", neighbors_states)
-
-
-        # print("prima di set_state - state:", agent.state, "agent.get_external_chemicals_to_spread():", agent.get_external_chemicals_to_spread(), "agent.get_phenotype():", agent.get_phenotype())
-        state = self.agent_controller.predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer       
-        # print("compute_agent_state: agent.pos:", agent.pos, "neighbors states:", neighbors_states, "state:", state)
-        # print(self.agent_controller.getWeightsList())
+        # Compute controller outputs (state)
+        if len(self.agent_controller) == 1:
+            state = self.agent_controller[0].predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer       
+            
+            if verbose_debug:
+                verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, final state = {state}"
         
+
+        elif self.agent_type == agentCoordinates_xy_map and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only":
+            ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
+            ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
+            ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
+            ann2_phenotype = self.agent_controller[-1].predict(ann1_state[:-self.size_phenotype])
+            state = [ann1_state[0]]
+            state.append(ann2_phenotype[0])
+
+            if verbose_debug:
+                verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
+        
+
         return state
-        # print("dopo di set_state - state:", agent.state, "agent.get_external_chemicals_to_spread():", agent.get_external_chemicals_to_spread(), "agent.get_phenotype():", agent.get_phenotype())
 
     #---------------------------------------------------
 
@@ -1041,6 +991,7 @@ class swarmGrid:
                                              flag_pattern=flag_pattern,
                                              flag_target=None,
                                              init_cell_state_value=init_cell_state_value,
+                                             agent_type=None,
                                              nn_controller=nn_controller,
                                              agent_controller_weights=best_ind_per_phase,
                                              nb_intrasteps=None,
@@ -1106,6 +1057,7 @@ class swarmGrid:
                                             flag_pattern=flag_pattern,
                                             flag_target=None,
                                             init_cell_state_value=init_cell_state_value,
+                                            agent_type=None,
                                             nn_controller=nn_controller,
                                             agent_controller_weights=agent_controller_weights,
                                             nb_intrasteps=None,
@@ -1244,25 +1196,41 @@ class swarmGrid:
 
         positions = self.grid_map_pos_agent.keys() # all positions in the grid
         # assert len(positions) == self.grid_size, f"\eval_flags_distance, len(positions) {len(positions)} != grid_size {self.grid_size}"
-        for p, pos in enumerate(positions):
-            # if self.grid_map_pos_agent[pos] is not None:
-            if flag[pos] is not None:
-                sum_states += (self.flag_target[p] - flag[pos])**2
-                # print("eval_flags_distance:", "pos=", pos, self.flag_target[p], flag[pos], "-->",  ((self.flag_target[p] - flag[pos])**2))
-                nb_agents += 1
 
-        # flags_distance = sum_states/self.grid_size
+        if self.size_phenotype > 1:
+            for p, pos in enumerate(positions):
+                if flag[pos] is not None:
+                    for coordinate in range(self.size_phenotype):
+                        sum_states += (self.flag_target[p][coordinate] - flag[pos][coordinate])**2
+                        nb_agents += 1
+        else:
+            for p, pos in enumerate(positions):
+                # if self.grid_map_pos_agent[pos] is not None:
+                if flag[pos] is not None:
+                    # print("self.flag_target[p]", self.flag_target[p]) #OK!
+                    # print("flag[pos]", flag[pos]) # NOK c'est une liste!
+                    sum_states += (self.flag_target[p] - flag[pos])**2
+                    # print("eval_flags_distance:", "pos=", pos, self.flag_target[p], flag[pos], "-->",  ((self.flag_target[p] - flag[pos])**2))
+                    nb_agents += 1
+
         if nb_agents == 0:
             return 0.0
 
-        flags_distance = sum_states/nb_agents
+        # flags_distance = sum_states/self.grid_size # deprecated
+        flags_distance = (sum_states/self.size_phenotype)/nb_agents # agregation = sum composante x+y in [0,2] / nb agents presents
         # print("eval_flags_distance:", sum_states, "/", nb_agents, "= flags distance", flags_distance) 
+        # print("flags_distance", flags_distance)
         return flags_distance
     
     #---------------------------------------------------
 
     def convert_flag_to_list(self, flag):
-        flag_tmp = {k: (v if v is not None else self.default_missing_neighbor_state) for k, v in flag.items()}
+        
+        if self.size_phenotype == 1:
+            flag_tmp = {k: (v if v is not None else self.default_missing_neighbor_state) for k, v in flag.items()}
+        else:
+            flag_tmp = {k: (v if v is not None else [self.default_missing_neighbor_state] * self.size_phenotype) for k, v in flag.items()}
+
         return list(flag_tmp.values())
 
     #---------------------------------------------------
@@ -1301,7 +1269,7 @@ class swarmGrid:
         
         with open (analysis_file, 'w') as f:
             s = f"// flagAutomata individual controller run {run:03}, gen {gen:05}, eval {nb_eval:07}, nb_ind {nb_ind:03}\n"
-            s += self.agent_controller.get_weights_biases_for_pogobots()
+            s += self.agent_controller[-1].get_weights_biases_for_pogobots()
             if self.agent_additional_weights:
                 s += f"const double additional_weights[] = {(str(self.agent_additional_weights).replace('[','{')).replace(']','}')};\n"
             s += f"#define {self.agent_type.__name__}"
@@ -1342,107 +1310,143 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag, fitness, permutated_pos=[], deleted_pos=[], nb_moves_per_step=0, analysis_dir_plots=None):
-        
-        fig, ax = plt.subplots()
+    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag_list, fitness, permutated_pos=[], deleted_pos=[], nb_moves_per_step=0, analysis_dir_plots=None):
 
-        grid_pos = []
-        for row in range(grid_nb_rows):
-            for col in range(grid_nb_cols):
-                grid_pos.append(tuple((row, col)))
+        if isinstance(flag_list[0], (list, tuple)): # this means that we have a flag with N dimensions (called components)
+            flag_components = swarmGrid.get_flag_components(flag_list)
+            merged_flag = swarmGrid.merge_flag_components(flag_list)
+            flag_list = flag_components
+            flag_list.append(merged_flag)
+        else:
+            flag_list=[flag_list]
 
-        if permutated_pos:
-            x_permutated = [pos[1] for pos in permutated_pos]
-            y_permutated = [-pos[0] for pos in permutated_pos]
+        for n_flag, flag in enumerate(flag_list):
+            fig, ax = plt.subplots()
 
-        if deleted_pos:
-            x_deleted = [pos[1] for pos in deleted_pos]
-            y_deleted = [-pos[0] for pos in deleted_pos]
-
-        if grid_nb_rows <= 10 and grid_nb_cols <= 10:
-            for row, col in [pos for pos in grid_pos if pos not in deleted_pos]:
-                for neighbor_pos in [(row-1, col), (row, col-1), (row, col+1), (row+1, col)]:
-                    if swarmGrid.is_pos_valid(grid_nb_rows, grid_nb_cols, neighbor_pos) and neighbor_pos not in deleted_pos:
-                        ax.plot([col, neighbor_pos[1]], [-row, -neighbor_pos[0]], color='black', linestyle=':', zorder=1)
-                    
-            circle_radius = 0.4
-
-        x = []
-        y = []
-        grey_values = []
-        for p, pos in enumerate(grid_pos):
-            grey_value = flag[p]
-
-            if grid_nb_rows > 10 or grid_nb_cols > 10:
-                x.append(pos[1])
-                y.append(-pos[0])
-                grey_values.append(grey_value)
-
-            else:
-                if grey_value > 0.9: # close to white
-                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
-                else:
-                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
-
-                if pos in permutated_pos:
-                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:green', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
-
-                if pos in deleted_pos:
-                    circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
-                
-                ax.add_patch(circle)
-
-                if grid_nb_rows < 6 and grid_nb_cols < 6:
-                    ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(grey_value,2)), color='black', va='center', ha='center')
-                
-                # Hide axis lines and ticks, but still show labels
-                ax.spines['top'].set_visible(False)
-                ax.spines['right'].set_visible(False)
-                ax.spines['left'].set_visible(False)
-                ax.spines['bottom'].set_visible(False)
-
-
-        if grid_nb_rows > 10 or grid_nb_cols > 10:
-            colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black to light blue
-            cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
-            plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
+            grid_pos = []
+            for row in range(grid_nb_rows):
+                for col in range(grid_nb_cols):
+                    grid_pos.append(tuple((row, col)))
 
             if permutated_pos:
-                plt.scatter(x_permutated, y_permutated, c='tab:green') # agents permutated
+                x_permutated = [pos[1] for pos in permutated_pos]
+                y_permutated = [-pos[0] for pos in permutated_pos]
 
             if deleted_pos:
-                plt.scatter(x_deleted, y_deleted, c='tab:red') # deleted agents
-       
+                x_deleted = [pos[1] for pos in deleted_pos]
+                y_deleted = [-pos[0] for pos in deleted_pos]
 
-        ax.set_aspect('equal')
-        plt.xlim(-0.5, grid_nb_cols-0.5)
-        plt.ylim(-grid_nb_rows+0.5, 0.5)
-        plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        plt.xlabel(f"nb moves during this step = {nb_moves_per_step}", fontsize=12)
+            if grid_nb_rows <= 10 and grid_nb_cols <= 10:
+                for row, col in [pos for pos in grid_pos if pos not in deleted_pos]:
+                    for neighbor_pos in [(row-1, col), (row, col-1), (row, col+1), (row+1, col)]:
+                        if swarmGrid.is_pos_valid(grid_nb_rows, grid_nb_cols, neighbor_pos) and neighbor_pos not in deleted_pos:
+                            ax.plot([col, neighbor_pos[1]], [-row, -neighbor_pos[0]], color='black', linestyle=':', zorder=1)
+                        
+                circle_radius = 0.4
+
+            x = []
+            y = []
+            grey_values = []
+            for p, pos in enumerate(grid_pos):
+                grey_value = flag[p]
+
+                if grid_nb_rows > 10 or grid_nb_cols > 10:
+                    x.append(pos[1])
+                    y.append(-pos[0])
+                    grey_values.append(grey_value)
+
+                else:
+                    if grey_value > 0.9: # close to white
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
+                    else:
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
+
+                    if pos in permutated_pos:
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:green', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
+
+                    if pos in deleted_pos:
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
+                    
+                    ax.add_patch(circle)
+
+                    if grid_nb_rows < 6 and grid_nb_cols < 6:
+                        ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(grey_value,2)), color='black', va='center', ha='center')
+                    
+                    # Hide axis lines and ticks, but still show labels
+                    ax.spines['top'].set_visible(False)
+                    ax.spines['right'].set_visible(False)
+                    ax.spines['left'].set_visible(False)
+                    ax.spines['bottom'].set_visible(False)
 
 
-        if setup_name:
-            plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=10)
-            dir_name = analysis_dir_plots+"/"+setup_name+"/flag"
-            if not os.path.exists(dir_name):
-                os.makedirs(dir_name, exist_ok=True)
-            plt.savefig(f"{dir_name}/{setup_name}_flag_run_{run:03}_best_ind_{nb_ind:03}_n_{n:03}_step_{step:03}.png")
-        else:
-            if nb_ind is not None:
-                file_name = f"run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}"
-                plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, nb_eval {nb_eval}, individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)       
-                dir_name = analysis_dir_plots+ f"/{file_name}/flag"
+            if grid_nb_rows > 10 or grid_nb_cols > 10:
+                colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black to light blue
+                cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
+                plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
+
+                if permutated_pos:
+                    plt.scatter(x_permutated, y_permutated, c='tab:green') # agents permutated
+
+                if deleted_pos:
+                    plt.scatter(x_deleted, y_deleted, c='tab:red') # deleted agents
+        
+
+            ax.set_aspect('equal')
+            plt.xlim(-0.5, grid_nb_cols-0.5)
+            plt.ylim(-grid_nb_rows+0.5, 0.5)
+            plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            plt.xlabel(f"nb moves during this step = {nb_moves_per_step}", fontsize=12)
+
+
+            if setup_name:
+                plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=10)
+                dir_name = f"{analysis_dir_plots}/{setup_name}/flag/component{n_flag}"
                 if not os.path.exists(dir_name):
                     os.makedirs(dir_name, exist_ok=True)
-                plt.savefig(f"{dir_name}/plot_env_flag_{file_name}_step_{step:03}.png")
+                plt.savefig(f"{dir_name}/{setup_name}_flag_run_{run:03}_best_ind_{nb_ind:03}_n_{n:03}_step_{step:03}.png")
             else:
-                plt.suptitle(f"Flag target {grid_nb_rows}x{grid_nb_cols}", fontsize=12)
-                plt.savefig(f"{analysis_dir_plots}/plot_env_flag_target.png")
+                if nb_ind is not None:
+                    file_name = f"run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}"
+                    plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, nb_eval {nb_eval}, individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)       
+                    dir_name = f"{analysis_dir_plots}/{file_name}/flag/component{n_flag}"
+                    if not os.path.exists(dir_name):
+                        os.makedirs(dir_name, exist_ok=True)
+                    plt.savefig(f"{dir_name}/plot_env_flag_{file_name}_step_{step:03}.png")
+                else:
+                    plt.suptitle(f"Flag target {grid_nb_rows}x{grid_nb_cols}", fontsize=12)
+                    plt.savefig(f"{analysis_dir_plots}/plot_env_flag_target_component{n_flag}.png")
 
-        plt.clf()
-        plt.close()
+            plt.clf()
+            plt.close()
+
+    #---------------------------------------------------
+
+    # flag_list becomes a list of flag components [ flag_component_x, flag_component_y, ... ]
+    @staticmethod
+    def get_flag_components(flag_list):
+        flag_components = []
+        for component in range(len(flag_list[0])):
+            tmp = [flag_list[i][component] for i in range(len(flag_list))]
+            flag_components.append(tmp)
+            
+        return flag_components
+
+    #---------------------------------------------------
+
+    # We build a new flag, by computing the sum of its N components, representing the final flag 
+    @staticmethod
+    def merge_flag_components(flag_list):
+        merged_flag = [] 
+        nb_components = len(flag_list[0])
+        for l in range(len(flag_list)):
+            sum_components = 0
+            for c in range(nb_components):
+                sum_components += flag_list[l][c]/(nb_components)
+            merged_flag.append(sum_components)
+            
+        return merged_flag
 
     #---------------------------------------------------
 
