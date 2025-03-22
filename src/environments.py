@@ -81,6 +81,7 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
     flags_distances = []
     in_t_window_zone_bools = []
     flags = []
+    flags_signals = []
 
     init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
     if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
@@ -120,6 +121,10 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
         flags.append(env.convert_flag_to_list(flag))
         flags_distance = env.eval_flags_distance(flag) #check
         
+        # To write and plot ANN learning mechanism
+        flag_signals = env.get_flag_signals_from_grid()
+        flags_signals.append(env.convert_flag_to_list(flag_signals))
+
         if step >= time_window_start and step <= time_window_end:
             in_t_window_zone_bool = True
             sum_flags_distances += flags_distance
@@ -133,7 +138,7 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
         
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=None, nb_moves_per_step=None, analysis_dir=analysis_dir)
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, flags_signals=flags_signals, weights=weights, deleted_agents_per_step=None, nb_moves_per_step=None, analysis_dir=analysis_dir)
         env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
@@ -181,6 +186,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 
     in_t_window_zone_bools = []
     flags = []
+    flags_signals = []
 
     flags_distance = 0.0
     sum_flags_distances = 0.0
@@ -199,6 +205,11 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
         flag = env.get_flag_from_grid()
         flags.append(env.convert_flag_to_list(flag))
         flags_distance = env.eval_flags_distance(flag)
+        
+        # To write and plot ANN learning mechanism
+        flag_signals = env.get_flag_signals_from_grid()
+        flags_signals.append(env.convert_flag_to_list(flag_signals))
+        
         deleted_agents_per_step.append([a.pos for a in agents_to_delete])
         
         if step >= time_window_start and step <= time_window_end:
@@ -216,7 +227,7 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
 
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, flags_signals=flags_signals, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
         env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     # Restore original grid
@@ -269,6 +280,7 @@ def sliding_puzzle_coordinates(env_eval_function_params, analysis_dir, run, gen,
 
     in_t_window_zone_bools = []
     flags = []
+    flags_signals = []
 
     flags_distance = 0.0
     sum_flags_distances = 0.0
@@ -287,6 +299,13 @@ def sliding_puzzle_coordinates(env_eval_function_params, analysis_dir, run, gen,
         flag = env.get_flag_from_grid()
         flags.append(env.convert_flag_to_list(flag))
         flags_distance = env.eval_flags_distance(flag)
+        
+        # To write and plot ANN learning mechanism
+        flag_signals = env.get_flag_signals_from_grid()
+        # print("flag_signals", flag_signals)
+        flags_signals.append(env.convert_flag_to_list(flag_signals))
+        # print("flags_signals", flags_signals)
+        
         deleted_agents_per_step.append([a.pos for a in agents_to_delete])
         
         if step >= time_window_start and step <= time_window_end:
@@ -304,7 +323,7 @@ def sliding_puzzle_coordinates(env_eval_function_params, analysis_dir, run, gen,
 
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
+        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, flags_signals=flags_signals, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
         env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     # Restore original grid
@@ -672,12 +691,29 @@ class swarmGrid:
             ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
             ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
             ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
-            ann2_phenotype = self.agent_controller[-1].predict(ann1_state[:-self.size_phenotype])
+            ann2_phenotype = self.agent_controller[-1].predict(ann1_state[:-self.size_phenotype]) # inputs: x, y
             state = [ann1_state[0]]
             state.append(ann2_phenotype[0])
 
-            if verbose_debug:
-                verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
+            # if verbose_debug:
+            #     verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
+        
+
+        elif self.agent_type == agentCoordinates_xy_map and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES":
+            ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
+            ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
+            ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
+            ann2_inputs = list(ann1_state[:-self.size_phenotype]) # o mettere to_list?
+            # print(ann2_inputs)
+            ann2_inputs += neighbors_states
+            # print(ann2_inputs)
+            ann2_phenotype = self.agent_controller[-1].predict(ann2_inputs) # inputs: x, y, signalN, signalW, signalE, signalS
+            # print(ann2_phenotype,"\n-----")
+            state = [ann1_state[0]]
+            state.append(ann2_phenotype[0])
+
+            # if verbose_debug:
+            #     verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
         
 
         return state
@@ -1159,6 +1195,19 @@ class swarmGrid:
     
     #---------------------------------------------------
 
+    def get_flag_signals_from_grid(self):
+        flag_signals = {}
+        for pos in self.grid_map_pos_agent.keys(): # salvare la lista per ogni utilizzo
+            if self.grid_map_pos_agent[pos] is not None:
+                flag_signals[pos] = self.grid_map_pos_agent[pos].get_external_chemicals_to_spread()[0]
+            else:
+                # flag_signals[pos] = self.default_missing_neighbor_state
+                flag_signals[pos] = None
+
+        return flag_signals
+
+    #---------------------------------------------------
+
     # def eval_flags_distance(self, flag):
 
     #     if self.flags_distance_mode == "MSE":
@@ -1244,14 +1293,14 @@ class swarmGrid:
 
     #---------------------------------------------------
     
-    def write_flag_data_learning(self, run, gen, nb_eval, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, weights, deleted_agents_per_step, nb_moves_per_step, analysis_dir):
+    def write_flag_data_learning(self, run, gen, nb_eval, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, flags_signals, weights, deleted_agents_per_step, nb_moves_per_step, analysis_dir):
 
         from learning_initializations import save_data_to_csv
 
         file_path = analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
         if not (os.path.exists(file_path)):
             os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
-            save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual", "Deleted_agents_positions", "Nb_moves"])
+            save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Flag_signals", "Individual", "Deleted_agents_positions", "Nb_moves"])
         
         if deleted_agents_per_step is None:
             deleted_agents_per_step = [[] for _ in range(time_steps)]
@@ -1259,7 +1308,7 @@ class swarmGrid:
         
         data_env_flag = []
         for step in range(time_steps):
-            data_env_flag.append([str(gen), str(nb_eval), str(nb_ind), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(weights).strip(), str(deleted_agents_per_step[step]).strip(), str(nb_moves_per_step[step]).strip()])
+            data_env_flag.append([str(gen), str(nb_eval), str(nb_ind), str(step), str(flags_distances[step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[step]).strip(), str(flags_signals[step]).strip(), str(weights).strip(), str(deleted_agents_per_step[step]).strip(), str(nb_moves_per_step[step]).strip()])
 
         save_data_to_csv(file_path, data_env_flag)
 

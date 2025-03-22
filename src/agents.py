@@ -252,6 +252,6 @@ class agentCoordinates_xy_map(swarmAgent):
     
     #---------------------------------------------------
 
-    def get_phenotype(self): # phenotype = [x,y]
+    def get_phenotype(self):
         state = super().get_state()
         return (state[1] + 1) / 2

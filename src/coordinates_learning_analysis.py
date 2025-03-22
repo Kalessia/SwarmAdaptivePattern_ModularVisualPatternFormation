@@ -52,13 +52,13 @@ if (__name__ == "__main__"):
         params = json.load(f)
     
     # Save best ever individual data for this single run
-    analysis_dir = params['analysis_dir']
-    for run in range(11):
-        dataset_path = analysis_dir['data'].replace("run_000", f"run_{run:03}")+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv"
-        save_best_inds_ever_filename = analysis_dir['data'].replace("run_000", f"run_{run:03}")+ f"/data_evo_run_{run:03}_best_inds_ever.csv"
-        save_best_ind_per_run_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
-        save_best_ind_per_run_per_phase_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv"
-        write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, switch_gen=None, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename, save_best_ind_per_run_per_phase_filename=save_best_ind_per_run_per_phase_filename)
+    # analysis_dir = params['analysis_dir']
+    # for run in range(11):
+    #     dataset_path = analysis_dir['data'].replace("run_000", f"run_{run:03}")+ f"/data_evo_run_{run:03}_best_inds_per_gen.csv"
+    #     save_best_inds_ever_filename = analysis_dir['data'].replace("run_000", f"run_{run:03}")+ f"/data_evo_run_{run:03}_best_inds_ever.csv"
+    #     save_best_ind_per_run_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv"
+    #     save_best_ind_per_run_per_phase_filename = analysis_dir['root']+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv"
+    #     write_best_inds_ever_and_best_ind_per_run(dataset_path=dataset_path, switch_gen=None, save_best_inds_ever_filename=save_best_inds_ever_filename, save_best_ind_per_run_filename=save_best_ind_per_run_filename, save_best_ind_per_run_per_phase_filename=save_best_ind_per_run_per_phase_filename)
 
     params['with_parallelization_bool'] = args.with_parallelization_bool
     params['with_parallelization_nb_free_cores'] = args.with_parallelization_nb_free_cores

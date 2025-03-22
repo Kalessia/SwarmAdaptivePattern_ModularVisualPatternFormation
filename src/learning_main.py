@@ -4,6 +4,7 @@ import random
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
+from numpy.linalg import LinAlgError
 
 from learning_initializations import set_env, init_toolbox
 from learning_analysis import init_all_runs_analysis, init_one_run_analysis, write_single_gen_data, write_single_run_data
@@ -40,6 +41,9 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
         gen += 1 # each while iteration correspond to a new evolutionary generation, and 1 gen = pop_size evals. 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
+        if nb_eval > 12000:
+            print("run", run,"population", population)
+            print("run", run,"strategy.C", strategy.C)
         pop_size = len(population)
 
         # In case of sliding_puzzle incremental learning, we switch from the 1st to the 2nd setup
@@ -68,6 +72,7 @@ def cmaES_EvoAlgorithm(run, learning_params):
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
 
+
             # In the 'flag_automata' env (see set_env in learning_initializations.py), save the best flags only (memory optimization)
             if fit[0] < best_fit:
                 best_fit = fit[0]
@@ -76,8 +81,12 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
         write_single_gen_data(run, gen, nb_evals, population, learning_params['analysis_dir']['data'])
 
-        toolbox.update(population) # update the current covariance matrix strategy from the population; update the strategy with the evaluated individuals
-
+        try:
+            toolbox.update(population) # update the current covariance matrix strategy from the population; update the strategy with the evaluated individuals
+        except LinAlgError:
+            print("Warning: Eigenvalues did not converge due to an issue with the toolbox update of the covariance matrix. This run will end prematurely.")
+            break
+    
 
     time_run = time.time() - time_run
     print(f"cmaES_EvoAlgorithm run n.{run} - Completed. Execution time: {time_run} seconds")

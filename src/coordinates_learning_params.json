@@ -15,12 +15,12 @@
         "time_window_end": 50
     },
 
-    "nn_controller info": "The agent's controller is a forward neural network. 'nb_neuronsPerInputs' is >= 4. 'hidden_layers' lists the nb of neurons per hidden layer. One biais neuron is added to the input and each hidden layer. Weights (individual) values are in ]-inf, +inf[",
-    "nn_controller_stacking_mode": "ANN_stacking_phenotypes_only",
+    "nn_controller info": "The agent's controller is a forward neural network. 'nb_neuronsPerInputs' is >= 4. 'hidden_layers' lists the nb of neurons per hidden layer. One biais neuron is added to the input and each hidden layer. Weights (individual) values are in ]-inf, +inf[. nn_controller_stacking_mode in [ANN_stacking_phenotypes_only, ANN_stacking_phenotypes_and_NWES]",
+    "nn_controller_stacking_mode": "ANN_stacking_phenotypes_and_NWES",
 
     "grid info": "flag_patterns in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs']. Set init_cell_state_value as a scalar or null (random).",
     "grid": {
-        "flag_pattern": "two-bands"
+        "flag_pattern": "centered-half-discs"
     },
 
     "learning_options info": "learning_options in ['learning_random_async_update_states', 'learning_random_init_states', 'learning_with_noise']",

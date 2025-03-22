@@ -246,6 +246,9 @@ def plot_single_run_data(run, params):
             deleted_pos = eval(deleted_pos)
             nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
 
+            flag_signals_list = dataset.loc[(dataset.Step==step),['Flag_signals']].values.tolist()[0][0]
+            flag_signals_list = eval(flag_signals_list)
+
             if step in steps:
                 swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
                                     grid_nb_cols=params['grid']['grid_nb_cols'],
@@ -261,6 +264,22 @@ def plot_single_run_data(run, params):
                                     deleted_pos=deleted_pos,
                                     nb_moves_per_step=nb_moves_per_step,
                                     analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
+
+                # signals
+                swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
+                                    grid_nb_cols=params['grid']['grid_nb_cols'],
+                                    setup_name=None,
+                                    run=run,
+                                    nb_ind=nb_ind,
+                                    gen=gen,
+                                    nb_eval=nb_eval,
+                                    n="",
+                                    step=step,
+                                    flag_list=flag_signals_list,
+                                    fitness=fitness,
+                                    deleted_pos=deleted_pos,
+                                    nb_moves_per_step=nb_moves_per_step,
+                                    analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/signals")
             
                 # Write this individual
                 if step == steps[0]:
