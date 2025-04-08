@@ -118,12 +118,12 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
 
         in_t_window_zone_bool = False
         flag = env.get_flag_from_grid()
-        flags.append(env.convert_flag_to_list(flag))
+        flags.append(env.convert_flag_to_list(flag, env.size_phenotype))
         flags_distance = env.eval_flags_distance(flag) #check
         
         # To write and plot ANN learning mechanism
         flag_signals = env.get_flag_signals_from_grid()
-        flags_signals.append(env.convert_flag_to_list(flag_signals))
+        flags_signals.append(env.convert_flag_to_list(flag_signals, env.size_chemicals_to_spread))
 
         if step >= time_window_start and step <= time_window_end:
             in_t_window_zone_bool = True
@@ -203,12 +203,12 @@ def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen,
     for step in range(time_steps):
         in_t_window_zone_bool = False
         flag = env.get_flag_from_grid()
-        flags.append(env.convert_flag_to_list(flag))
+        flags.append(env.convert_flag_to_list(flag, env.size_phenotype))
         flags_distance = env.eval_flags_distance(flag)
         
         # To write and plot ANN learning mechanism
         flag_signals = env.get_flag_signals_from_grid()
-        flags_signals.append(env.convert_flag_to_list(flag_signals))
+        flags_signals.append(env.convert_flag_to_list(flag_signals, env.size_chemicals_to_spread))
         
         deleted_agents_per_step.append([a.pos for a in agents_to_delete])
         
@@ -297,14 +297,13 @@ def sliding_puzzle_coordinates(env_eval_function_params, analysis_dir, run, gen,
     for step in range(time_steps):
         in_t_window_zone_bool = False
         flag = env.get_flag_from_grid()
-        flags.append(env.convert_flag_to_list(flag))
+        flags.append(env.convert_flag_to_list(flag, env.size_phenotype))
         flags_distance = env.eval_flags_distance(flag)
         
         # To write and plot ANN learning mechanism
         flag_signals = env.get_flag_signals_from_grid()
+        flags_signals.append(env.convert_flag_to_list(flag_signals, env.size_chemicals_to_spread))
         # print("flag_signals", flag_signals)
-        flags_signals.append(env.convert_flag_to_list(flag_signals))
-        # print("flags_signals", flags_signals)
         
         deleted_agents_per_step.append([a.pos for a in agents_to_delete])
         
@@ -355,6 +354,7 @@ class swarmGrid:
         self.agent_additional_weights = None
         self.agent_type = agent_type
         self.size_phenotype = None
+        self.size_chemicals_to_spread = None
         self.nb_intrasteps = nb_intrasteps
 
         # parameters useful in the swarm application, to restore learning initialization parameters 
@@ -397,7 +397,8 @@ class swarmGrid:
         
         self.grid_map_pos_agent = grid_map_pos_agent
         self.update_agent_neighbors()
-        self.size_phenotype = agent.size_phenotype # possiamo definirlo anke dopo il target...
+        self.size_phenotype = agent.size_phenotype
+        self.size_chemicals_to_spread = agent.size_chemicals_to_spread
 
     #---------------------------------------------------
     
@@ -532,9 +533,9 @@ class swarmGrid:
         # Verbose debug
         if verbose_debug:
             global verbose_str
-            verbose_str += f"\n<build_flag> - Flag pattern just built: {flag_pattern}.\n{self.convert_flag_to_list(flag_target)}"
+            verbose_str += f"\n<build_flag> - Flag pattern just built: {flag_pattern}.\n{self.convert_flag_to_list(flag_target, self.size_phenotype)}"
 
-        return self.convert_flag_to_list(flag_target)
+        return self.convert_flag_to_list(flag_target, self.size_phenotype)
 
     #---------------------------------------------------
 
@@ -1273,12 +1274,12 @@ class swarmGrid:
     
     #---------------------------------------------------
 
-    def convert_flag_to_list(self, flag):
+    def convert_flag_to_list(self, flag, size_pixel):
         
-        if self.size_phenotype == 1:
+        if size_pixel == 1:
             flag_tmp = {k: (v if v is not None else self.default_missing_neighbor_state) for k, v in flag.items()}
         else:
-            flag_tmp = {k: (v if v is not None else [self.default_missing_neighbor_state] * self.size_phenotype) for k, v in flag.items()}
+            flag_tmp = {k: (v if v is not None else [self.default_missing_neighbor_state] * size_pixel) for k, v in flag.items()}
 
         return list(flag_tmp.values())
 
@@ -1302,6 +1303,8 @@ class swarmGrid:
             os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
             save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Flag_signals", "Individual", "Deleted_agents_positions", "Nb_moves"])
         
+        self.clean_data_env_flag(analysis_dir=analysis_dir['data'])
+
         if deleted_agents_per_step is None:
             deleted_agents_per_step = [[] for _ in range(time_steps)]
             nb_moves_per_step = [[] for _ in range(time_steps)]
@@ -1313,7 +1316,21 @@ class swarmGrid:
         save_data_to_csv(file_path, data_env_flag)
 
     #---------------------------------------------------
-        
+
+    def clean_data_env_flag(self, analysis_dir, max_len_dir=5):
+
+        path = analysis_dir+"/data_env_flag"
+        files = sorted(os.listdir(path))
+        if len(files) <= (max_len_dir*3): # to avoid erasing one by one
+            return
+
+        files = files[1:-(max_len_dir-1)] # always keep the 1st and the last flags
+        if len(files) > 0:
+            for f in files:
+                os.remove(path+"/"+f)
+
+    #---------------------------------------------------
+
     def write_controller_data_for_pogobots(self, run, gen, nb_eval, nb_ind, analysis_file):
         
         with open (analysis_file, 'w') as f:
@@ -1345,13 +1362,13 @@ class swarmGrid:
 
             if permutated_agents_per_step:
                 #TODO: perché convert flag to list? Non é già list?
-                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(permutated_agents_per_step[step]).strip()])
+                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step], self.size_phenotype)).strip(), str(permutated_agents_per_step[step]).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Permutated_agents_positions"]
             elif deleted_agents_per_step:
-                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip(), str(deleted_agents_per_step[step]).strip(), str(nb_moves_per_step[step]).strip()])
+                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step], self.size_phenotype)).strip(), str(deleted_agents_per_step[step]).strip(), str(nb_moves_per_step[step]).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag", "Deleted_agents_positions", "Nb_moves"]
             else:
-                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step])).strip()])
+                data_env_flag.append([str(run), setup_name, str(n), str(step), str(flags_distance).strip(), str(self.convert_flag_to_list(flags[step], self.size_phenotype)).strip()])
                 header = ["Run", "Setup", "N", "Step", "Flags_distance", "Flag"]
 
         save_data_to_csv(dir_name+file_name, data_env_flag, header=header)

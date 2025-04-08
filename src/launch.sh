@@ -27,7 +27,7 @@ learning_analysis_dir="/home/kalessia/flagAutomata/data_plots/simulationAnalysis
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new learning simulation. NB: this line modifies the "learning_analysis_dir" parameter
-# output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
@@ -51,9 +51,9 @@ output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_di
 ###########################################################################
 
 # COMMENT the following lines if you DON'T want to plot the learning data (flag or gradient)
-# python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-#                                 --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-#                                 --plot_with_animation_bool ${plot_with_animation_bool}
+python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+                                --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+                                --plot_with_animation_bool ${plot_with_animation_bool}
 
 
 ###########################################################################

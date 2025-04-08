@@ -227,7 +227,12 @@ def plot_single_run_data(run, params):
         nb_eval = best_inds_ever_dataset.loc[index, 'Nb_eval']
         ind = best_inds_ever_dataset.loc[index, 'Individual']
 
-        dataset = pd.read_csv(params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv")
+        path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
+        if not os.path.exists(path):
+            continue
+
+        # Here, it is certain that 'path' exists
+        dataset = pd.read_csv(path)
         
         dataset_gen = dataset.loc[(dataset.Generation==gen)]
         dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
@@ -470,7 +475,7 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, sw
     plt.xlim(0, nb_evals)
     plt.yticks([0, 0.5, 1.0], fontsize=18)
     plt.xticks([0, 7000, 14000], fontsize=18)
-    plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, 11 runs, only best ever", fontsize=18)
+    plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, {params['evolutionary_settings']['nb_runs']} runs, only best ever", fontsize=18)
     plt.xlabel("Evaluations", fontsize=18)
     plt.ylabel("Distance", fontsize=18)
     plt.legend(loc="upper right") 
