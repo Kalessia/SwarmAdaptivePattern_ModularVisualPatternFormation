@@ -10,7 +10,7 @@
         "sliding_puzzle_incremental": {
             "sliding_puzzle_incremental info": "sliding_puzzle_incremental_density_ticks>0.0. Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions_ticks[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions_ticks[1] in the 2nd. The switch generation is deducted from 'switch_eval'. Either 'units' or 'percent' must be null. 2 values should be different... check",
             "sliding_puzzle_incremental_switch_eval": 0,
-            "sliding_puzzle_incremental_density_ticks": [1.0, 0.2]
+            "sliding_puzzle_incremental_density_ticks": [1.0, 0.8]
         },
         "flags_distance_mode": "CLIP",
         "sliding_puzzle_nb_intrasteps": false

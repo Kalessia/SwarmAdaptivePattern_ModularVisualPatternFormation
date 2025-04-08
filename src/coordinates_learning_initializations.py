@@ -96,17 +96,17 @@ def set_env(params):
                         activation_function='tanh')
     ann1.set_weights_biases_vectors_from_list(params['learning_best_ind_ever'])
 
-    ann2 = NeuralNetwork(input_size=2, # x, y
-                        hidden_layers=[2],
-                        output_size=1, # one grayscale phenotype
-                        activation_function='tanh')
-    params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_only"
-
-    # ann2 = NeuralNetwork(input_size=6, # x, y, signalN, signalW, signalE, signalS
-    #                     hidden_layers=[3],
+    # ann2 = NeuralNetwork(input_size=2, # x, y
+    #                     hidden_layers=[2],
     #                     output_size=1, # one grayscale phenotype
     #                     activation_function='tanh')
-    # params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
+    # params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_only"
+
+    ann2 = NeuralNetwork(input_size=6, # x, y, signalN, signalW, signalE, signalS
+                        hidden_layers=[3],
+                        output_size=1, # one grayscale phenotype
+                        activation_function='tanh')
+    params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
 
 
     params['evolutionary_settings']['ind_size'] = ann2.weights_biases_size

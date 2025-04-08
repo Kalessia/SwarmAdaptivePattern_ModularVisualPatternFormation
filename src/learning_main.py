@@ -41,9 +41,6 @@ def cmaES_EvoAlgorithm(run, learning_params):
 
         gen += 1 # each while iteration correspond to a new evolutionary generation, and 1 gen = pop_size evals. 
         population = toolbox.generate() # generate a new population of λ individuals of type ind_init from the current strategy
-        if nb_eval > 12000:
-            print("run", run,"population", population)
-            print("run", run,"strategy.C", strategy.C)
         pop_size = len(population)
 
         # In case of sliding_puzzle incremental learning, we switch from the 1st to the 2nd setup
