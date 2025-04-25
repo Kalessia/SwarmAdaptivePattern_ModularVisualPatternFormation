@@ -35,7 +35,6 @@ def cmaES_EvoAlgorithm(run, learning_params):
     sliding_puzzle_proba_move = learning_params['evolutionary_settings']['sliding_puzzle_proba_move']
     executed_once_bool = False
 
-
     # Main evolutionary loop
     while(nb_eval < learning_params['evolutionary_settings']['nb_evals']): # while the max budjet of allowed evaluations is not reached
 
@@ -60,7 +59,6 @@ def cmaES_EvoAlgorithm(run, learning_params):
         nb_evals = list(range(nb_eval, nb_eval+pop_size))
         nb_eval += pop_size # important: this line has to be executed after the 'incremental' condition above, to catch correctly nb_eval>switch_eval in the current generation et not in the following one
 
-
         # DEAP CMAES
         # To control the stopping criteria: while not any(conditions.values())
         # https://deap.readthedocs.io/en/master/examples/bipop_cmaes.html
@@ -68,7 +66,6 @@ def cmaES_EvoAlgorithm(run, learning_params):
         eval_results = toolbox.map(toolbox.evaluate, [run]*pop_size, [gen]*pop_size, nb_evals, list(range(pop_size)), [best_fit]*pop_size, population, [sliding_puzzle_nb_deletions]*pop_size, [sliding_puzzle_proba_move]*pop_size)
         for ind, fit in zip(population, eval_results):
             ind.fitness.values = fit
-
 
             # In the 'flag_automata' env (see set_env in learning_initializations.py), save the best flags only (memory optimization)
             if fit[0] < best_fit:
@@ -84,7 +81,6 @@ def cmaES_EvoAlgorithm(run, learning_params):
             print("Warning: Eigenvalues did not converge due to an issue with the toolbox update of the covariance matrix. This run will end prematurely.")
             break
     
-
     time_run = time.time() - time_run
     print(f"cmaES_EvoAlgorithm run n.{run} - Completed. Execution time: {time_run} seconds")
 

@@ -10,8 +10,8 @@ import random
 
 import csv
 
-from environments import sliding_puzzle, sliding_puzzle_incremental, sliding_puzzle_coordinates
-from agents import agentCoordinates_xy_map
+from environments import sliding_puzzle
+from agents import agent2Outputs
 from nn import NeuralNetwork
 
 
@@ -90,11 +90,12 @@ def set_env(params):
 
     # check_params_validity(params)
     
-    ann1 = NeuralNetwork(input_size=4, # one signal from N, W, E, S
-                        hidden_layers=[2],
-                        output_size=3,
-                        activation_function='tanh')
+    ann1 = NeuralNetwork(input_size=params['learning_nn_controller']['nb_neuronsPerInputs'],
+                        hidden_layers=params['learning_nn_controller']['hidden_layers'],
+                        output_size=params['learning_nn_controller']['nb_neuronsPerOutputs'],
+                        activation_function=params['learning_nn_controller']['activation_function'])
     ann1.set_weights_biases_vectors_from_list(params['learning_best_ind_ever'])
+    ann1.plot_neural_network(env_name="learning", analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
 
     # ann2 = NeuralNetwork(input_size=2, # x, y
     #                     hidden_layers=[2],
@@ -106,14 +107,18 @@ def set_env(params):
                         hidden_layers=[3],
                         output_size=1, # one grayscale phenotype
                         activation_function='tanh')
-    params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
+    ann2.plot_neural_network(env_name=params['evolutionary_settings']['env_name'], analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
+    params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
 
-
-    params['evolutionary_settings']['ind_size'] = ann2.weights_biases_size
+    params['coordinates_nn_controller']['nb_neuronsPerInputs'] = ann2.input_size
+    params['coordinates_nn_controller']['hidden_layers'] = ann2.hidden_layers
+    params['coordinates_nn_controller']['nb_neuronsPerOutputs'] = ann2.output_size
+    params['coordinates_nn_controller']['activation_function'] = ann2.activation_function
+    params['evolutionary_settings']['coordinates_ind_size'] = ann2.weights_biases_size
     
     environments = {
-        'sliding_puzzle_coordinates': {
-            'eval_function': sliding_puzzle_coordinates,
+        'sliding_puzzle': {
+            'eval_function': sliding_puzzle,
             'eval_function_params': {
                 'grid_nb_rows': params['grid']['grid_nb_rows'],
                 'grid_nb_cols': params['grid']['grid_nb_cols'],
@@ -121,9 +126,9 @@ def set_env(params):
                 'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
-                'agent_type': agentCoordinates_xy_map,
+                'agent_type': agent2Outputs,
                 'controller': [ann1, ann2],
-                'nn_controller_stacking_mode': params['nn_controller_stacking_mode'],
+                'nn_controller_stacking_mode': params['coordinates_nn_controller']['nn_controller_stacking_mode'],
                 'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
                 'time_steps': params['environment']['time_steps'],
                 'time_window_start': params['environment']['time_window_start'],
@@ -133,15 +138,14 @@ def set_env(params):
                 'verbose_debug': params['verbose_debug'],
                 'analysis_dir': params['analysis_dir']
             },
-            'env_boundaries': None,
             'toolbox_cmaes': {
-                'centroid': list(np.random.uniform(-1, 1, params['evolutionary_settings']['ind_size'])),
+                'centroid': list(np.random.uniform(-1, 1, params['evolutionary_settings']['coordinates_ind_size'])),
                 'sigma': 0.5
             }
         }
     }
 
-    params['env'] = environments['sliding_puzzle_coordinates']
+    params['env'] = environments['sliding_puzzle']
 
     return params
 #---------------------------------------------------
@@ -211,7 +215,9 @@ def copy_params_from_learning_x(learning_gradient_params, coordinates_params):
 
     coordinates_params['evolutionary_settings']['env_name'] = learning_gradient_params['evolutionary_settings']['env_name']
     coordinates_params['evolutionary_settings']['sliding_puzzle_proba_move'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_proba_move']
-   
+    coordinates_params['evolutionary_settings']['learning_ind_size'] = learning_gradient_params['evolutionary_settings']['ind_size']
+    coordinates_params['learning_nn_controller'] = learning_gradient_params['nn_controller']
+
     if coordinates_params['evolutionary_settings']['same_as_learning_gradient']:
         coordinates_params['evolutionary_settings']['nb_runs'] = learning_gradient_params['evolutionary_settings']['nb_runs']
         coordinates_params['evolutionary_settings']['nb_evals'] = learning_gradient_params['evolutionary_settings']['nb_evals']

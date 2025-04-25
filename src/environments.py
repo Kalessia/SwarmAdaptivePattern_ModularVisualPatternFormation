@@ -78,174 +78,6 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
     time_window_start = env_eval_function_params['time_window_start']
     time_window_end = env_eval_function_params['time_window_end']
 
-    flags_distances = []
-    in_t_window_zone_bools = []
-    flags = []
-    flags_signals = []
-
-    init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
-    if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
-        init_cell_state_value = None # None = random state initialization
-
-    random_async_update_bool = False
-    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_modes']:
-        random_async_update_bool = True
-
-    with_noise_bool = False
-    noise_std = None
-    if "learning_with_noise_bool" in env_eval_function_params['learning_modes']:
-        with_noise_bool = True
-        noise_std = env_eval_function_params['noise_std']
-
-    env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
-                             grid_nb_cols=env_eval_function_params['grid_nb_cols'],
-                             learning_modes=[],
-                             flags_distance_mode=env_eval_function_params['flags_distance_mode'],
-                             learning_with_noise_std=None,
-                             flag_pattern=env_eval_function_params['flag_pattern'],
-                             flag_target=env_eval_function_params['flag_target'],
-                             init_cell_state_value=init_cell_state_value,
-                             agent_type=env_eval_function_params['agent_type'],
-                             nn_controller=env_eval_function_params['controller'],
-                             agent_controller_weights=weights,
-                             nb_intrasteps=env_eval_function_params['nb_intrasteps'],
-                             verbose_debug_bool=env_eval_function_params['verbose_debug'],
-                             analysis_dir=env_eval_function_params['analysis_dir'])
-
-    flags_distance = 0.0
-    sum_flags_distances = 0.0
-    for step in range(time_steps):
-
-        in_t_window_zone_bool = False
-        flag = env.get_flag_from_grid()
-        flags.append(env.convert_flag_to_list(flag, env.size_phenotype))
-        flags_distance = env.eval_flags_distance(flag) #check
-        
-        # To write and plot ANN learning mechanism
-        flag_signals = env.get_flag_signals_from_grid()
-        flags_signals.append(env.convert_flag_to_list(flag_signals, env.size_chemicals_to_spread))
-
-        if step >= time_window_start and step <= time_window_end:
-            in_t_window_zone_bool = True
-            sum_flags_distances += flags_distance
-
-        flags_distances.append(flags_distance)
-        in_t_window_zone_bools.append(in_t_window_zone_bool)
-
-        env.step(random_async_update_bool=random_async_update_bool,
-                 with_noise_bool=with_noise_bool,
-                 noise_std=noise_std)
-        
-    mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
-    if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, flags_signals=flags_signals, weights=weights, deleted_agents_per_step=None, nb_moves_per_step=None, analysis_dir=analysis_dir)
-        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
-
-    return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
-
-#---------------------------------------------------
-
-def sliding_puzzle_incremental(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
-    global verbose_str
-    
-    time_steps = env_eval_function_params['time_steps']
-    time_window_start = env_eval_function_params['time_window_start']
-    time_window_end = env_eval_function_params['time_window_end']
-
-    init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
-    if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
-        init_cell_state_value = None # None = random state initialization
-
-    random_async_update_bool = False
-    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_modes']:
-        random_async_update_bool = True
-
-    with_noise_bool = False
-    noise_std = None
-    if "learning_with_noise_bool" in env_eval_function_params['learning_modes']:
-        with_noise_bool = True
-        noise_std = env_eval_function_params['noise_std']
-
-    env = init_swarmGrid_env(grid_nb_rows=env_eval_function_params['grid_nb_rows'],
-                             grid_nb_cols=env_eval_function_params['grid_nb_cols'],
-                             learning_modes=[],
-                             flags_distance_mode=env_eval_function_params['flags_distance_mode'],
-                             learning_with_noise_std=None,
-                             flag_pattern=env_eval_function_params['flag_pattern'],
-                             flag_target=env_eval_function_params['flag_target'],
-                             init_cell_state_value=init_cell_state_value,
-                             agent_type=env_eval_function_params['agent_type'],
-                             nn_controller=env_eval_function_params['controller'],
-                             nn_controller_stacking_mode=None,
-                             agent_controller_weights=weights,
-                             nb_intrasteps=env_eval_function_params['nb_intrasteps'],
-                             verbose_debug_bool=env_eval_function_params['verbose_debug'],
-                             analysis_dir=env_eval_function_params['analysis_dir'])
-
-    #self.init_agents_state() # fait at init env
-
-    in_t_window_zone_bools = []
-    flags = []
-    flags_signals = []
-
-    flags_distance = 0.0
-    sum_flags_distances = 0.0
-    flags_distances = []
-
-    agents_to_delete = []
-    deleted_agents_per_step = []
-    nb_moves_per_step = []
-
-    agents = env.get_agents()
-    agents_to_delete = random.sample(agents, sliding_puzzle_nb_deletions)
-    deleted_map_pos_agent = env.delete_agent(agents_to_delete=agents_to_delete)
-
-    for step in range(time_steps):
-        in_t_window_zone_bool = False
-        flag = env.get_flag_from_grid()
-        flags.append(env.convert_flag_to_list(flag, env.size_phenotype))
-        flags_distance = env.eval_flags_distance(flag)
-        
-        # To write and plot ANN learning mechanism
-        flag_signals = env.get_flag_signals_from_grid()
-        flags_signals.append(env.convert_flag_to_list(flag_signals, env.size_chemicals_to_spread))
-        
-        deleted_agents_per_step.append([a.pos for a in agents_to_delete])
-        
-        if step >= time_window_start and step <= time_window_end:
-            in_t_window_zone_bool = True
-            sum_flags_distances += flags_distance
-
-        flags_distances.append(flags_distance)
-        in_t_window_zone_bools.append(in_t_window_zone_bool)
-
-        nb_moves = env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
-                                                    sliding_puzzle_proba_move=sliding_puzzle_proba_move,
-                                                    with_noise_bool=with_noise_bool,
-                                                    noise_std=noise_std)
-        nb_moves_per_step.append(nb_moves)
-
-    mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
-    if mean_tw_flags_distances < best_fit:
-        env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, flags_signals=flags_signals, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
-        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
-
-    # Restore original grid
-    env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent) # i have a new grid each time?
-
-    with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
-        f.write(verbose_str)
-        verbose_str = ""
-
-    return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
-
-#---------------------------------------------------
-
-def sliding_puzzle_coordinates(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
-    time_steps = env_eval_function_params['time_steps']
-    time_window_start = env_eval_function_params['time_window_start']
-    time_window_end = env_eval_function_params['time_window_end']
-
     init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
     if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
         init_cell_state_value = None # None = random state initialization
@@ -303,7 +135,6 @@ def sliding_puzzle_coordinates(env_eval_function_params, analysis_dir, run, gen,
         # To write and plot ANN learning mechanism
         flag_signals = env.get_flag_signals_from_grid()
         flags_signals.append(env.convert_flag_to_list(flag_signals, env.size_chemicals_to_spread))
-        # print("flag_signals", flag_signals)
         
         deleted_agents_per_step.append([a.pos for a in agents_to_delete])
         
@@ -376,7 +207,6 @@ class swarmGrid:
 
     def set_agent_controller_weights(self, agent_controller_weights, agent_additional_weights=None):
         self.agent_controller_weights = agent_controller_weights
-        # self.agent_controller.setWeightsFromList(agent_controller_weights)
         self.agent_controller[-1].set_weights_biases_vectors_from_list(agent_controller_weights)
 
         if self.agent_type == agent3Outputs_Devert2011:
@@ -681,13 +511,13 @@ class swarmGrid:
         
 
         # Compute controller outputs (state)
-        if len(self.agent_controller) == 1:
+        if len(self.agent_controller) == 1: # one only ANN is used
             state = self.agent_controller[0].predict(neighbors_states) # forwardPropagation, stableSigmoid on the last layer       
             
             if verbose_debug:
                 verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, final state = {state}"
         
-
+        # In the following options, we combine more than one ANN
         elif self.agent_type == agentCoordinates_xy_map and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only":
             ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
             ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)

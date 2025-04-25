@@ -152,51 +152,59 @@ class NeuralNetwork:
 # Neural Network structure visualization
 ###########################################################################
 
-def draw_neural_network(ax, input_size, hidden_layers, output_size):
-    # Layer sizes include input, hidden, and output layers
-    layer_sizes = [input_size] + hidden_layers + [output_size]
-    num_layers = len(layer_sizes)
+    def plot_neural_network(self, env_name, analysis_dir):
+        # Layer sizes include input, hidden, and output layers
+        layer_sizes = [self.input_size] + self.hidden_layers + [self.output_size]
+        num_layers = len(layer_sizes)
 
-    # Vertical and horizontal spacing
-    v_spacing = 1.0 / float(max(layer_sizes))
-    h_spacing = 1.0 / float(num_layers - 1)
+        # Vertical and horizontal spacing
+        v_spacing = 0.8 / float(max(layer_sizes))
+        h_spacing = 0.8 / float(num_layers-1)
+        circle_radius = v_spacing / 4.
 
-    # Draw neurons and edges
-    for n, layer_size in enumerate(layer_sizes):
-        # Position neurons
-        layer_top = v_spacing * (layer_size - 1) / 2.0  # Center the layer vertically
-        for m in range(layer_size):
-            # Draw neuron as a circle
-            neuron = plt.Circle((n * h_spacing, layer_top - m * v_spacing), v_spacing / 4.,
-                                color='w', ec='k', zorder=4)
-            ax.add_artist(neuron)
-        
-        # Draw bias neuron for hidden and output layers (not for the input layer)
-        if n < num_layers - 1:  # No bias for the output layer
-            bias = plt.Circle((n * h_spacing, layer_top + v_spacing), v_spacing / 4.,
-                              color='w', ec='k', zorder=4, linestyle='--')
-            ax.add_artist(bias)
+        fig, ax = plt.subplots()
 
-    # Draw edges
-    for n, (layer_size_a, layer_size_b) in enumerate(zip(layer_sizes[:-1], layer_sizes[1:])):
-        layer_top_a = v_spacing * (layer_size_a - 1) / 2.0
-        layer_top_b = v_spacing * (layer_size_b - 1) / 2.0
-        for m in range(layer_size_a):
+        # Draw neurons and edges
+        for n, layer_size in enumerate(layer_sizes):
+            # Position neurons
+            layer_top = 0.45 + (v_spacing * (layer_size) / 2.0)  # Center the layer vertically
+            for m in range(layer_size):
+                # Draw neuron as a circle
+                neuron = plt.Circle(((h_spacing/2)+(n*h_spacing), layer_top - (m+1) * v_spacing), circle_radius,
+                                    color='w', ec='k', zorder=4)
+                ax.add_artist(neuron)
+            
+            # Draw bias neuron for hidden and output layers (not for the input layer)
+            if n < num_layers - 1:  # No bias for the output layer
+                bias = plt.Circle(((h_spacing/2)+(n*h_spacing), layer_top), circle_radius,
+                                color='w', ec='k', zorder=4, linestyle='--')
+                ax.add_artist(bias)
+
+        # Draw edges
+        for n, (layer_size_a, layer_size_b) in enumerate(zip(layer_sizes[:-1], layer_sizes[1:])):
+            layer_top_a = 0.45 + (v_spacing * (layer_size_a) / 2.0)
+            layer_top_b = 0.45 + (v_spacing * (layer_size_b) / 2.0)
+            for m in range(layer_size_a):
+                for o in range(layer_size_b):
+                    # Draw connections between neurons of adjacent layers
+                    line = plt.Line2D([(h_spacing/2)+(n*h_spacing), (h_spacing/2)+((n + 1) * h_spacing)],
+                                    [layer_top_a - (m+1) * v_spacing, layer_top_b - (o+1) * v_spacing], c='k')
+                    ax.add_artist(line)
+            
+            # Draw connections from bias neuron to all neurons in the next layer
+            bias_x_a = (h_spacing/2)+(n*h_spacing)
+            bias_x_b = (h_spacing/2)+((n+1)*h_spacing)
             for o in range(layer_size_b):
-                # Draw connections between neurons of adjacent layers
-                line = plt.Line2D([n * h_spacing, (n + 1) * h_spacing],
-                                  [layer_top_a - m * v_spacing, layer_top_b - o * v_spacing], c='k')
+                line = plt.Line2D([bias_x_a, bias_x_b],
+                                [layer_top_a, layer_top_b - (o+1) * v_spacing], c='k', linestyle='--')
                 ax.add_artist(line)
-        
-        # Draw connections from bias neuron to all neurons in the next layer
-        bias_x = n * h_spacing
-        bias_y = layer_top_a + v_spacing
-        for o in range(layer_size_b):
-            line = plt.Line2D([bias_x, (n + 1) * h_spacing],
-                              [bias_y, layer_top_b - o * v_spacing], c='k', linestyle='--')
-            ax.add_artist(line)
 
-    plt.show()
+        ax.axis('off')
+        plt.suptitle(f"ANN {self.input_size}-{str(self.hidden_layers).replace(' ', '')}-{self.output_size}", fontsize=12)
+        plt.title(f"Weights+biases vector size: {self.weights_biases_size}", fontsize=12)
+        plt.savefig(f"{analysis_dir}/ANN_{env_name}_{self.input_size}-{str(self.hidden_layers).replace(' ', '')}-{self.output_size}.png")
+        plt.clf()
+        plt.close()
 
 
 ###########################################################################
@@ -214,8 +222,6 @@ def draw_neural_network(ax, input_size, hidden_layers, output_size):
 # print("Network output:", output)
 
 # # Plot
-# fig, ax = plt.subplots(figsize=(10, 6))
-# ax.axis('off')
-# draw_neural_network(ax, input_size, hidden_layers, output_size)
+# plot_neural_network("learning", analysis_dir_plots)
 
 

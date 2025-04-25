@@ -1,33 +1,26 @@
 {
     "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process. flags distance in [MSE, SSIM, CLIP] (add check init)",
     "evolutionary_settings": {
-        "nb_runs": 22,
-        "nb_evals": 28000,
+        "nb_runs": 1,
+        "nb_evals": 140,
         "env_name info": "env_name in ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates']",
-        "env_name": "sliding_puzzle_coordinates",
+        "env_name": "sliding_puzzle",
         "sliding_puzzle_density": 1.0,
         "sliding_puzzle_proba_move": 0.0,
         "sliding_puzzle_incremental": {
             "sliding_puzzle_incremental info": "sliding_puzzle_incremental_density_ticks>0.0. Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions_ticks[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions_ticks[1] in the 2nd. The switch generation is deducted from 'switch_eval'. Either 'units' or 'percent' must be null. 2 values should be different... check",
-            "sliding_puzzle_incremental_switch_eval": 0,
-            "sliding_puzzle_incremental_density_ticks": [1.0, 0.8]
+            "sliding_puzzle_incremental_switch_eval": 70,
+            "sliding_puzzle_incremental_density_ticks": [0.8, 0.5]
         },
         "flags_distance_mode": "CLIP",
         "sliding_puzzle_nb_intrasteps": false
     },
 
-    "nn_controller info": "The agent's controller is a forward neural network. 'nb_neuronsPerInputs' is >= 4. 'hidden_layers' lists the nb of neurons per hidden layer. One biais neuron is added to the input and each hidden layer. Weights (individual) values are in ]-inf, +inf[. If env=sliding_puzzle_coordinates, the nn_controller structure is fixed (4-[2]-3) to build the coordinate system.",
-    "nn_controller": {
-        "nb_neuronsPerInputs": 4,
-        "hidden_layers": [2],
-        "nb_neuronsPerOutputs": 2
-    },
-
     "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs']. If env=sliding_puzzle_coordinates, then the flag_pattern is 'coordinates'. Set init_cell_state_value as a scalar or null (random).",
     "grid": {
         "flag_pattern": "two-bands",
-        "grid_nb_rows": 16,
-        "grid_nb_cols": 16,
+        "grid_nb_rows": 5,
+        "grid_nb_cols": 5,
         "init_cell_state_value": 0.0
     },
 
