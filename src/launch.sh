@@ -51,9 +51,9 @@ output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis
 ###########################################################################
 
 # COMMENT the following lines if you DON'T want to plot the learning data (flag or gradient)
-# python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-#                                 --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-#                                 --plot_with_animation_bool ${plot_with_animation_bool}
+python3 -u learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+                                --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+                                --plot_with_animation_bool ${plot_with_animation_bool}
 
 
 ###########################################################################

@@ -12,7 +12,6 @@ from matplotlib.colors import ListedColormap
 #from flags_distance_methods import convert_flag_to_image, get_images_distance_MSE, get_images_distance_SSIM, get_images_distance_CLIP
 
 from agents import *
-from nn import NeuralNetwork
 
 
 ###########################################################################
@@ -27,11 +26,6 @@ env = None
 ###########################################################################
 # Activation functions
 ###########################################################################
-
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-
 
 def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distance_mode, learning_with_noise_std, flag_pattern, flag_target, init_cell_state_value, agent_type, nn_controller, nn_controller_stacking_mode, agent_controller_weights, nb_intrasteps, verbose_debug_bool, analysis_dir):
     
@@ -505,7 +499,7 @@ class swarmGrid:
                 neighbors_states += neighbor.get_external_chemicals_to_spread()
             else:
                 neighbors_states += [self.default_missing_neighbor_state] * agent.size_chemicals_to_spread
-        
+
         if (self.agent_type == agent3Outputs_Devert2011):
             neighbors_states += agent.get_internal_chemicals()
         
@@ -546,7 +540,6 @@ class swarmGrid:
             # if verbose_debug:
             #     verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
         
-
         return state
 
     #---------------------------------------------------

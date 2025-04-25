@@ -25,11 +25,11 @@ class swarmAgent:
     def set_state(self, vector, with_noise_bool, noise_std):
 
         if with_noise_bool:
-            state = vector.copy()
-            noise = np.random.normal(0, noise_std, self.size_state) 
-            vector = [self.clip(state[i]+noise[i]) for i in range(self.size_state)] # check  
+            state = np.array(vector, copy=True)  # safe conversion, even if vector is a list
+            noise = np.random.normal(0, noise_std, self.size_state)
+            vector = [self.clip(float(state[i] + noise[i])) for i in range(self.size_state)]
 
-        self.state = vector
+        self.state = list(vector)  # always convert to plain Python list
 
     #---------------------------------------------------
 
@@ -161,7 +161,7 @@ class agent3Outputs(swarmAgent):
 
     def get_phenotype(self):
         state = super().get_state()
-        return (state[-self.size_phenotype:] + 1) / 2 # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale. Issue with sigmoid(state[1]): sigmoid(x) with x in (-1, 1) returned inconvenient bounded result in [0.27, 0.73] and we need phenotype in [0,1]
+        return (state[2] + 1) / 2 # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale. Issue with sigmoid(state[1]): sigmoid(x) with x in (-1, 1) returned inconvenient bounded result in [0.27, 0.73] and we need phenotype in [0,1]
     
 
 ###########################################################################
