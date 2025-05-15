@@ -9,7 +9,7 @@ import random
 
 import csv
 
-from environments import sliding_puzzle
+from environments import sliding_puzzle, sliding_puzzle_multiEnvs
 from agents import agent2Outputs, agent3Outputs, agent3Outputs_Devert2011, agentCoordinates_gradient
 from nn import NeuralNetwork
 
@@ -55,6 +55,10 @@ def check_params_validity(params):
     else:
         params['evolutionary_settings']['sliding_puzzle_nb_deletions_ticks'] = int(params['grid']['grid_size']*(1.0-params['evolutionary_settings']['sliding_puzzle_density']))
 
+    if params['evolutionary_settings']['env_name'] in ['sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']: # to name the learning folder and to cause a crush in case of wrong environment executed
+        params['grid']['grid_nb_rows'] = "N"
+        params['grid']['grid_nb_cols'] = "N"
+
     #---------------------------------------------------
 
     params['environment']['time_steps'] = int(params['environment']['time_steps'])
@@ -85,7 +89,7 @@ def check_params_validity(params):
 
     #---------------------------------------------------
 
-    patterns = ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates']
+    patterns = ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']
     if params['evolutionary_settings']['env_name'] not in patterns:
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
@@ -101,14 +105,14 @@ def check_params_validity(params):
         print("learning_main stopped. Please correct the entry parameter in learning_params.json before restart.")
         exit()
 
+    return params
+
 
 #---------------------------------------------------
 
 def set_env(params):
 
-    check_params_validity(params)
-
-    if params['evolutionary_settings']['env_name'] == "sliding_puzzle_coordinates":
+    if params['evolutionary_settings']['env_name'] in ["sliding_puzzle_coordinates", "sliding_puzzle_multiEnvs_coordinates"]:
         nn_controller = NeuralNetwork(input_size=4, # one signal from N, W, E, S
                                     hidden_layers=[2],
                                     output_size=3, # signal, phenotype x, phenotype y
@@ -171,10 +175,35 @@ def set_env(params):
                 'centroid': list(np.random.uniform(-1, 1, params['evolutionary_settings']['ind_size'])),
                 'sigma': 0.5
             }
+        },
+        'sliding_puzzle_multiEnvs': {
+            'eval_function': sliding_puzzle_multiEnvs,
+            'eval_function_params': {
+                'env_dims_list': params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'], # list of [grid_nb_rows, grid_nb_cols]
+                'flags_distance_mode': params['evolutionary_settings']['flags_distance_mode'],
+                'flag_pattern': flag_pattern,
+                'flag_target': None,
+                'init_cell_state_value': params['grid']['init_cell_state_value'],
+                'agent_type': agent_type,
+                'controller': [nn_controller],
+                'nn_controller_stacking_mode': None,
+                'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
+                'time_steps': params['environment']['time_steps'],
+                'time_window_start': params['environment']['time_window_start'],
+                'time_window_end': params['environment']['time_window_end'],
+                'learning_modes': params['learning_modes'],
+                'noise_std': params['learning_options']['learning_with_noise']['learning_with_noise_std'],
+                'verbose_debug': params['verbose_debug'],
+                'analysis_dir': params['analysis_dir']
+            },
+            'toolbox_cmaes': {
+                'centroid': list(np.random.uniform(-1, 1, params['evolutionary_settings']['ind_size'])),
+                'sigma': 0.5
+            }
         }
     }
 
-    params['env'] = environments['sliding_puzzle']
+    params['env'] = environments['sliding_puzzle_multiEnvs'] if params['evolutionary_settings']['env_name'] in ['sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates'] else environments['sliding_puzzle']
     return params
 
 

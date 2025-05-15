@@ -40,7 +40,7 @@
         }
     },
 
-    "verbose_debug": true,
+    "verbose_debug": false,
 
     "with_parallelization_bool": true,
     "with_parallelization_nb_free_cores": 0

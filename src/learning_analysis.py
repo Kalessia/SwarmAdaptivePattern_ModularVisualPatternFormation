@@ -222,97 +222,104 @@ def plot_single_run_data(run, params):
     # steps = list(range(params['environment']['time_window_start'], params['environment']['time_window_end'])) # we plot this steps interval for each individual less the best
     steps = [0, time_steps-5, time_steps-4, time_steps-3, time_steps-2, time_steps-1] # we plot the last 5 steps for each individual less the best
 
+    env_dims_list = [[params['grid']['grid_nb_rows'], params['grid']['grid_nb_cols']]]
+    if params['evolutionary_settings']['env_name'] in ['sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']:
+        env_dims_list = params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list']
+
     for index in best_inds_ever_dataset.index: # for each best individual ever
         gen = best_inds_ever_dataset.loc[index, 'Generation']
         nb_eval = best_inds_ever_dataset.loc[index, 'Nb_eval']
         ind = best_inds_ever_dataset.loc[index, 'Individual']
 
-        path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
-        if not os.path.exists(path):
-            continue
+        for env_id, env_dims in enumerate(env_dims_list):
+            path = params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env{env_id}_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
+            if not os.path.exists(path):
+                continue
 
-        # Here, it is certain that 'path' exists
-        dataset = pd.read_csv(path)
-        
-        dataset_gen = dataset.loc[(dataset.Generation==gen)]
-        dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
-        nb_ind = dataset['Nb_ind'].unique()[0]
-
-        last_indexes = min(len(best_inds_ever_dataset), 3)
-        if index >= best_inds_ever_dataset.index[-last_indexes]: # for the last 'last_indexes' individuals we plot all development steps 
-            steps = dataset['Step'].unique()
-
-        for step in range(time_steps):
-            # flag_list = get_flag_list_from_dataset_step(dataset, step) # flag_list is a list of floats (1D) or a list of tuples (nD)
-            flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
-            flag_list = eval(flag_list)
-            fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]            
-            deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
-            deleted_pos = eval(deleted_pos)
-            nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
-
-            flag_signals_list = dataset.loc[(dataset.Step==step),['Flag_signals']].values.tolist()[0][0]
-            flag_signals_list = eval(flag_signals_list)
-
-            if step in steps:
-                swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
-                                    grid_nb_cols=params['grid']['grid_nb_cols'],
-                                    setup_name=None,
-                                    run=run,
-                                    nb_ind=nb_ind,
-                                    gen=gen,
-                                    nb_eval=nb_eval,
-                                    n="",
-                                    step=step,
-                                    flag_list=flag_list,
-                                    fitness=fitness,
-                                    deleted_pos=deleted_pos,
-                                    nb_moves_per_step=nb_moves_per_step,
-                                    analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
-
-                # signals
-                swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
-                                    grid_nb_cols=params['grid']['grid_nb_cols'],
-                                    setup_name=None,
-                                    run=run,
-                                    nb_ind=nb_ind,
-                                    gen=gen,
-                                    nb_eval=nb_eval,
-                                    n="",
-                                    step=step,
-                                    flag_list=flag_signals_list,
-                                    fitness=fitness,
-                                    deleted_pos=deleted_pos,
-                                    nb_moves_per_step=nb_moves_per_step,
-                                    analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/signals")
+            # Here, it is certain that 'path' exists
+            dataset = pd.read_csv(path)
             
-                # Write this individual
-                if step == steps[0]:
-                    file_path = params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_individual.txt"
-                    if not os.path.exists(file_path):
-                        with open (file_path, 'w') as f:
-                            f.write(str(ind))
+            dataset_gen = dataset.loc[(dataset.Generation==gen)]
+            dataset = dataset_gen.loc[(dataset_gen.Individual==str(ind))]
+            nb_ind = dataset['Nb_ind'].unique()[0]
 
-        swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv",
-                                                setup_name=None,
-                                                time_window_start=params['environment']['time_window_start'],
-                                                time_window_length= params['environment']['time_window_end'] - params['environment']['time_window_start'] + 1,
-                                                run=run,
-                                                nb_ind=nb_ind,
-                                                ind=ind,
-                                                n="",
-                                                gen=gen,
-                                                nb_eval=nb_eval,
-                                                switch_step=None,
-                                                analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
-        
-        # TODO: le nom du dossier de sauvegarde n'est pas bon, il faudrait un plot par flag??? Evitabile
-        # if params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
-        #     swarmGrid.plot_learning_sliding_puzzle_nb_moves_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv",
-        #                                                run=run,
-        #                                                grid_size=params['grid']['grid_nb_rows']*params['grid']['grid_nb_cols'],
-        #                                                analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
+            last_indexes = min(len(best_inds_ever_dataset), 3)
+            if index >= best_inds_ever_dataset.index[-last_indexes]: # for the last 'last_indexes' individuals we plot all development steps 
+                steps = dataset['Step'].unique()
+
+            for step in range(time_steps):
+                # flag_list = get_flag_list_from_dataset_step(dataset, step) # flag_list is a list of floats (1D) or a list of tuples (nD)
+                flag_list = dataset.loc[(dataset.Step==step),['Flag']].values.tolist()[0][0]
+                flag_list = eval(flag_list)
+                fitness = dataset.loc[(dataset.Step==step),['Flags_distance']].values.tolist()[0][0]            
+                deleted_pos = dataset.loc[(dataset.Step==step),['Deleted_agents_positions']].values.tolist()[0][0]
+                deleted_pos = eval(deleted_pos)
+                nb_moves_per_step = dataset.loc[(dataset.Step==step),['Nb_moves']].values.tolist()[0][0]
+
+                flag_signals_list = dataset.loc[(dataset.Step==step),['Flag_signals']].values.tolist()[0][0]
+                flag_signals_list = eval(flag_signals_list)
+
+                if step in steps:
+                    swarmGrid.plot_flag(grid_nb_rows=env_dims[0],
+                                        grid_nb_cols=env_dims[1],
+                                        setup_name=None,
+                                        run=run,
+                                        nb_ind=nb_ind,
+                                        gen=gen,
+                                        nb_eval=nb_eval,
+                                        n="",
+                                        step=step,
+                                        flag_list=flag_list,
+                                        fitness=fitness,
+                                        env_id=env_id,
+                                        deleted_pos=deleted_pos,
+                                        nb_moves_per_step=nb_moves_per_step,
+                                        analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
+
+                    # signals
+                    # swarmGrid.plot_flag(grid_nb_rows=env_dims[0],
+                    #                     grid_nb_cols=env_dims[1],
+                    #                     setup_name=None,
+                    #                     run=run,
+                    #                     nb_ind=nb_ind,
+                    #                     gen=gen,
+                    #                     nb_eval=nb_eval,
+                    #                     n="",
+                    #                     step=step,
+                    #                     flag_list=flag_signals_list,
+                    #                     fitness=fitness,
+                    #                     env_id=env_id,
+                    #                     deleted_pos=deleted_pos,
+                    #                     nb_moves_per_step=nb_moves_per_step,
+                    #                     analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/signals")
+                
+                    # Write this individual
+                    if step == steps[0]:
+                        file_path = params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_individual.txt"
+                        if not os.path.exists(file_path):
+                            with open (file_path, 'w') as f:
+                                f.write(str(ind))
+
+            swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env{env_id}_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv",
+                                                    setup_name=None,
+                                                    time_window_start=params['environment']['time_window_start'],
+                                                    time_window_length= params['environment']['time_window_end'] - params['environment']['time_window_start'] + 1,
+                                                    run=run,
+                                                    nb_ind=nb_ind,
+                                                    ind=ind,
+                                                    n="",
+                                                    gen=gen,
+                                                    nb_eval=nb_eval,
+                                                    switch_step=None,
+                                                    analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
             
+            # TODO: le nom du dossier de sauvegarde n'est pas bon, il faudrait un plot par flag??? Evitabile
+            # if params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
+            #     swarmGrid.plot_learning_sliding_puzzle_nb_moves_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/data/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv",
+            #                                                run=run,
+            #                                                grid_size=params['grid']['grid_nb_rows']*params['grid']['grid_nb_cols'],
+            #                                                analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
+                
             
     # Animation of: plot all the flag steps of the last best individual ever
     if params['plot_with_animation_bool']:
@@ -384,24 +391,30 @@ def plot_all_runs_data(params):
     plot_all_pop_fitnesses_median(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, switch_eval=switch_eval, save_filename=save_filename)
 
     # Plot flag target
-    dataset = pd.read_csv(params['analysis_dir']['root']+"/data_all_runs/data_env_flag_target.csv")
-    # flag_list = get_flag_list_from_dataset_step(dataset, 0)
-    flag_list = dataset.loc[(dataset.Step==0),['Flag']].values.tolist()[0][0]
-    flag_list = eval(flag_list)
+    env_dims_list = [[params['grid']['grid_nb_rows'], params['grid']['grid_nb_cols']]]
+    if params['evolutionary_settings']['env_name'] in ['sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']:
+        env_dims_list = params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list']
 
-    swarmGrid.plot_flag(grid_nb_rows=params['grid']['grid_nb_rows'],
-                    grid_nb_cols=params['grid']['grid_nb_cols'],
-                    setup_name=None,
-                    run=None,
-                    nb_ind=None,
-                    gen=0,
-                    nb_eval=0,
-                    n="",
-                    step=0,
-                    flag_list=flag_list,
-                    fitness=0,
-                    deleted_pos=[],
-                    analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
+    for env_id, env_dims in enumerate(env_dims_list):
+        dataset = pd.read_csv(f"{params['analysis_dir']['root']}/data_all_runs/data_env{env_id}_flag_target.csv")
+        # flag_list = get_flag_list_from_dataset_step(dataset, 0)
+        flag_list = dataset.loc[(dataset.Step==0),['Flag']].values.tolist()[0][0]
+        flag_list = eval(flag_list)
+
+        swarmGrid.plot_flag(grid_nb_rows=env_dims[0],
+                        grid_nb_cols=env_dims[1],
+                        setup_name=None,
+                        run=None,
+                        nb_ind=None,
+                        gen=0,
+                        nb_eval=0,
+                        n="",
+                        step=0,
+                        flag_list=flag_list,
+                        fitness=0,
+                        env_id=env_id,
+                        deleted_pos=[],
+                        analysis_dir_plots=params['analysis_dir']['root']+"/plots_all_runs")
     
     print(f"Plots for all the runs completed.")
 

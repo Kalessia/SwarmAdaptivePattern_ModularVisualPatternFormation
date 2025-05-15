@@ -33,6 +33,11 @@ if (__name__ == "__main__"):
     with open(os.getcwd()+"/coordinates_learning_params.json", "r") as f: # os.getcwd() should be the 'src' directory
         coordinates_params = json.load(f)
 
+    # Check previous learning for compatibility
+    if learning_params['evolutionary_settings']['env_name'] not in ['sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs_coordinates']:
+        print(f"Error in coordinates_learning_initializations.py - Coordinate learning cannot occur without first constructing a coordinate system, i.e. learning ['evolutionary_settings']['env_name'] should be in ['sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs_coordinates'].\nlearning_main stopped. Please correct the entry parameter in swarm_params.json before restart.")
+        exit()
+
     # Initializations
     learning_analysis_dir_root=learning_params['analysis_dir']['root']
     coordinates_params = init_all_runs_analysis(learning_analysis_dir_root=learning_analysis_dir_root, params=coordinates_params)

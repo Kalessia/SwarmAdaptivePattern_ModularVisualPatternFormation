@@ -6,7 +6,7 @@ from multiprocessing import Pool, cpu_count
 import numpy as np
 from numpy.linalg import LinAlgError
 
-from learning_initializations import set_env, init_toolbox
+from learning_initializations import check_params_validity, set_env, init_toolbox
 from learning_analysis import init_all_runs_analysis, init_one_run_analysis, write_single_gen_data, write_single_run_data
 
 import json
@@ -133,6 +133,7 @@ if (__name__ == "__main__"):
         learning_params = json.load(f)
 
     # Initializations
+    learning_params = check_params_validity(learning_params)
     learning_params = init_all_runs_analysis(learning_params)
     learning_params = set_env(learning_params)
 

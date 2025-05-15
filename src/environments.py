@@ -21,7 +21,9 @@ from agents import *
 verbose_debug = False
 verbose_str = ""
 
-env = None
+env = None # one single env
+multiEnvs = None # list of envs (swarmGrid) of different sizes, used in sliding_puzzle_multiEnvs
+
 
 ###########################################################################
 # Activation functions
@@ -46,8 +48,6 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distanc
                         nn_controller_stacking_mode=nn_controller_stacking_mode,
                         nb_intrasteps=nb_intrasteps)
     
-    env.write_flag_target_data(analysis_dir) # check emplacement
-    
     # Some genomes could have 2 components, one dedicated to the controller NN and one for other purpose. Ex: in Devert 2011, 4 weights are required for the expression function
     agent_additional_weights = None
     nn_controller_weights_size = nn_controller[-1].weights_biases_size
@@ -59,7 +59,6 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distanc
     # grid and agent re-initialization are required for each new individual (new agent_controller_weights) before evaluation
     env.set_agent_controller_weights(agent_controller_weights=agent_controller_weights, agent_additional_weights=agent_additional_weights)
     env.init_agents_state() # to execute at last in this function
-
     return env
 
 
@@ -102,7 +101,7 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
                              verbose_debug_bool=env_eval_function_params['verbose_debug'],
                              analysis_dir=env_eval_function_params['analysis_dir'])
 
-    #self.init_agents_state() # fait at init env
+    env.write_flag_target_data(analysis_dir=env_eval_function_params['analysis_dir'])
 
     in_t_window_zone_bools = []
     flags = []
@@ -140,9 +139,9 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
         in_t_window_zone_bools.append(in_t_window_zone_bool)
         
         nb_moves = env.step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
-                                                    sliding_puzzle_proba_move=sliding_puzzle_proba_move,
-                                                    with_noise_bool=with_noise_bool,
-                                                    noise_std=noise_std)
+                                                                sliding_puzzle_proba_move=sliding_puzzle_proba_move,
+                                                                with_noise_bool=with_noise_bool,
+                                                                noise_std=noise_std)
         nb_moves_per_step.append(nb_moves)
 
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
@@ -161,6 +160,128 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
 
     return (mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
 
+#---------------------------------------------------
+
+def sliding_puzzle_multiEnvs(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb_ind, best_fit, weights, sliding_puzzle_nb_deletions, sliding_puzzle_proba_move):
+    time_steps = env_eval_function_params['time_steps']
+    time_window_start = env_eval_function_params['time_window_start']
+    time_window_end = env_eval_function_params['time_window_end']
+
+    init_cell_state_value = env_eval_function_params['init_cell_state_value'] # init_cell_state_value is None or float depending on user settings in learning_params.json
+    if "learning_random_init_states_bool" in env_eval_function_params['learning_modes']: # if this bool is True, init_cell_state_value is ignored
+        init_cell_state_value = None # None = random state initialization
+
+    random_async_update_bool = False
+    if "learning_random_async_update_states_bool" in env_eval_function_params['learning_modes']:
+        random_async_update_bool = True
+
+    with_noise_bool = False
+    noise_std = None
+    if "learning_with_noise_bool" in env_eval_function_params['learning_modes']:
+        with_noise_bool = True
+        noise_std = env_eval_function_params['noise_std']
+
+    env_dims_list = env_eval_function_params['env_dims_list']
+
+    multiEnvs_mean_tw_flags_distances = []
+    multiEnvs_flags_distances = []
+    multiEnvs_flags = []
+    multiEnvs_flags_signals = []
+    multiEnvs_deleted_agents_per_step = []
+    multiEnvs_nb_moves_per_step = []
+
+    global env, multiEnvs
+    if multiEnvs is None:
+        multiEnvs = [None] * len(env_dims_list)
+
+    for env_id, env_dims in enumerate(env_dims_list):
+
+        env = multiEnvs[env_id] # this line triggers "init_swarmGrid_env" to create a new env, if env==None, i.e. if an env of this size has never been created before.
+        multiEnvs[env_id] = init_swarmGrid_env(grid_nb_rows=env_dims[0],
+                            grid_nb_cols=env_dims[1],
+                            learning_modes=[],
+                            flags_distance_mode=env_eval_function_params['flags_distance_mode'],
+                            learning_with_noise_std=None,
+                            flag_pattern=env_eval_function_params['flag_pattern'],
+                            flag_target=env_eval_function_params['flag_target'],
+                            init_cell_state_value=init_cell_state_value,
+                            agent_type=env_eval_function_params['agent_type'],
+                            nn_controller=env_eval_function_params['controller'],
+                            nn_controller_stacking_mode=env_eval_function_params['nn_controller_stacking_mode'],
+                            agent_controller_weights=weights,
+                            nb_intrasteps=env_eval_function_params['nb_intrasteps'],
+                            verbose_debug_bool=env_eval_function_params['verbose_debug'],
+                            analysis_dir=env_eval_function_params['analysis_dir'])
+
+        multiEnvs[env_id].write_flag_target_data(analysis_dir=env_eval_function_params['analysis_dir'], env_id=env_id)
+
+        in_t_window_zone_bools = []
+        flags = []
+        flags_signals = []
+
+        flags_distance = 0.0
+        sum_flags_distances = 0.0
+        flags_distances = []
+
+        agents_to_delete = []
+        deleted_agents_per_step = []
+        nb_moves_per_step = []
+
+        agents = multiEnvs[env_id].get_agents()
+        agents_to_delete = random.sample(agents, sliding_puzzle_nb_deletions)
+        deleted_map_pos_agent = multiEnvs[env_id].delete_agent(agents_to_delete=agents_to_delete)
+
+        for step in range(time_steps):
+            in_t_window_zone_bool = False
+            flag = multiEnvs[env_id].get_flag_from_grid()
+            flags.append(multiEnvs[env_id].convert_flag_to_list(flag, multiEnvs[env_id].size_phenotype))
+            flags_distance = multiEnvs[env_id].eval_flags_distance(flag)
+            
+            # To write and plot ANN learning mechanism
+            flag_signals = multiEnvs[env_id].get_flag_signals_from_grid()
+            flags_signals.append(multiEnvs[env_id].convert_flag_to_list(flag_signals, multiEnvs[env_id].size_chemicals_to_spread))
+            
+            deleted_agents_per_step.append([a.pos for a in agents_to_delete])
+            
+            if step >= time_window_start and step <= time_window_end:
+                in_t_window_zone_bool = True
+                sum_flags_distances += flags_distance
+
+            flags_distances.append(flags_distance)
+            in_t_window_zone_bools.append(in_t_window_zone_bool)
+            
+            nb_moves = multiEnvs[env_id].step_random_async_update_sliding_puzzle(agents_to_delete=agents_to_delete,
+                                                                    sliding_puzzle_proba_move=sliding_puzzle_proba_move,
+                                                                    with_noise_bool=with_noise_bool,
+                                                                    noise_std=noise_std)
+            nb_moves_per_step.append(nb_moves)
+
+        mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
+        
+        # We save one-single-env information for each env
+        multiEnvs_mean_tw_flags_distances.append(mean_tw_flags_distances)
+        multiEnvs_flags_distances.append(flags_distances)
+        multiEnvs_flags.append(flags)
+        multiEnvs_flags_signals.append(flags_signals)
+        multiEnvs_deleted_agents_per_step.append(deleted_agents_per_step)
+        multiEnvs_nb_moves_per_step.append(nb_moves_per_step)
+
+        # Restore original grid
+        multiEnvs[env_id].restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent) # problem?
+
+
+    averaged_multiEnvs_mean_tw_flags_distances = sum(multiEnvs_mean_tw_flags_distances)/len(multiEnvs_mean_tw_flags_distances)
+    if averaged_multiEnvs_mean_tw_flags_distances < best_fit:
+        multiEnvs[env_id].write_multiEnvs_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=multiEnvs_flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=multiEnvs_flags, flags_signals=multiEnvs_flags_signals, weights=weights, deleted_agents_per_step=multiEnvs_deleted_agents_per_step, nb_moves_per_step=multiEnvs_nb_moves_per_step, analysis_dir=analysis_dir)
+        multiEnvs[env_id].write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
+
+    # Verbose debug
+    global verbose_str
+    with open(analysis_dir['root']+"/verbose_debug.txt", 'a') as f:
+        f.write(verbose_str)
+        verbose_str = ""
+
+    return (averaged_multiEnvs_mean_tw_flags_distances,) # it is important to return a tuple (deap framework)
 
 ###########################################################################
 # Environment swarmGrid
@@ -512,7 +633,7 @@ class swarmGrid:
                 verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, final state = {state}"
         
         # In the following options, we combine more than one ANN
-        elif self.agent_type == agentCoordinates_xy_map and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only":
+        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only":
             ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
             ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
             ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
@@ -524,7 +645,7 @@ class swarmGrid:
             #     verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
         
 
-        elif self.agent_type == agentCoordinates_xy_map and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES":
+        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES":
             ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
             ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
             ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
@@ -1108,12 +1229,12 @@ class swarmGrid:
 
     #---------------------------------------------------
     
-    def write_flag_target_data(self, analysis_dir):
+    def write_flag_target_data(self, analysis_dir, env_id=0):
 
         from learning_initializations import save_data_to_csv
 
-        if not (os.path.exists(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv")):
-            save_data_to_csv(analysis_dir['root']+"/data_all_runs/data_env_flag_target.csv", [[0, 0, 0, 0,  str(self.flag_target).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
+        if not (os.path.exists(f"{analysis_dir['root']}/data_all_runs/data_env{env_id}_flag_target.csv")):
+            save_data_to_csv(f"{analysis_dir['root']}/data_all_runs/data_env{env_id}_flag_target.csv", [[0, 0, 0, 0,  str(self.flag_target).strip(), 0]], header = ["Generation", "Step", "Flags_distance", "Time_window_zone", "Flag", "Individual"])
 
     #---------------------------------------------------
     
@@ -1121,9 +1242,9 @@ class swarmGrid:
 
         from learning_initializations import save_data_to_csv
 
-        file_path = analysis_dir['data']+ f"/data_env_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
+        file_path = analysis_dir['data']+ f"/data_env0_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
         if not (os.path.exists(file_path)):
-            os.makedirs(analysis_dir['data']+"/data_env_flag/", exist_ok=True)
+            os.makedirs(analysis_dir['data']+"/data_env0_flag/", exist_ok=True)
             save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Flag_signals", "Individual", "Deleted_agents_positions", "Nb_moves"])
         
         self.clean_data_env_flag(analysis_dir=analysis_dir['data'])
@@ -1140,9 +1261,33 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def clean_data_env_flag(self, analysis_dir, max_len_dir=5):
+    def write_multiEnvs_flag_data_learning(self, run, gen, nb_eval, nb_ind, time_steps, flags_distances, in_t_window_zone_bools, flags, flags_signals, weights, deleted_agents_per_step, nb_moves_per_step, analysis_dir):
 
-        path = analysis_dir+"/data_env_flag"
+        from learning_initializations import save_data_to_csv
+
+        for env_id, _ in enumerate(flags_distances):
+            file_path = analysis_dir['data']+ f"/data_env{env_id}_flag/data_env_flag_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}.csv"
+            if not (os.path.exists(file_path)):
+                os.makedirs(f"{analysis_dir['data']}/data_env{env_id}_flag/", exist_ok=True)
+                save_data_to_csv(file_path, [], header = ["Generation", "Nb_eval", "Nb_ind", "Step", "Flags_distance", "Time_window_zone", "Flag", "Flag_signals", "Individual", "Deleted_agents_positions", "Nb_moves"])
+            
+            self.clean_data_env_flag(analysis_dir=analysis_dir['data'], env_id=env_id)
+
+            if deleted_agents_per_step is None:
+                deleted_agents_per_step = [[] for _ in range(time_steps)]
+                nb_moves_per_step = [[] for _ in range(time_steps)]
+            
+            data_env_flag = []
+            for step in range(time_steps):
+                data_env_flag.append([str(gen), str(nb_eval), str(nb_ind), str(step), str(flags_distances[env_id][step]).strip(), str(in_t_window_zone_bools[step]).strip(), str(flags[env_id][step]).strip(), str(flags_signals[env_id][step]).strip(), str(weights).strip(), str(deleted_agents_per_step[env_id][step]).strip(), str(nb_moves_per_step[env_id][step]).strip()])
+
+            save_data_to_csv(file_path, data_env_flag)
+
+    #---------------------------------------------------
+
+    def clean_data_env_flag(self, analysis_dir, max_len_dir=5, env_id=0):
+
+        path = f"{analysis_dir}/data_env{env_id}_flag"
         files = sorted(os.listdir(path))
         if len(files) <= (max_len_dir*3): # to avoid erasing one by one
             return
@@ -1199,7 +1344,7 @@ class swarmGrid:
     #---------------------------------------------------
 
     @staticmethod
-    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag_list, fitness, permutated_pos=[], deleted_pos=[], nb_moves_per_step=0, analysis_dir_plots=None):
+    def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag_list, fitness, env_id, permutated_pos=[], deleted_pos=[], nb_moves_per_step=0, analysis_dir_plots=None):
 
         if isinstance(flag_list[0], (list, tuple)): # this means that we have a flag with N dimensions (called components)
             flag_components = swarmGrid.get_flag_components(flag_list)
@@ -1299,13 +1444,13 @@ class swarmGrid:
                 if nb_ind is not None:
                     file_name = f"run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}"
                     plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, nb_eval {nb_eval}, individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)       
-                    dir_name = f"{analysis_dir_plots}/{file_name}/flag/component{n_flag}"
+                    dir_name = f"{analysis_dir_plots}/{file_name}/flag/component{n_flag}/env{env_id}"
                     if not os.path.exists(dir_name):
                         os.makedirs(dir_name, exist_ok=True)
                     plt.savefig(f"{dir_name}/plot_env_flag_{file_name}_step_{step:03}.png")
                 else:
                     plt.suptitle(f"Flag target {grid_nb_rows}x{grid_nb_cols}", fontsize=12)
-                    plt.savefig(f"{analysis_dir_plots}/plot_env_flag_target_component{n_flag}.png")
+                    plt.savefig(f"{analysis_dir_plots}/plot_env{env_id}_flag_target_component{n_flag}.png")
 
             plt.clf()
             plt.close()
