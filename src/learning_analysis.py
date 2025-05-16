@@ -277,21 +277,21 @@ def plot_single_run_data(run, params):
                                         analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env")
 
                     # signals
-                    # swarmGrid.plot_flag(grid_nb_rows=env_dims[0],
-                    #                     grid_nb_cols=env_dims[1],
-                    #                     setup_name=None,
-                    #                     run=run,
-                    #                     nb_ind=nb_ind,
-                    #                     gen=gen,
-                    #                     nb_eval=nb_eval,
-                    #                     n="",
-                    #                     step=step,
-                    #                     flag_list=flag_signals_list,
-                    #                     fitness=fitness,
-                    #                     env_id=env_id,
-                    #                     deleted_pos=deleted_pos,
-                    #                     nb_moves_per_step=nb_moves_per_step,
-                    #                     analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/signals")
+                    swarmGrid.plot_flag(grid_nb_rows=env_dims[0],
+                                        grid_nb_cols=env_dims[1],
+                                        setup_name=None,
+                                        run=run,
+                                        nb_ind=nb_ind,
+                                        gen=gen,
+                                        nb_eval=nb_eval,
+                                        n="",
+                                        step=step,
+                                        flag_list=flag_signals_list,
+                                        fitness=fitness,
+                                        env_id=env_id,
+                                        deleted_pos=deleted_pos,
+                                        nb_moves_per_step=nb_moves_per_step,
+                                        analysis_dir_plots=params['analysis_dir']['root']+ f"/run_{run:03}/plots/env/signals")
                 
                     # Write this individual
                     if step == steps[0]:

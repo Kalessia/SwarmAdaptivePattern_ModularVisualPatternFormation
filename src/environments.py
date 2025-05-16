@@ -1378,6 +1378,7 @@ class swarmGrid:
                         
                 circle_radius = 0.4
 
+
             x = []
             y = []
             grey_values = []
@@ -1390,16 +1391,22 @@ class swarmGrid:
                     grey_values.append(grey_value)
 
                 else:
+                    edgecolor_color = grey_value
+                    facecolor_color = 'white'
+                    if "signals" in analysis_dir_plots:
+                        edgecolor_color = max(0.0, min(1.0, (grey_value + 1) / 2)) # (x+1)/2 to rescale signal (-1,1) in (0,1) keeping the scale, because edgecolor has to be positive
+                        facecolor_color = 'peachpuff'
+
                     if grey_value > 0.9: # close to white
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor='white', linestyle='--', linewidth=1.0, zorder=2)    
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor=facecolor_color, linestyle='--', linewidth=1.0, zorder=2)    
                     else:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(grey_value), facecolor='white', linewidth=6.0, zorder=2)
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(edgecolor_color), facecolor=facecolor_color, linewidth=6.0, zorder=2)
 
                     if pos in permutated_pos:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:green', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:green', facecolor=facecolor_color, linestyle='--', linewidth=2.0, zorder=2)    
 
                     if pos in deleted_pos:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor='white', linestyle='--', linewidth=2.0, zorder=2)    
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:red', facecolor=facecolor_color, linestyle='--', linewidth=2.0, zorder=2)    
                     
                     ax.add_patch(circle)
 
@@ -1415,6 +1422,8 @@ class swarmGrid:
 
             if grid_nb_rows > 10 or grid_nb_cols > 10:
                 colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black to light blue
+                if "signals" in analysis_dir_plots:
+                    colors = [(0.0, 0.0, 0.0), (1.0, 0.8, 0.6)]  # black to light orange
                 cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
                 plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
 

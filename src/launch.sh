@@ -35,7 +35,7 @@ learning_analysis_dir="/home/kalessia/flagAutomata/data_plots/simulationAnalysis
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new learning simulation. NB: this line modifies the "learning_analysis_dir" parameter
-output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+# output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
