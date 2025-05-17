@@ -11,7 +11,7 @@ import random
 import csv
 
 from environments import sliding_puzzle, sliding_puzzle_multiEnvs
-from agents import agent2Outputs
+from agents import agent2Outputs, agent3Outputs
 from nn import NeuralNetwork
 
 
@@ -101,15 +101,24 @@ def set_env(params):
     #                     hidden_layers=[2],
     #                     output_size=1, # one grayscale phenotype
     #                     activation_function='tanh')
+    # agent_type = agent2Outputs
     # params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_only"
 
-    ann2 = NeuralNetwork(input_size=6, # x, y, signalN, signalW, signalE, signalS
-                        hidden_layers=[3],
-                        output_size=1, # one grayscale phenotype
-                        activation_function='tanh')
-    ann2.plot_neural_network(env_name=params['evolutionary_settings']['env_name'], analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
-    params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
+    # ann2 = NeuralNetwork(input_size=6, # x, y, signalN, signalW, signalE, signalS
+    #                     hidden_layers=[3],
+    #                     output_size=1, # one grayscale phenotype
+    #                     activation_function='tanh')
+    # agent_type = agent2Outputs
+    # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
 
+    ann2 = NeuralNetwork(input_size=6, # x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S
+                        hidden_layers=[3],
+                        output_size=2, # one signal_p, one grayscale phenotype
+                        activation_function='tanh')
+    agent_type = agent3Outputs
+    params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES_model_B"
+    
+    ann2.plot_neural_network(env_name=params['evolutionary_settings']['env_name'], analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
     params['coordinates_nn_controller']['nb_neuronsPerInputs'] = ann2.input_size
     params['coordinates_nn_controller']['hidden_layers'] = ann2.hidden_layers
     params['coordinates_nn_controller']['nb_neuronsPerOutputs'] = ann2.output_size
@@ -126,7 +135,7 @@ def set_env(params):
                 'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
-                'agent_type': agent2Outputs,
+                'agent_type': agent_type,
                 'controller': [ann1, ann2],
                 'nn_controller_stacking_mode': params['coordinates_nn_controller']['nn_controller_stacking_mode'],
                 'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],
@@ -151,7 +160,7 @@ def set_env(params):
                 'flag_pattern': params['grid']['flag_pattern'],
                 'flag_target': None,
                 'init_cell_state_value': params['grid']['init_cell_state_value'],
-                'agent_type': agent2Outputs,
+                'agent_type': agent_type,
                 'controller': [ann1, ann2],
                 'nn_controller_stacking_mode': params['coordinates_nn_controller']['nn_controller_stacking_mode'],
                 'nb_intrasteps': params['evolutionary_settings']['sliding_puzzle_nb_intrasteps'],

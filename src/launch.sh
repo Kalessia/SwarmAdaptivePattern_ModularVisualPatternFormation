@@ -18,7 +18,7 @@ plot_with_animation_bool=False
 
 # If you want to launch a swarm simulation or to plot learning figures for a specific learning simulation, write the corresponding path in the following line
 # exemple path: "/home/kalessia/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2025-03-10_15-39-37_two-bands_8x5"
-learning_analysis_dir="/home/kalessia/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_multiEnvs_coordinates_2025-05-15_22-36-45_centered-half-discs_NxN"
+learning_analysis_dir="/home/kalessia/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_multiEnvs_coordinates_2025-05-17_02-05-59_centered-half-discs_NxN"
 
 
 ###########################################################################
@@ -35,7 +35,7 @@ learning_analysis_dir="/home/kalessia/flagAutomata/data_plots/simulationAnalysis
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new learning simulation. NB: this line modifies the "learning_analysis_dir" parameter
-# output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
@@ -61,9 +61,9 @@ learning_analysis_dir="/home/kalessia/flagAutomata/data_plots/simulationAnalysis
 ###########################################################################
 
 # # COMMENT the following lines if you DON'T want to plot the learning data (map_xy_flag)
-python3 -u coordinates_learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-                                            --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-                                            --plot_with_animation_bool ${plot_with_animation_bool}
+# python3 -u coordinates_learning_analysis.py --learning_analysis_dir ${learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+#                                             --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+#                                             --plot_with_animation_bool ${plot_with_animation_bool}
 
 
 ###########################################################################

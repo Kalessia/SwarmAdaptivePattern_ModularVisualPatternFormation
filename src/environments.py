@@ -633,34 +633,53 @@ class swarmGrid:
                 verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, final state = {state}"
         
         # In the following options, we combine more than one ANN
-        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only":
-            ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
+        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only": # ANN model A: 4-x-3_2-y-1
+            ann1_state = list(self.agent_controller[0].predict(neighbors_states)) # ann1 output = [ signal, x, y ]
             ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
             ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
-            ann2_phenotype = self.agent_controller[-1].predict(ann1_state[:-self.size_phenotype]) # inputs: x, y
+            ann2_output = list(self.agent_controller[-1].predict(ann1_state[-2:])) # ann2 inputs = [ x, y ]
             state = [ann1_state[0]]
-            state.append(ann2_phenotype[0])
+            state.append(ann2_output[0]) # state = [signal from ann1, phenotype from ann2]
 
-            # if verbose_debug:
-            #     verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
-        
-
-        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES":
-            ann1_state = self.agent_controller[0].predict(neighbors_states) # state ANN1 = [ signal, phenotype_x, phenotype_y ]
+        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES": # ANN model C: 4-x-3_6-y-1
+            ann1_state = list(self.agent_controller[0].predict(neighbors_states)) # ann1 inputs = [ signalN, signalW, signalE, signalS ], ann1 output = [ signal, x, y ]
+            # print("ann1_state =", ann1_state)
             ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
             ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
-            ann2_inputs = list(ann1_state[:-self.size_phenotype]) # o mettere to_list?
-            # print(ann2_inputs)
+            # print("ann1_state con rescale =", ann1_state)
+            ann2_inputs = list(ann1_state[-2:])
             ann2_inputs += neighbors_states
-            # print(ann2_inputs)
-            ann2_phenotype = self.agent_controller[-1].predict(ann2_inputs) # inputs: x, y, signalN, signalW, signalE, signalS
-            # print(ann2_phenotype,"\n-----")
+            # print("ann2_inputs =", ann2_inputs)
+            ann2_output = list(self.agent_controller[-1].predict(ann2_inputs)) # ann2 inputs = [ x, y, signalN, signalW, signalE, signalS ]
+            # print("ann2_output=", ann2_output)
+            ann2_output[0] = (ann2_output[0] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
+            # print("ann2_output after rescale=", ann2_output)
             state = [ann1_state[0]]
-            state.append(ann2_phenotype[0])
+            state.append(ann2_output[0]) # state = [signal from ann1, phenotype from ann2]
+            # print("state (s_xy, p) = ann1_state[0] .append(ann2_output[0])", state, "\n-----")
 
-            # if verbose_debug:
-            #     verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, stacking_mode ann1+ann2 = ANN_stacking_phenotypes_only. ann1_state = {ann1_state}, ann2_phenotype = {ann2_phenotype}, ann2_state (final state) = {state}"
-        
+        elif self.agent_type == agent3Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES_model_B": # ANN model B: 4-x-3_6-y-2
+            # print("ok siamo qua. neighbors_states =", neighbors_states)
+            signals_xy = neighbors_states[::2] # even indexes = signal_xy
+            signals_p = neighbors_states[1::2] # odd indexes = signal_p
+            # print("signals_xy =", signals_xy)
+            # print("signals_p =", signals_p)
+            ann1_state = list(self.agent_controller[0].predict(signals_xy)) # ann1 inputs = [ signalN, signalW, signalE, signalS ], ann1 output = [ signal, x, y ]
+            # print("ann1_state =", ann1_state)
+            ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
+            ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
+            # print("ann1_state con rescale =", ann1_state)
+            ann2_inputs = list(ann1_state[-2:])
+            ann2_inputs += signals_p
+            # print("ann2_inputs =", ann2_inputs)
+            ann2_output = list(self.agent_controller[-1].predict(ann2_inputs)) # ann2 inputs = [ x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+            # print("ann2_output =", ann2_output)
+            ann2_output[1] = (ann2_output[1] + 1) / 2 # rescale phenotype in (-1,1) to (0,1)
+            # print("ann2_output after rescale=", ann2_output)
+            state = [ann1_state[0]]
+            state += ann2_output
+            # print("state (s_xy, s_p, p) = ann1_state[0] += ann2_output", state, "\n-----")
+
         return state
 
     #---------------------------------------------------
