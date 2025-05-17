@@ -97,22 +97,22 @@ def set_env(params):
     ann1.set_weights_biases_vectors_from_list(params['learning_best_ind_ever'])
     ann1.plot_neural_network(env_name="learning", analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
 
-    # ann2 = NeuralNetwork(input_size=2, # x, y
+    # ann2 = NeuralNetwork(input_size=2, # x, y (model A)
     #                     hidden_layers=[2],
     #                     output_size=1, # one grayscale phenotype
     #                     activation_function='tanh')
     # agent_type = agent2Outputs
     # params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_only"
 
-    # ann2 = NeuralNetwork(input_size=6, # x, y, signalN, signalW, signalE, signalS
+    # ann2 = NeuralNetwork(input_size=6, # x, y, signalN, signalW, signalE, signalS (model C)
     #                     hidden_layers=[3],
     #                     output_size=1, # one grayscale phenotype
     #                     activation_function='tanh')
     # agent_type = agent2Outputs
     # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
 
-    ann2 = NeuralNetwork(input_size=6, # x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S
-                        hidden_layers=[3],
+    ann2 = NeuralNetwork(input_size=6, # x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S (model B)
+                        hidden_layers=[5,5],
                         output_size=2, # one signal_p, one grayscale phenotype
                         activation_function='tanh')
     agent_type = agent3Outputs
