@@ -97,12 +97,12 @@ def set_env(params):
     ann1.set_weights_biases_vectors_from_list(params['learning_best_ind_ever'])
     ann1.plot_neural_network(env_name="learning", analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
 
-    # ann2 = NeuralNetwork(input_size=2, # x, y (model A)
-    #                     hidden_layers=[2],
-    #                     output_size=1, # one grayscale phenotype
-    #                     activation_function='tanh')
-    # agent_type = agent2Outputs
-    # params['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_only"
+    ann2 = NeuralNetwork(input_size=2, # x, y (model A)
+                        hidden_layers=[5,5],
+                        output_size=1, # one grayscale phenotype
+                        activation_function='tanh')
+    agent_type = agent2Outputs
+    params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_only"
 
     # ann2 = NeuralNetwork(input_size=6, # x, y, signalN, signalW, signalE, signalS (model C)
     #                     hidden_layers=[3],
@@ -111,12 +111,12 @@ def set_env(params):
     # agent_type = agent2Outputs
     # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES"
 
-    ann2 = NeuralNetwork(input_size=6, # x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S (model B)
-                        hidden_layers=[5,5],
-                        output_size=2, # one signal_p, one grayscale phenotype
-                        activation_function='tanh')
-    agent_type = agent3Outputs
-    params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES_model_B"
+    # ann2 = NeuralNetwork(input_size=6, # x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S (model B)
+    #                     hidden_layers=[5,5],
+    #                     output_size=2, # one signal_p, one grayscale phenotype
+    #                     activation_function='tanh')
+    # agent_type = agent3Outputs
+    # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ANN_stacking_phenotypes_and_NWES_model_B"
     
     ann2.plot_neural_network(env_name=params['evolutionary_settings']['env_name'], analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
     params['coordinates_nn_controller']['nb_neuronsPerInputs'] = ann2.input_size
@@ -274,8 +274,9 @@ def copy_params_from_learning_x(learning_gradient_params, coordinates_params):
         coordinates_params['evolutionary_settings']['sliding_puzzle_nb_deletions_ticks'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_nb_deletions_ticks']
         coordinates_params['evolutionary_settings']['sliding_puzzle_density'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_density']
 
+    coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs'] = {}
+    coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = None
     if learning_gradient_params['evolutionary_settings']['env_name'] == "sliding_puzzle_multiEnvs_coordinates":
-        coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs'] = {}
         coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list']
 
     coordinates_params['grid']['grid_nb_rows'] = learning_gradient_params['grid']['grid_nb_rows']

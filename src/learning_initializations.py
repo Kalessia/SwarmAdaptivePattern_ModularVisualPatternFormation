@@ -114,7 +114,7 @@ def set_env(params):
 
     if params['evolutionary_settings']['env_name'] in ["sliding_puzzle_coordinates", "sliding_puzzle_multiEnvs_coordinates"]:
         nn_controller = NeuralNetwork(input_size=4, # one signal from N, W, E, S
-                                    hidden_layers=[2],
+                                    hidden_layers=[],
                                     output_size=3, # signal, phenotype x, phenotype y
                                     activation_function='tanh')
         agent_type = agentCoordinates_gradient
