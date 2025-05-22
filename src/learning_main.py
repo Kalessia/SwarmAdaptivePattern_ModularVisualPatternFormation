@@ -144,6 +144,10 @@ if (__name__ == "__main__"):
         for run in range(learning_params['evolutionary_settings']['nb_runs']):
             learning_params = cmaES_EvoAlgorithm(run, learning_params)
 
+    # Plot ANNs used in this simulation
+    for i, ann in enumerate(learning_params['env']['eval_function_params']['controller']):
+        ann.plot_neural_network(env_name=f"ann{i+1}", analysis_dir=learning_params['analysis_dir']['root']+"/plots_all_runs")
+
     # Save a trace of used parameters for this simulation in learning_params.json
     del learning_params['env']['eval_function'] # not JSON serializable object
     del learning_params['env']['eval_function_params']['controller'] # not JSON serializable object

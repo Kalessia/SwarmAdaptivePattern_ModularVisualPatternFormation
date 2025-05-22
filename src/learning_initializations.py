@@ -113,28 +113,29 @@ def check_params_validity(params):
 def set_env(params):
 
     if params['evolutionary_settings']['env_name'] in ["sliding_puzzle_coordinates", "sliding_puzzle_multiEnvs_coordinates"]:
-        nn_controller = NeuralNetwork(input_size=4, # one signal from N, W, E, S
+        nn_controller = NeuralNetwork(input_size=4, # ann input = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ] 
                                     hidden_layers=[],
-                                    output_size=3, # signal, phenotype x, phenotype y
+                                    output_size=3, # ann output = [ signal_xy, x, y ]
                                     activation_function='tanh')
-        agent_type = agentCoordinates_gradient
-        flag_pattern = "coordinates" # 2D flag representing x,y coordinates system
+        agent_type = agentCoordinates_gradient # size_chemicals_to_spread = 1, size_phenotype = 2
+        flag_pattern = "coordinates" # 2D flag representing a 2D coordinates system (x,y)
     
     else:
     
-        # Control experience 1
-        nn_controller = NeuralNetwork(input_size=8, # two signals from N, W, E, S: Ns1, Ns2, Ws1, Ws2, Es1, Es2, Ss1, Ss2 
+        # Control experience 1 (one big ann instead of 2 distinct learning phases (coordinate system method), with similar research space)
+        nn_controller = NeuralNetwork(input_size=8, # ann input = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ] 
                                     hidden_layers=[5,5],
-                                    output_size=3, # signal1, signal2, phenotype
+                                    output_size=3, # ann output = [signal_xy, signal_p, p ]
                                     activation_function='tanh')
-        agent_type = agent3Outputs
+        agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
+        # NB: il faut trier les entrées? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-        # # Control experience 2
-        # nn_controller = NeuralNetwork(input_size=4, # one signal from N, W, E, S
+        # # Control experience 2 (GECCO model: one signal from each neighbor, one signal to spread and one phenotype to evaluate as output)
+        # nn_controller = NeuralNetwork(input_size=4, # ann input = [ signal_N, signal_W, signal_E, signal_S ] 
         #                             hidden_layers=[5,5],
-        #                             output_size=2, # signal, phenotype
+        #                             output_size=2, # ann output = [signal, p ]
         #                             activation_function='tanh')
-        # agent_type = agent2Outputs
+        # agent_type = agent2Outputs # size_chemicals_to_spread = 1, size_phenotype = 1
 
         flag_pattern = params['grid']['flag_pattern']
 
@@ -143,7 +144,6 @@ def set_env(params):
     params['nn_controller']['hidden_layers'] = nn_controller.hidden_layers
     params['nn_controller']['nb_neuronsPerOutputs'] = nn_controller.output_size
     params['nn_controller']['activation_function'] = nn_controller.activation_function
-    nn_controller.plot_neural_network(env_name=params['evolutionary_settings']['env_name'], analysis_dir=params['analysis_dir']['root']+"/plots_all_runs")
 
     params['evolutionary_settings']['ind_size'] = nn_controller.weights_biases_size
     if agent_type == agent3Outputs_Devert2011: # Devert 2011

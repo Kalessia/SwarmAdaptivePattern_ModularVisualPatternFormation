@@ -18,7 +18,7 @@ plot_with_animation_bool=False
 
 # If you want to launch a swarm simulation or to plot learning figures for a specific learning simulation, write the corresponding path in the following line
 # exemple path: "/home/kalessia/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2025-03-10_15-39-37_two-bands_8x5"
-learning_analysis_dir="/home/loi/Documents/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2025-05-17_03-20-33_centered-half-discs_16x16"
+learning_analysis_dir="/home/kalessia/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2025-05-22_13-12-48_centered-half-discs_16x16"
 
 
 ###########################################################################

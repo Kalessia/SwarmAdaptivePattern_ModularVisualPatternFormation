@@ -613,7 +613,7 @@ class swarmGrid:
             print("ça arrive?")
             return
 
-        # Get controller inputs
+        # Get controller inputs (chemicals_to_spread)
         neighbors_states = []
         for neighbor in agent.neighbors_NWES: # est il à jour? calcolarlo ora?
             if neighbor is not None: # si il a un id, il y a l'agent? tjr?
@@ -632,53 +632,87 @@ class swarmGrid:
             if verbose_debug:
                 verbose_str += f"\n<compute_agent_state> - Agent at pos {agent.pos}, neighbors_states = {neighbors_states}, final state = {state}"
         
+
         # In the following options, we combine more than one ANN
-        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only": # ANN model A: 4-x-3_2-y-1
-            ann1_state = list(self.agent_controller[0].predict(neighbors_states)) # ann1 output = [ signal, x, y ]
-            ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
-            ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
-            ann2_output = list(self.agent_controller[-1].predict(ann1_state[-2:])) # ann2 inputs = [ x, y ]
-            state = [ann1_state[0]]
-            state.append(ann2_output[0]) # state = [signal from ann1, phenotype from ann2]
+        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_only":
 
-        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES": # ANN model C: 4-x-3_6-y-1
-            ann1_state = list(self.agent_controller[0].predict(neighbors_states)) # ann1 inputs = [ signalN, signalW, signalE, signalS ], ann1 output = [ signal, x, y ]
-            # print("ann1_state =", ann1_state)
-            ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
-            ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
-            # print("ann1_state con rescale =", ann1_state)
-            ann2_inputs = list(ann1_state[-2:])
-            ann2_inputs += neighbors_states
-            # print("ann2_inputs =", ann2_inputs)
-            ann2_output = list(self.agent_controller[-1].predict(ann2_inputs)) # ann2 inputs = [ x, y, signalN, signalW, signalE, signalS ]
-            # print("ann2_output=", ann2_output)
-            ann2_output[0] = (ann2_output[0] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
-            # print("ann2_output after rescale=", ann2_output)
-            state = [ann1_state[0]]
-            state.append(ann2_output[0]) # state = [signal from ann1, phenotype from ann2]
-            # print("state (s_xy, p) = ann1_state[0] .append(ann2_output[0])", state, "\n-----")
+            # Model A: 4-x-3_2-y-1
+            # The 1st ANN (4-x-3), used for the learning phase (coordinates system, flag 2D), has:
+            #   - inputs: a signal (chemicals_to_spread) from each neighbor. ann1 input = neighbors_states = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
+            #   - output: a signal to spread to neighbors, and two phenotype values x and y. ann1 output = [ signal_xy, x, y ]
+            # The 2nd ANN (2-y-1), used to learn the target flag (two-bands, centered-half-discs, ...), has:
+            #   - inputs: x and y from the coordinate system. ann2 input = [ x, y ]
+            #   - output: one phenotype. ann2 output = [ p ]
+            # The final state for an agent, is [signal_xy from ann1, p from ann2]
+            # NB: all phenotypes (x, y, p) are rescaled from (-1,1) to (0,1); ann2 phenotypes (p) will be rescaled in agent2Outputs
 
-        elif self.agent_type == agent3Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES_model_B": # ANN model B: 4-x-3_6-y-2
-            # print("ok siamo qua. neighbors_states =", neighbors_states)
+            # print("model A: ann1 input =", neighbors_states)
+            ann1_output = list(self.agent_controller[0].predict(neighbors_states)) # ann1 input = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ], ann1 output = [ signal_xy, x, y ]
+            # print("model A: ann1 output =", ann1_output)
+            ann1_output[1] = (ann1_output[1] + 1) / 2 # rescale phenotype x in (-1,1) to (0,1)
+            ann1_output[2] = (ann1_output[2] + 1) / 2 # rescale phenotype y in (-1,1) to (0,1)
+            # print("model A: ann1 input after rescale =", ann1_output)
+            # print("model A: ann2 input =", ann1_output[-2:])
+            ann2_output = list(self.agent_controller[-1].predict(ann1_output[-2:])) # ann2 input = [ x, y ], ann2 output = [ p ]
+            # print("model A: ann2 output =", ann2_output)
+            state = [ann1_output[0]] + ann2_output # state = [signal_xy from ann1, p from ann2]. ann2 phenotypes (p) will be rescaled in agent2Outputs
+            # print("model A: state = [signal_xy from ann1, p from ann2] =", state, "\n-----")
+
+
+        elif self.agent_type == agent3Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES_model_B":
+            
+            # Model B: 4-x-3_6-y-2
+            # The 1st ANN (4-x-3), used for the learning phase (coordinates system, flag 2D), has:
+            #   - inputs: a signal (chemicals_to_spread) from each neighbor. ann1 input = 1st quartet of neighbors_states = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
+            #   - output: a signal to spread to neighbors, and two phenotype values x and y. ann1 output = [ signal_xy, x, y ]
+            # The 2nd ANN (6-y-2), used to learn the target flag (two-bands, centered-half-discs, ...), has:
+            #   - inputs: x and y from the coordinate system, plus the 2nd quartet of neighbors_states. ann2 input = [ x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+            #   - output: one signal to spread to neighbors and one phenotype. ann2 output = [ signal_p, p ]
+            # The final state for an agent, is [signal_xy from ann1, signal_p from ann2, p from ann2]
+            # NB: all phenotypes (x, y, p) are rescaled from (-1,1) to (0,1); ann2 phenotypes (p) will be rescaled in agent3Outputs
+            
             signals_xy = neighbors_states[::2] # even indexes = signal_xy
             signals_p = neighbors_states[1::2] # odd indexes = signal_p
-            # print("signals_xy =", signals_xy)
-            # print("signals_p =", signals_p)
-            ann1_state = list(self.agent_controller[0].predict(signals_xy)) # ann1 inputs = [ signalN, signalW, signalE, signalS ], ann1 output = [ signal, x, y ]
-            # print("ann1_state =", ann1_state)
-            ann1_state[1] = (ann1_state[1] + 1) / 2 # rescale phenotype_x in (-1,1) to (0,1)
-            ann1_state[2] = (ann1_state[2] + 1) / 2 # rescale phenotype_y in (-1,1) to (0,1)
-            # print("ann1_state con rescale =", ann1_state)
-            ann2_inputs = list(ann1_state[-2:])
-            ann2_inputs += signals_p
-            # print("ann2_inputs =", ann2_inputs)
-            ann2_output = list(self.agent_controller[-1].predict(ann2_inputs)) # ann2 inputs = [ x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
-            # print("ann2_output =", ann2_output)
-            ann2_output[1] = (ann2_output[1] + 1) / 2 # rescale phenotype in (-1,1) to (0,1)
-            # print("ann2_output after rescale=", ann2_output)
-            state = [ann1_state[0]]
-            state += ann2_output
-            # print("state (s_xy, s_p, p) = ann1_state[0] += ann2_output", state, "\n-----")
+            # print("model B: ann1 input =", neighbors_states)
+            # print("model B: signals_xy =", signals_xy)
+            # print("model B: signals_p =", signals_p)
+            ann1_output = list(self.agent_controller[0].predict(signals_xy)) # ann1 input = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ], ann1 output = [ signal_xy, x, y ]
+            # print("model B: ann1 output =", ann1_output)
+            ann1_output[1] = (ann1_output[1] + 1) / 2 # rescale phenotype x in (-1,1) to (0,1)
+            ann1_output[2] = (ann1_output[2] + 1) / 2 # rescale phenotype y in (-1,1) to (0,1)
+            # print("model B: ann1 input after rescale =", ann1_output)
+            ann2_input = list(ann1_output[-2:]) + signals_p # ann2 input = [ x, y, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+            # print("model B: ann2 input =", ann2_input)
+            ann2_output = list(self.agent_controller[-1].predict(ann2_input)) # ann2 output = [ signal_p, p ]
+            # print("model B: ann2 output =", ann2_output)
+            state = [ann1_output[0]] + ann2_output # state = [signal_xy from ann1, signal_p from ann2, p from ann2]. ann2 phenotypes (p) will be rescaled in agent3Outputs
+            # print("model B: state = [signal_xy from ann1, signal_p from ann2, p from ann2] =", state, "\n-----")
+            
+
+        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ANN_stacking_phenotypes_and_NWES":
+            
+            # Model C: 4-x-3_6-y-1
+            # The 1st ANN (4-x-3), used for the learning phase (coordinates system, flag 2D), has:
+            #   - inputs: a signal (chemicals_to_spread) from each neighbor. ann1 input = neighbors_states = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
+            #   - output: a signal to spread to neighbors, and two phenotype values x and y. ann1 output = [ signal_xy, x, y ]
+            # The 2nd ANN (6-y-1), used to learn the target flag (two-bands, centered-half-discs, ...), has:
+            #   - inputs: x and y from the coordinate system, plus the ann1 neighbors_states. ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
+            #   - output: one phenotype. ann2 output = [ p ]
+            # The final state for an agent, is [signal_xy from ann1, p from ann2]
+            # NB: ann1 phenotypes (x, y) are rescaled from (-1,1) to (0,1); ann2 phenotypes (p) will be rescaled in agent2Outputs
+            
+            # print("model C: ann1 input =", neighbors_states)
+            ann1_output = list(self.agent_controller[0].predict(neighbors_states)) # ann1 input = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ], ann1 output = [ signal_xy, x, y ]
+            # print("model C: ann1 output =", ann1_output)
+            ann1_output[1] = (ann1_output[1] + 1) / 2 # rescale phenotype x in (-1,1) to (0,1)
+            ann1_output[2] = (ann1_output[2] + 1) / 2 # rescale phenotype y in (-1,1) to (0,1)
+            # print("model C: ann1 input after rescale =", ann1_output)
+            ann2_input = list(ann1_output[-2:]) + neighbors_states # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
+            # print("model C: ann2 input =", ann2_input)
+            ann2_output = list(self.agent_controller[-1].predict(ann2_input)) # ann2 output = [ p ]
+            # print("model C: ann2 output =", ann2_output)
+            state = [ann1_output[0]] + ann2_output # state = [signal_xy from ann1, p from ann2]. ann2 phenotypes (p) will be rescaled in agent2Outputs
+            # print("model C: state = [signal_xy from ann1, p from ann2] =", state, "\n-----")
 
         return state
 
