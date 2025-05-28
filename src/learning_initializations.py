@@ -120,19 +120,18 @@ def set_env(params):
         agent_type = agentCoordinates_gradient # size_chemicals_to_spread = 1, size_phenotype = 2
         flag_pattern = "coordinates" # 2D flag representing a 2D coordinates system (x,y)
     
-    else:
+    else: # one only learning phase (no coordinates system) to learn directly the flag target 
     
         # Control experience 1 (one big ann instead of 2 distinct learning phases (coordinate system method), with similar research space)
         nn_controller = NeuralNetwork(input_size=8, # ann input = [ signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ] 
-                                    hidden_layers=[5,5],
+                                    hidden_layers=[3],
                                     output_size=3, # ann output = [signal_xy, signal_p, p ]
                                     activation_function='tanh')
         agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
-        # NB: il faut trier les entrées? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         # # Control experience 2 (GECCO model: one signal from each neighbor, one signal to spread and one phenotype to evaluate as output)
         # nn_controller = NeuralNetwork(input_size=4, # ann input = [ signal_N, signal_W, signal_E, signal_S ] 
-        #                             hidden_layers=[5,5],
+        #                             hidden_layers=[3],
         #                             output_size=2, # ann output = [signal, p ]
         #                             activation_function='tanh')
         # agent_type = agent2Outputs # size_chemicals_to_spread = 1, size_phenotype = 1
