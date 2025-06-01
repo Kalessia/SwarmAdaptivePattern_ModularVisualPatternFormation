@@ -1,7 +1,7 @@
 {
     "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process. flags distance in [MSE, SSIM, CLIP] (add check init)",
     "evolutionary_settings": {
-        "same_as_learning_gradient": false,
+        "same_as_learning_gradient": true,
         "nb_runs": 3,
         "nb_evals": 140,
         "flags_distance_mode": "CLIP",

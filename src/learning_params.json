@@ -2,7 +2,7 @@
     "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process. flags distance in [MSE, SSIM, CLIP] (add check init)",
     "evolutionary_settings": {
         "nb_runs": 20,
-        "nb_evals": 140,
+        "nb_evals": 28000,
         "env_name info": "env_name in ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']",
         "env_name": "sliding_puzzle_coordinates",
         "sliding_puzzle_density": 1.0,
