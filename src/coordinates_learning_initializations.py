@@ -114,21 +114,21 @@ def set_env(params):
     # agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
     # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelB"
 
-    # # Model C: 4-x-3_6-y-1
-    # ann2 = NeuralNetwork(input_size=6, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
-    #                     hidden_layers=[5,5],
-    #                     output_size=1, # one grayscale phenotype. ann2 output = [ p ]
-    #                     activation_function='tanh')
-    # agent_type = agent2Outputs # size_chemicals_to_spread = 1, size_phenotype = 1
-    # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelC"
-
-    # Model E: 4-x-3_10-y-2
-    ann2 = NeuralNetwork(input_size=10, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+    # Model C: 4-x-3_6-y-1
+    ann2 = NeuralNetwork(input_size=6, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
                         hidden_layers=[5,5],
-                        output_size=2, # one signal_p, one grayscale phenotype. ann2 output = [ signal_p, p ]
+                        output_size=1, # one grayscale phenotype. ann2 output = [ p ]
                         activation_function='tanh')
-    agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
-    params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelE"
+    agent_type = agent2Outputs # size_chemicals_to_spread = 1, size_phenotype = 1
+    params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelC"
+
+    # # Model E: 4-x-3_10-y-2
+    # ann2 = NeuralNetwork(input_size=10, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+    #                     hidden_layers=[3],
+    #                     output_size=2, # one signal_p, one grayscale phenotype. ann2 output = [ signal_p, p ]
+    #                     activation_function='tanh')
+    # agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
+    # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelE"
     
     #---------------------------------------------------
 
@@ -260,18 +260,22 @@ def get_flag_target(dataset_path=None):
 
 def copy_params_from_learning_x(learning_gradient_params, coordinates_params):
 
-    coordinates_params['evolutionary_settings']['env_name'] = learning_gradient_params['evolutionary_settings']['env_name']
     coordinates_params['evolutionary_settings']['sliding_puzzle_proba_move'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_proba_move']
     coordinates_params['evolutionary_settings']['learning_ind_size'] = learning_gradient_params['evolutionary_settings']['ind_size']
 
     coordinates_params['learning_nn_controller'] = learning_gradient_params['nn_controller']
     coordinates_params['coordinates_nn_controller'] = {}
 
+    # coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs'] = {}
+    # coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = None
     if coordinates_params['evolutionary_settings']['same_as_learning_gradient']:
         coordinates_params['evolutionary_settings']['nb_runs'] = learning_gradient_params['evolutionary_settings']['nb_runs']
         coordinates_params['evolutionary_settings']['nb_evals'] = learning_gradient_params['evolutionary_settings']['nb_evals']
+        coordinates_params['evolutionary_settings']['env_name'] = learning_gradient_params['evolutionary_settings']['env_name']
         coordinates_params['evolutionary_settings']['flags_distance_mode'] = learning_gradient_params['evolutionary_settings']['flags_distance_mode']
         coordinates_params['evolutionary_settings']['nb_intrasteps'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_nb_intrasteps']
+        if learning_gradient_params['evolutionary_settings']['env_name'] == "sliding_puzzle_multiEnvs_coordinates" and coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['same_as_learning_gradient']:
+            coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list']
 
     if coordinates_params['environment']['same_as_learning_gradient']:
         coordinates_params['environment']['time_steps'] = learning_gradient_params['environment']['time_steps']
@@ -286,11 +290,6 @@ def copy_params_from_learning_x(learning_gradient_params, coordinates_params):
     else:
         coordinates_params['evolutionary_settings']['sliding_puzzle_nb_deletions_ticks'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_nb_deletions_ticks']
         coordinates_params['evolutionary_settings']['sliding_puzzle_density'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_density']
-
-    coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs'] = {}
-    coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = None
-    if learning_gradient_params['evolutionary_settings']['env_name'] == "sliding_puzzle_multiEnvs_coordinates":
-        coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = learning_gradient_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list']
 
     coordinates_params['grid']['grid_nb_rows'] = learning_gradient_params['grid']['grid_nb_rows']
     coordinates_params['grid']['grid_nb_cols'] = learning_gradient_params['grid']['grid_nb_cols']
