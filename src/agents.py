@@ -104,7 +104,7 @@ class agent2Outputs(swarmAgent):
 
         if self.init_cell_state_value is None or random_init_bool:
             self.state = np.random.uniform(-1, 1, self.size_state).tolist()
-            self.state[1] = np.abs(self.state[1])
+            # self.state[1] = np.abs(self.state[1])
         else:
             self.state = [self.init_cell_state_value] * self.size_state
 
@@ -255,3 +255,79 @@ class agentCoordinates_gradient(swarmAgent):
     def get_phenotype(self): # phenotype = [x,y]
         state = super().get_state()
         return [(state[1]+1)/2, (state[2]+1)/2] # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale
+        
+
+###########################################################################
+
+class agent2Outputs_RGB(swarmAgent):
+    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+        self.size_state = 4
+        self.size_chemicals_to_spread = 1
+        self.size_phenotype = 3
+        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
+        self.init_state()
+
+    #---------------------------------------------------
+
+    def init_state(self, random_init_bool=False):
+
+        if self.init_cell_state_value is None or random_init_bool:
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
+            # self.state[1] = np.abs(self.state[1]) # useless ???? rescaled apres
+        else:
+            self.state = [self.init_cell_state_value] * self.size_state
+
+    #---------------------------------------------------
+
+    def set_state(self, vector, with_noise_bool, noise_std):
+        super().set_state(vector, with_noise_bool, noise_std)
+    
+    #---------------------------------------------------
+
+    def get_external_chemicals_to_spread(self):
+        state = super().get_state()
+        return [state[0]] # list of floats
+    
+    #---------------------------------------------------
+
+    def get_phenotype(self): # phenotype = [r,g,b]
+        state = super().get_state()
+        return [(state[1]+1)/2, (state[2]+1)/2, (state[3]+1)/2] # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale
+
+
+###########################################################################
+
+class agent3Outputs_RGB(swarmAgent):
+    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+        self.size_state = 5
+        self.size_chemicals_to_spread = 2
+        self.size_phenotype = 3
+        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
+        self.init_state()
+
+    #---------------------------------------------------
+
+    def init_state(self, random_init_bool=False):
+
+        if self.init_cell_state_value is None or random_init_bool:
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
+            # self.state[1] = np.abs(self.state[1])
+        else:
+            self.state = [self.init_cell_state_value] * self.size_state
+
+    #---------------------------------------------------
+
+    def set_state(self, vector, with_noise_bool, noise_std):
+        super().set_state(vector, with_noise_bool, noise_std)
+    
+    #---------------------------------------------------
+
+    def get_external_chemicals_to_spread(self):
+        state = super().get_state()
+        return state[:self.size_chemicals_to_spread] # list of floats
+    
+    #---------------------------------------------------
+
+    def get_phenotype(self):
+        state = super().get_state()
+        return [(state[2]+1)/2, (state[3]+1)/2, (state[4]+1)/2] # (x+1)/2 to rescale (-1,1) in (0,1) keeping the scale    
