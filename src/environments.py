@@ -381,11 +381,12 @@ class swarmGrid:
 
 
         elif flag_pattern == "three-bands":
-            horizontal_threshold_upper = int(self.grid_nb_rows/3)
-            horizontal_threshold_lower = int(self.grid_nb_rows/3*2)
+            band_thickness = int(self.grid_nb_rows/3)
+            horizontal_threshold_upper = band_thickness
+            horizontal_threshold_lower = self.grid_nb_rows - 1 - band_thickness
 
             for cell in self.grid_map_pos_agent.keys():
-                if cell[0] < horizontal_threshold_upper:
+                if cell[0] <= horizontal_threshold_upper:
                     flag_target[cell] = 0.0 # black in the upper region
                 elif cell[0] >= horizontal_threshold_lower:
                     flag_target[cell] = 0.5 # grey in the lower region
@@ -455,7 +456,7 @@ class swarmGrid:
                         else:
                             flag_target[cell] = 0.0 # black
                 else:
-                    radius = np.floor(min((self.grid_nb_rows/2), (self.grid_nb_cols/2)))
+                    radius = np.floor(min((flag_pattern/2), (self.grid_nb_cols/2)))
                     if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2):
                         if cell[1] <= center[1]:
                             flag_target[cell] = 0.0 # black
@@ -473,6 +474,229 @@ class swarmGrid:
             for cell in self.grid_map_pos_agent.keys():
                 flag_target[cell] = [round((1.0 / (self.grid_nb_cols-1)) * cell[1], 2), # linear_gradient_left_right = x component
                                     round((1.0 / (self.grid_nb_rows-1)) * cell[0], 2)] # linear_gradient_up_down = y component
+
+
+        elif flag_pattern == "bn-SU":
+
+            scales = {
+                "bn-SU-8x8": 1,
+                "bn-SU-16x16": 2,
+                "bn-SU-32x32": 4
+            }
+
+            flag_pattern = flag_pattern + f"-{self.grid_nb_rows}x{self.grid_nb_cols}"
+            assert flag_pattern in scales, f"Error in environments.py, build_flag - Pattern {flag_pattern} not supported."
+            scale = scales[flag_pattern]
+
+            pattern_black_cells_8x8_list = [(0,1), (0,2), (0,5), (0,7),
+                                            (1,0), (1,3), (1,5), (1,7),
+                                            (2,0), (2,5), (2,7),
+                                            (3,1), (3,5), (3,7),
+                                            (4,2), (4,5), (4,7),
+                                            (5,3), (5,5), (5,7),
+                                            (6,0), (6,3), (6,5), (6,7),
+                                            (7,1), (7,2), (7,5), (7,6), (7,7)]
+
+            black_cells = []
+            for row, col in pattern_black_cells_8x8_list:
+                for shift_row in range(scale):
+                    for shift_col in range(scale):
+                        black_cells.append((row * scale + shift_row, col * scale + shift_col))
+
+            for cell in self.grid_map_pos_agent.keys():
+                flag_target[cell] = 0.0 if cell in black_cells else 1.0
+
+
+        elif flag_pattern == "bn-smile1":
+
+            scales = {
+                "bn-smile1-8x8": 1,
+                "bn-smile1-16x16": 2,
+                "bn-smile1-32x32": 4
+            }
+
+            flag_pattern = flag_pattern + f"-{self.grid_nb_rows}x{self.grid_nb_cols}"
+            assert flag_pattern in scales, f"Error in environments.py, build_flag - Pattern {flag_pattern} not supported."
+            scale = scales[flag_pattern]
+
+            pattern_black_cells_8x8_list = [(1,2), (1,5),
+                                            (2,2), (2,5),
+                                            (4,0), (4,7),
+                                            (5,1), (5,6),
+                                            (6,2), (6,3), (6,4), (6,5)]
+
+            black_cells = []
+            for row, col in pattern_black_cells_8x8_list:
+                for shift_row in range(scale):
+                    for shift_col in range(scale):
+                        black_cells.append((row * scale + shift_row, col * scale + shift_col))
+
+            for cell in self.grid_map_pos_agent.keys():
+                flag_target[cell] = 0.0 if cell in black_cells else 1.0
+
+
+        elif flag_pattern == "bn-smile2":
+
+            scales = {
+                "bn-smile2-8x8": 1,
+                "bn-smile2-16x16": 2,
+                "bn-smile2-32x32": 4
+            }
+
+            flag_pattern = flag_pattern + f"-{self.grid_nb_rows}x{self.grid_nb_cols}"
+            assert flag_pattern in scales, f"Error in environments.py, build_flag - Pattern {flag_pattern} not supported."
+            scale = scales[flag_pattern]
+
+            pattern_black_cells_8x8_list = [(1,1), (1,2), (1,5), (1,6),
+                                            (2,1), (2,2), (2,5), (2,6),
+                                            (4,0), (4,7),
+                                            (5,0), (5,1), (5,6), (5,7),
+                                            (6,1), (6,2), (6,3), (6,4), (6,5), (6,6),
+                                            (7,2), (7,3), (7,4), (7,5)]
+
+            black_cells = []
+            for row, col in pattern_black_cells_8x8_list:
+                for shift_row in range(scale):
+                    for shift_col in range(scale):
+                        black_cells.append((row * scale + shift_row, col * scale + shift_col))
+
+            for cell in self.grid_map_pos_agent.keys():
+                flag_target[cell] = 0.0 if cell in black_cells else 1.0
+
+
+        elif flag_pattern == "rgb-italian-flag":
+            assert self.size_phenotype == 3
+            band_thickness = int(self.grid_nb_cols/3)
+            vertical_threshold_left = band_thickness
+            vertical_threshold_right = self.grid_nb_cols - 1 - band_thickness
+
+            for cell in self.grid_map_pos_agent.keys():
+                if cell[1] <= vertical_threshold_left:
+                    flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
+                elif cell[1] >= vertical_threshold_right:
+                    flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
+                else:
+                    flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+
+
+        elif flag_pattern == "rgb-french-cockade":
+            assert self.size_phenotype == 3
+            center = (np.floor(self.grid_nb_rows/2), np.floor(self.grid_nb_cols/2))
+            band_thickness = int((min(self.grid_nb_rows/2, self.grid_nb_cols/2) -1)/3)
+
+            for cell in self.grid_map_pos_agent.keys():
+                if self.grid_nb_rows%2 == 0 or self.grid_nb_cols%2 == 0:
+                    radius_outer = np.floor(min((self.grid_nb_rows/2)-1, (self.grid_nb_cols/2)-1))
+                    radius_middle = radius_outer - band_thickness
+                    radius_inner = radius_middle - band_thickness
+                    if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius_inner**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1])**2 <= radius_inner**2) \
+                    or ((cell[0] - center[0])**2 + (cell[1] - center[1]+1)**2 <= radius_inner**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1]+1)**2 <= radius_inner**2):
+                        flag_target[cell] = [0.0, 0.0, 1.0] # blue in the inner region
+
+                    elif ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius_middle**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1])**2 <= radius_middle**2) \
+                    or ((cell[0] - center[0])**2 + (cell[1] - center[1]+1)**2 <= radius_middle**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1]+1)**2 <= radius_middle**2):
+                        flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+
+                    elif ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius_outer**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1])**2 <= radius_outer**2) \
+                    or ((cell[0] - center[0])**2 + (cell[1] - center[1]+1)**2 <= radius_outer**2) \
+                    or ((cell[0] - center[0]+1)**2 + (cell[1] - center[1]+1)**2 <= radius_outer**2):
+                        flag_target[cell] = [1.0, 0.0, 0.0] # red in the outer region
+                    else:
+                        flag_target[cell] = [1.0, 1.0, 1.0] # grey
+
+                else:
+                    radius_outer = np.floor(min((self.grid_nb_rows/2), (self.grid_nb_cols/2)))
+                    radius_middle = radius_outer - band_thickness
+                    radius_inner = radius_middle - band_thickness
+                    if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius_inner**2):
+                        flag_target[cell] = [0.0, 0.0, 1.0] # blue in the inner region
+                    elif ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius_middle**2):
+                        flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+                    elif ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius_outer**2):
+                        flag_target[cell] = [1.0, 0.0, 0.0] # red in the outer region
+                    else:
+                        flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+            
+
+        elif flag_pattern == "rgb-rainbow-full":
+            assert self.size_phenotype == 3
+            
+            colors_list = [
+                [1.0, 0.0, 0.0],     # red
+                [1.0, 0.6, 0.0],     # orange
+                [1.0, 1.0, 0.0],     # yellow
+                [0.0, 0.5, 0.0],     # green
+                [0.0, 1.0, 1.0],     # cyan
+                [0.0, 0.0, 1.0],     # blue
+                [0.5, 0.0, 0.5]]     # purple
+            
+            arrow_size = max(self.grid_nb_rows, self.grid_nb_cols)
+            band_thickness = max(1, min(self.grid_nb_rows, self.grid_nb_cols) // 8) # scaling pattern from grid 8x8
+
+            # Initialize grid to avoid not colored regions
+            for cell in self.grid_map_pos_agent.keys():
+                flag_target[cell] = [1.0, 1.0, 1.0] # white
+
+            for row_index in range(self.grid_nb_rows):
+                col_index = self.grid_nb_cols - 1 - row_index # x in {N-1, N-2, ..., 0}. (row_index,col_index) identifies the diagonal of the grid: {(0, N-1), (1, N-2), ..., (N-1, 0)}
+                if not (0 <= col_index < self.grid_nb_cols):
+                    continue
+                
+                color_index = (row_index // band_thickness) % len(colors_list) # loop color choice during 'band_thickness' cases
+                flag_target[(row_index, col_index)] = colors_list[color_index]
+
+                # Color all pixels in the same row and col as the diagonal cell
+                for offset in range(1, arrow_size):
+                    off = col_index - offset # horizontal shift
+                    if 0 <= off < self.grid_nb_cols: # if this position is valid
+                        flag_target[(row_index, off)] = colors_list[color_index]
+
+                    off = row_index + offset # vertical shift
+                    if 0 <= off < self.grid_nb_rows: # if this position is valid
+                        flag_target[(off, col_index)] = colors_list[color_index]
+
+
+        elif flag_pattern == "rgb-rainbow-arrow": # same code as "rgb-rainbow-full", just different "arrow_size"
+            assert self.size_phenotype == 3
+            
+            colors_list = [
+                [1.0, 0.0, 0.0],     # red
+                [1.0, 0.6, 0.0],     # orange
+                [1.0, 1.0, 0.0],     # yellow
+                [0.0, 0.5, 0.0],     # green
+                [0.0, 1.0, 1.0],     # cyan
+                [0.0, 0.0, 1.0],     # blue
+                [0.5, 0.0, 0.5]]     # purple
+            
+            arrow_size = max(1, min(self.grid_nb_rows, self.grid_nb_cols) // 4)
+            band_thickness = max(1, min(self.grid_nb_rows, self.grid_nb_cols) // 8) # scaling pattern from grid 8x8
+
+            # Initialize grid to avoid not colored regions
+            for cell in self.grid_map_pos_agent.keys():
+                flag_target[cell] = [1.0, 1.0, 1.0] # white
+
+            for row_index in range(self.grid_nb_rows):
+                col_index = self.grid_nb_cols - 1 - row_index # x in {N-1, N-2, ..., 0}. (row_index,col_index) identifies the diagonal of the grid: {(0, N-1), (1, N-2), ..., (N-1, 0)}
+                if not (0 <= col_index < self.grid_nb_cols):
+                    continue
+                
+                color_index = (row_index // band_thickness) % len(colors_list) # loop color choice during 'band_thickness' cases
+                flag_target[(row_index, col_index)] = colors_list[color_index]
+
+                # Color all pixels in the same row and col as the diagonal cell
+                for offset in range(1, arrow_size):
+                    off = col_index - offset # horizontal shift
+                    if 0 <= off < self.grid_nb_cols: # if this position is valid
+                        flag_target[(row_index, off)] = colors_list[color_index]
+
+                    off = row_index + offset # vertical shift
+                    if 0 <= off < self.grid_nb_rows: # if this position is valid
+                        flag_target[(off, col_index)] = colors_list[color_index]
 
 
         # Verbose debug
@@ -1274,7 +1498,7 @@ class swarmGrid:
         positions = self.grid_map_pos_agent.keys() # all positions in the grid
         # assert len(positions) == self.grid_size, f"\eval_flags_distance, len(positions) {len(positions)} != grid_size {self.grid_size}"
 
-        if self.size_phenotype > 1:
+        if self.size_phenotype > 1: # flag coordinates (2D) or rgb (3D)
             for p, pos in enumerate(positions):
                 if flag[pos] is not None:
                     for coordinate in range(self.size_phenotype):
@@ -1431,13 +1655,29 @@ class swarmGrid:
 
         if isinstance(flag_list[0], (list, tuple)): # this means that we have a flag with N dimensions (called components)
             flag_components = swarmGrid.get_flag_components(flag_list)
-            merged_flag = swarmGrid.merge_flag_components(flag_list)
-            flag_list = flag_components
-            flag_list.append(merged_flag)
+            # merged_flag = swarmGrid.merge_flag_components(flag_list)
+            flag_list = flag_components + [flag_list]
+            # flag_list.append(merged_flag)
         else:
-            flag_list=[flag_list]
+            flag_list = [flag_list]
 
         for n_flag, flag in enumerate(flag_list):
+
+            # Color profile detection: 
+            first_elem_flag = flag[0]
+            is_rgb_flag = isinstance(first_elem_flag, (list, tuple)) and len(first_elem_flag) == 3
+            is_2d_or_1d_flag = (isinstance(first_elem_flag, float) or (isinstance(first_elem_flag, (list, tuple)) and len(first_elem_flag) == 2))
+
+            if is_rgb_flag:
+                color_mode = 'rgb'
+            elif is_2d_or_1d_flag:
+                if "signals" in analysis_dir_plots:
+                    color_mode = 'monochrome2'
+                else:
+                    color_mode = 'monochrome1'
+            else:
+                raise ValueError("Error in evironments.py, plot_flag. Unrecognized flag structure: expected float, 1D/2D list, or RGB triplet.")
+
             fig, ax = plt.subplots()
 
             grid_pos = []
@@ -1474,16 +1714,16 @@ class swarmGrid:
                     grey_values.append(grey_value)
 
                 else:
-                    edgecolor_color = grey_value
+                    edgecolor_color = swarmGrid.map_color(grey_value, color_mode)
                     facecolor_color = 'white'
-                    if "signals" in analysis_dir_plots:
-                        edgecolor_color = max(0.0, min(1.0, (grey_value + 1) / 2)) # (x+1)/2 to rescale signal (-1,1) in (0,1) keeping the scale, because edgecolor has to be positive
-                        facecolor_color = 'peachpuff'
+                    # if "signals" in analysis_dir_plots:
+                    #     edgecolor_color = max(0.0, min(1.0, (grey_value + 1) / 2)) # (x+1)/2 to rescale signal (-1,1) in (0,1) keeping the scale, because edgecolor has to be positive
+                    #     facecolor_color = 'peachpuff'
 
-                    if grey_value > 0.9: # close to white
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor=facecolor_color, linestyle='--', linewidth=1.0, zorder=2)    
+                    if color_mode != 'rgb' and grey_value > 0.9: # close to white
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=edgecolor_color, facecolor=facecolor_color, linestyle='--', linewidth=1.0, zorder=2)
                     else:
-                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=str(edgecolor_color), facecolor=facecolor_color, linewidth=6.0, zorder=2)
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=edgecolor_color, facecolor=facecolor_color, linewidth=6.0, zorder=2)
 
                     if pos in permutated_pos:
                         circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='tab:green', facecolor=facecolor_color, linestyle='--', linewidth=2.0, zorder=2)    
@@ -1504,11 +1744,25 @@ class swarmGrid:
 
 
             if grid_nb_rows > 10 or grid_nb_cols > 10:
-                colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black to light blue
-                if "signals" in analysis_dir_plots:
-                    colors = [(0.0, 0.0, 0.0), (1.0, 0.8, 0.6)]  # black to light orange
-                cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
-                plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
+                if color_mode == 'monochrome1':
+                    colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black → light blue
+                elif color_mode == 'monochrome2':
+                    colors = [(0.0, 0.0, 0.0), (1.0, 0.4, 0.4)]  # black → light red
+                else:  # RGB
+                    colors = None
+
+                # colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black to light blue
+                # if "signals" in analysis_dir_plots:
+                #     colors = [(0.0, 0.0, 0.0), (1.0, 0.8, 0.6)]  # black to light orange
+                
+                if colors:
+                    cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
+                    plt.scatter(x, y, c=grey_values, cmap=cmap)
+                else:
+                    plt.scatter(x, y, c=grey_values) # use RGB values (already in 0–1 range)
+                
+                # cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
+                # plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
 
                 if permutated_pos:
                     plt.scatter(x_permutated, y_permutated, c='tab:green') # agents permutated
@@ -1546,6 +1800,26 @@ class swarmGrid:
 
             plt.clf()
             plt.close()
+
+    #---------------------------------------------------
+
+    @staticmethod
+    def map_color(value, mode):
+
+        # clip values (color encoding). phenotypes are always in [0,1], but signals could be negatives
+        if isinstance(value, list) or isinstance(value, tuple):
+            value = [max(0.0, min(1.0, v)) for v in value]
+        else:
+            value = max(0.0, min(1.0, value))
+
+        if mode == 'monochrome1':
+            return (0.0, 0.5 * value, value)  # black to light blue
+        elif mode == 'monochrome2':
+            return (value, 0.3 * value, 0.3 * value)  # black to reddish
+        elif mode == 'rgb':
+            return value  # already (r, g, b)
+        else:
+            return (value, value, value)
 
     #---------------------------------------------------
 

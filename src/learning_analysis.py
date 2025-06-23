@@ -455,7 +455,7 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, switc
 
     plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     ax.set_xticks(range(0, len(evaluations))) # important: boxplot boxes locations are incremental number from 0 to N=len(evaluations)
-    pace = int(len(evaluations) / 7) # number of labels to display, for lisibility
+    pace = max(1, int(len(evaluations) / 7)) # number of labels to display, for lisibility
     evaluations_labels = [str(evaluations[i]) if i%pace == 0 else "" for i in range(0, len(evaluations))]
     ax.set_xticklabels(evaluations_labels)
 
@@ -548,7 +548,7 @@ def plot_best_inds_per_gen(dataset_path, nb_evals, grid_size, switch_eval, with_
     plt.ylabel("Flags distance", fontsize=12)
     plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     ax.set_xticks(range(0, len(evaluations))) # important: boxplot boxes locations are incremental number from 0 to N=len(evaluations)
-    pace = int(len(evaluations) / 7) # number of labels to display, for lisibility
+    pace = max(1, int(len(evaluations) / 7)) # number of labels to display, for lisibility
     evaluations_labels = [str(evaluations[i]) if i%pace == 0 else "" for i in range(0, len(evaluations))]
     ax.set_xticklabels(evaluations_labels)
 

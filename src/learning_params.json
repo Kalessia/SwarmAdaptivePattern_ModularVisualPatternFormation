@@ -1,10 +1,10 @@
 {
     "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process. flags distance in [MSE, SSIM, CLIP] (add check init)",
     "evolutionary_settings": {
-        "nb_runs": 20,
-        "nb_evals": 28000,
+        "nb_runs": 1,
+        "nb_evals": 28,
         "env_name info": "env_name in ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']",
-        "env_name": "sliding_puzzle_coordinates",
+        "env_name": "sliding_puzzle",
         "sliding_puzzle_density": 1.0,
         "sliding_puzzle_proba_move": 0.0,
         "sliding_puzzle_incremental": {
@@ -19,11 +19,11 @@
         "sliding_puzzle_nb_intrasteps": false
     },
 
-    "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs']. If env=sliding_puzzle_coordinates, then the flag_pattern is 'coordinates'. Set init_cell_state_value as a scalar or null (random).",
+    "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile1', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']. If env=sliding_puzzle_coordinates, then the flag_pattern is 'coordinates'. Set init_cell_state_value as a scalar or null (random).",
     "grid": {
-        "flag_pattern": "centered-half-discs",
-        "grid_nb_rows": 16,
-        "grid_nb_cols": 16,
+        "flag_pattern": "bn-SU",
+        "grid_nb_rows": 8,
+        "grid_nb_cols": 8,
         "init_cell_state_value": 0.0
     },
 
