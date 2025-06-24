@@ -1655,9 +1655,7 @@ class swarmGrid:
 
         if isinstance(flag_list[0], (list, tuple)): # this means that we have a flag with N dimensions (called components)
             flag_components = swarmGrid.get_flag_components(flag_list)
-            # merged_flag = swarmGrid.merge_flag_components(flag_list)
             flag_list = flag_components + [flag_list]
-            # flag_list.append(merged_flag)
         else:
             flag_list = [flag_list]
 
@@ -1716,9 +1714,6 @@ class swarmGrid:
                 else:
                     edgecolor_color = swarmGrid.map_color(grey_value, color_mode)
                     facecolor_color = 'white'
-                    # if "signals" in analysis_dir_plots:
-                    #     edgecolor_color = max(0.0, min(1.0, (grey_value + 1) / 2)) # (x+1)/2 to rescale signal (-1,1) in (0,1) keeping the scale, because edgecolor has to be positive
-                    #     facecolor_color = 'peachpuff'
 
                     if color_mode != 'rgb' and grey_value > 0.9: # close to white
                         circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=edgecolor_color, facecolor=facecolor_color, linestyle='--', linewidth=1.0, zorder=2)
@@ -1751,19 +1746,12 @@ class swarmGrid:
                 else:  # RGB
                     colors = None
 
-                # colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black to light blue
-                # if "signals" in analysis_dir_plots:
-                #     colors = [(0.0, 0.0, 0.0), (1.0, 0.8, 0.6)]  # black to light orange
-                
                 if colors:
                     cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
                     plt.scatter(x, y, c=grey_values, cmap=cmap)
                 else:
                     plt.scatter(x, y, c=grey_values) # use RGB values (already in 0–1 range)
                 
-                # cmap = ListedColormap(np.linspace(colors[0], colors[1], 100))
-                # plt.scatter(x, y, c=grey_values, cmap=cmap) # cmap='grey'
-
                 if permutated_pos:
                     plt.scatter(x_permutated, y_permutated, c='tab:green') # agents permutated
 
@@ -1823,15 +1811,17 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    # flag_list becomes a list of flag components [ flag_component_x, flag_component_y, ... ]
+    # flag_list becomes a list of flag components. [ [ x1, y1 ], [ x2, y2 ] ] -> [ [ x1, x2 ], [ y1, y2 ] ]
     @staticmethod
     def get_flag_components(flag_list):
         flag_components = []
-        for component in range(len(flag_list[0])):
-            tmp = [flag_list[i][component] for i in range(len(flag_list))]
-            flag_components.append(tmp)
-            
-        return flag_components
+        first_elem_size = len(flag_list[0])
+        if isinstance(flag_list[0], (list, tuple)):
+            for component in range(first_elem_size):
+                tmp = [flag_list[i][component] for i in range(len(flag_list))]
+                flag_components.append(tmp)
+            return flag_components
+        return None
 
     #---------------------------------------------------
 
