@@ -1655,8 +1655,12 @@ class swarmGrid:
 
         if isinstance(flag_list[0], (list, tuple)): # this means that we have a flag with N dimensions (called components)
             flag_components = swarmGrid.get_flag_components(flag_list)
-            flag_list = flag_components + [flag_list]
-        else:
+
+            if len(flag_list[0]) == 3: # flag 3D, phenotype = [r,g,b] and r, g, b are floats in [0,1]
+                flag_list = flag_components + [flag_list]
+            else: # flag 2D, phenotype = [x,y] and x, y are floats in [0,1]
+                flag_list = flag_components
+        else: # flag 1D, phenotype = p and p is a float in [0,1]
             flag_list = [flag_list]
 
         for n_flag, flag in enumerate(flag_list):
