@@ -11,7 +11,7 @@ import random
 import csv
 
 from environments import sliding_puzzle, sliding_puzzle_multiEnvs
-from agents import agent2Outputs, agent3Outputs
+from agents import agent2Outputs, agent3Outputs, agent2Outputs_RGB, agent3Outputs_RGB 
 from nn import NeuralNetwork
 
 
@@ -115,21 +115,21 @@ def set_env(params):
         # agent_type = agent3Outputs_RGB # size_chemicals_to_spread = 2, size_phenotype = 1 (r, g, b)
         # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelB"
 
-        # # Model C: 4-x-3_6-y-1
-        # ann2 = NeuralNetwork(input_size=6, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
-        #                     hidden_layers=[5,5],
-        #                     output_size=3, # one grayscale phenotype. ann2 output = [ pR, pG, pB ]
-        #                     activation_function='tanh')
-        # agent_type = agent2Outputs_RGB # size_chemicals_to_spread = 1, size_phenotype = 1 (r, g, b)
-        # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelC"
-
-        # Model E: 4-x-3_10-y-2
-        ann2 = NeuralNetwork(input_size=10, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+        # Model C: 4-x-3_6-y-1
+        ann2 = NeuralNetwork(input_size=6, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
                             hidden_layers=[5,5],
-                            output_size=4, # one signal_p, one grayscale phenotype. ann2 output = [ signal_p, pR, pG, pB ]
+                            output_size=3, # one grayscale phenotype. ann2 output = [ pR, pG, pB ]
                             activation_function='tanh')
-        agent_type = agent3Outputs_RGB # size_chemicals_to_spread = 2, size_phenotype = 1 (r, g, b)
-        params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelE"
+        agent_type = agent2Outputs_RGB # size_chemicals_to_spread = 1, size_phenotype = 1 (r, g, b)
+        params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelC"
+
+        # # Model E: 4-x-3_10-y-2
+        # ann2 = NeuralNetwork(input_size=10, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+        #                     hidden_layers=[5,5],
+        #                     output_size=4, # one signal_p, one grayscale phenotype. ann2 output = [ signal_p, pR, pG, pB ]
+        #                     activation_function='tanh')
+        # agent_type = agent3Outputs_RGB # size_chemicals_to_spread = 2, size_phenotype = 1 (r, g, b)
+        # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelE"
 
     else:
         # # Model A: 4-x-3_2-y-1
@@ -148,21 +148,21 @@ def set_env(params):
         # agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
         # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelB"
 
-        # # Model C: 4-x-3_6-y-1
-        # ann2 = NeuralNetwork(input_size=6, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
-        #                     hidden_layers=[5,5],
-        #                     output_size=1, # one grayscale phenotype. ann2 output = [ p ]
-        #                     activation_function='tanh')
-        # agent_type = agent2Outputs # size_chemicals_to_spread = 1, size_phenotype = 1
-        # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelC"
-
-        # Model E: 4-x-3_10-y-2
-        ann2 = NeuralNetwork(input_size=10, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+        # Model C: 4-x-3_6-y-1
+        ann2 = NeuralNetwork(input_size=6, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S ]
                             hidden_layers=[5,5],
-                            output_size=2, # one signal_p, one grayscale phenotype. ann2 output = [ signal_p, p ]
+                            output_size=1, # one grayscale phenotype. ann2 output = [ p ]
                             activation_function='tanh')
-        agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
-        params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelE"
+        agent_type = agent2Outputs # size_chemicals_to_spread = 1, size_phenotype = 1
+        params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelC"
+
+        # # Model E: 4-x-3_10-y-2
+        # ann2 = NeuralNetwork(input_size=10, # ann2 input = [ x, y, signal_xy_N, signal_xy_W, signal_xy_E, signal_xy_S, signal_p_N, signal_p_W, signal_p_E, signal_p_S ]
+        #                     hidden_layers=[5,5],
+        #                     output_size=2, # one signal_p, one grayscale phenotype. ann2 output = [ signal_p, p ]
+        #                     activation_function='tanh')
+        # agent_type = agent3Outputs # size_chemicals_to_spread = 2, size_phenotype = 1
+        # params['coordinates_nn_controller']['nn_controller_stacking_mode'] = "ann1_ann2_modelE"
     
     #---------------------------------------------------
 

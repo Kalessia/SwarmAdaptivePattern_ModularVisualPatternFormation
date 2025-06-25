@@ -21,7 +21,7 @@
 
     "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile1', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']. If env=sliding_puzzle_coordinates, then the flag_pattern is 'coordinates'. Set init_cell_state_value as a scalar or null (random).",
     "grid": {
-        "flag_pattern": "rgb-italian-flag",
+        "flag_pattern": "bn-SU",
         "grid_nb_rows": 16,
         "grid_nb_cols": 16,
         "init_cell_state_value": 0.0
