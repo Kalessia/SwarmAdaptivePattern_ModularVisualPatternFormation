@@ -858,7 +858,7 @@ class swarmGrid:
         
 
         # In the following options, we combine more than one ANN
-        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ann1_ann2_modelA":
+        elif (self.agent_type == agent2Outputs or self.agent_type == agent2Outputs_RGB) and self.agent_controller_stacking_mode == "ann1_ann2_modelA":
 
             # Model A: 4-x-3_2-y-1
             # The 1st ANN (4-x-3), used for the learning phase (coordinates system, flag 2D), has:
@@ -883,7 +883,7 @@ class swarmGrid:
             # print("model A: state = [signal_xy from ann1, p from ann2] =", state, "\n-----")
 
 
-        elif self.agent_type == agent3Outputs and self.agent_controller_stacking_mode == "ann1_ann2_modelB":
+        elif (self.agent_type == agent3Outputs or self.agent_type == agent3Outputs_RGB) and self.agent_controller_stacking_mode == "ann1_ann2_modelB":
             
             # Model B: 4-x-3_6-y-2
             # The 1st ANN (4-x-3), used for the learning phase (coordinates system, flag 2D), has:
@@ -913,7 +913,7 @@ class swarmGrid:
             # print("model B: state = [signal_xy from ann1, signal_p from ann2, p from ann2] =", state, "\n-----")
             
 
-        elif self.agent_type == agent2Outputs and self.agent_controller_stacking_mode == "ann1_ann2_modelC":
+        elif (self.agent_type == agent2Outputs or self.agent_type == agent2Outputs_RGB) and self.agent_controller_stacking_mode == "ann1_ann2_modelC":
 
             # Model C: 4-x-3_6-y-1
             # The 1st ANN (4-x-3), used for the learning phase (coordinates system, flag 2D), has:
@@ -939,7 +939,7 @@ class swarmGrid:
             # print("model C: state = [signal_xy from ann1, p from ann2] =", state, "\n-----")
 
 
-        elif self.agent_type == agent3Outputs and self.agent_controller_stacking_mode == "ann1_ann2_modelE":
+        elif (self.agent_type == agent3Outputs or self.agent_type == agent3Outputs_RGB) and self.agent_controller_stacking_mode == "ann1_ann2_modelE":
             
             # Model E: 4-x-3_10-y-2
             # The 1st ANN (4-x-3), used for the learning phase (coordinates system, flag 2D), has:
@@ -1503,7 +1503,7 @@ class swarmGrid:
                 if flag[pos] is not None:
                     for coordinate in range(self.size_phenotype):
                         sum_states += (self.flag_target[p][coordinate] - flag[pos][coordinate])**2
-                        nb_agents += 1
+                    nb_agents += 1
         else:
             for p, pos in enumerate(positions):
                 # if self.grid_map_pos_agent[pos] is not None:
