@@ -1,25 +1,27 @@
 {
-    "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process. flags distance in [MSE, SSIM, CLIP] (add check init)",
+    "evolutionary_settings info": "nb_runs: number of independent evolutionary learnings to run \nnb_evals: the max budjet of allowed evaluations for one entire learning process \nsliding_puzzle_nb_intrasteps: activate (value: scalar, nb of intrasteps) or not (value: false) the repeated forward NN computation of each robot controller in the space of two subsequent steps",
     "evolutionary_settings": {
         "nb_runs": 20,
-        "nb_evals": 28000,
+        "nb_evals": 28,
         "env_name info": "env_name in ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']",
         "env_name": "sliding_puzzle_coordinates",
         "sliding_puzzle_density": 1.0,
         "sliding_puzzle_proba_move": 0.0,
         "sliding_puzzle_incremental": {
-            "sliding_puzzle_incremental info": "sliding_puzzle_incremental_density_ticks>0.0. Incremental learning refers to an evolutionary process that changes of parameters after a defined generation. Here, we modify the density of a sliding_puzzle environment, given by sliding_puzzle_incremental_nb_deletions_ticks[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions_ticks[1] in the 2nd. The switch generation is deducted from 'switch_eval'. Either 'units' or 'percent' must be null. 2 values should be different... check",
+            "sliding_puzzle_incremental info": "If env=sliding_puzzle_incremental, the following settings are used. Incremental learning refers to an evolutionary process that changes of parameters after a defined generation (the 1st generation after sliding_puzzle_incremental_switch_eval). The density is sliding_puzzle_incremental_nb_deletions_ticks[0] in the 1st setup and sliding_puzzle_incremental_nb_deletions_ticks[1] in the 2nd",
             "sliding_puzzle_incremental_switch_eval": 70,
             "sliding_puzzle_incremental_density_ticks": [0.8, 0.5]
         },
+        "sliding_puzzle_multiEnvs info": "If env=sliding_puzzle_multiEnvs or env=sliding_puzzle_multiEnvs_coordinates, each newly generated individual is evaluated on different environments listed in env_dims_list",
         "sliding_puzzle_multiEnvs": {
-            "env_dims_list": [[4, 4], [8, 8], [16, 16]]
+            "env_dims_list": [[4, 4], [8, 8], [12, 12], [16, 16]]
         },
+        "flags_distance_mode info": "flags_distance_mode: target and swarm images distance in [MSE, SSIM, CLIP] (not well implemented)",
         "flags_distance_mode": "CLIP",
         "sliding_puzzle_nb_intrasteps": false
     },
 
-    "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile1', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']. If env=sliding_puzzle_coordinates, then the flag_pattern is 'coordinates'. Set init_cell_state_value as a scalar or null (random).",
+    "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile1', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']. If env=sliding_puzzle_coordinates or env=sliding_puzzle_multiEnvs_coordinates, the flag_pattern is settled to 'coordinates', i.e. two 2D patterns: linear_gradient_left_right (x component) and linear_gradient_up_down (y component) \ninit_cell_state_value: value is a scalar (defined) or null (random initialization)",
     "grid": {
         "flag_pattern": "bn-SU",
         "grid_nb_rows": 16,
@@ -27,7 +29,7 @@
         "init_cell_state_value": 0.0
     },
 
-    "environment info": "Time step is the total length of the development flag task. Time window is the interval of steps where we compute the mean of each step fitness. Time window is in [time_window_start (step), time_window_end (step)].",
+    "environment info": "time_steps: total length of the development task \ntime_window_start, time_window_end: interval [time_window_start (step), time_window_end (step)] of steps during which we compute the task performance",
     "environment": {
         "time_steps": 50,
         "time_window_start": 30,
@@ -45,7 +47,7 @@
             "learning_random_init_states_bool": false
         },
         "learning_with_noise": {
-            "learning_with_noise info": "Each newly computed agent' state is perturbed by a noise N(0, learning_with_noise_std, len_state)",
+            "learning_with_noise info": "each newly computed agent' state is perturbed by a noise N(0, learning_with_noise_std, len_state)",
             "learning_with_noise_bool": false,
             "learning_with_noise_std": 1.0e-5
         }

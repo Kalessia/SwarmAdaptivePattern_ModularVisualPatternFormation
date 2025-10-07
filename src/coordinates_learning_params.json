@@ -1,18 +1,22 @@
 {
-    "evolutionary_settings info": "'nb_evals' is the max budjet of allowed evaluations for the entire learning process. flags distance in [MSE, SSIM, CLIP] (add check init)",
+    "coordinates_learning_params info": "This code learns to build a flag_pattern using an existing coordinate system. This prerequisite coordinate system can be build using the learning_main (learning_params, env=sliding_puzzle_coordinates or env=sliding_puzzle_multiEnvs_coordinates). A same coordinate_system could be used then to learn different flag_patterns, launching different times this code. If you want to launch this code on an existing coordinate system, put the learning path in launch.sh, learning_analysis_dir. Warning: coordinate learning cannot occur without first constructing a coordinate system, i.e. learning ['evolutionary_settings']['env_name'] should be in ['sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs_coordinates']",
+    "evolutionary_settings info": "\ndensity and mobility parameters (sliding_puzzle_density, sliding_puzzle_proba_move, ..., see learning_params.json) are copied from learning parameters \nsame_as_learning_gradient: if true, evolutionary settings (nb_runs, nb_evals, env_name, flags_distance_mode, nb_intrasteps, see learning_params.json) are copied from learning parameters; if false, the following parameters are used \nnb_runs: number of independent evolutionary learnings to run \nnb_evals: the max budjet of allowed evaluations for one entire learning process \nsliding_puzzle_nb_intrasteps: activate (value: scalar, nb of intrasteps) or not (value: false) the repeated forward NN computation of each robot controller in the space of two subsequent steps",
     "evolutionary_settings": {
         "same_as_learning_gradient": true,
         "nb_runs": 20,
         "nb_evals": 28000,
+        "env_name info": "env_name in ['sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs_coordinates']",
         "env_name": "sliding_puzzle_multiEnvs_coordinates",
+        "sliding_puzzle_multiEnvs info": "same_as_learning_gradient: if true, parameters (env_dims_list, see learning_params.json) are copied from learning parameters; if false, the following parameters are used",
         "sliding_puzzle_multiEnvs": {
             "same_as_learning_gradient": false,
-            "env_dims_list": [[4, 4], [8, 8], [16, 16], [32, 32]]
+            "env_dims_list": [[4, 4], [8, 8], [12, 12], [16, 16]]
         },
+        "flags_distance_mode info": "flags_distance_mode: target and swarm images distance in [MSE, SSIM, CLIP] (not well implemented)",
         "flags_distance_mode": "CLIP",
         "sliding_puzzle_nb_intrasteps": false
     },
-    "environment info": "Time step is the total length of the development flag task. Time window is the interval of steps where we compute the mean of each step fitness. Time window is in [time_window_start (step), time_window_end (step)].",
+    "environment info": "same_as_learning_gradient: if true, parameters (time_steps, time_window_start, time_window_end, see learning_params.json) are copied from learning parameters; if false, the following parameters are used \ntime_steps: total length of the development task \ntime_window_start, time_window_end: interval [time_window_start (step), time_window_end (step)] of steps during which we compute the task performance",
     "environment": {
         "same_as_learning_gradient": true,
         "time_steps": 50,
@@ -20,10 +24,7 @@
         "time_window_end": 50
     },
 
-    "nn_controller info": "The agent's controller is a forward neural network. 'nb_neuronsPerInputs' is >= 4. 'hidden_layers' lists the nb of neurons per hidden layer. One biais neuron is added to the input and each hidden layer. Weights (individual) values are in ]-inf, +inf[. nn_controller_stacking_mode in [ANN_stacking_phenotypes_only, ANN_stacking_phenotypes_and_NWES]",
-    "nn_controller_stacking_mode": "ANN_stacking_phenotypes_and_NWES",
-
-    "grid info": "flag_patterns in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs']. Set init_cell_state_value as a scalar or null (random).",
+    "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile1', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow'] \nother grid parameters (grid_nb_rows, grid_nb_cols, init_cell_state_value, see learning_params.json) are copied from learning parameters",
     "grid": {
         "flag_pattern": "rgb-italian-flag"
     },
@@ -31,7 +32,7 @@
     "learning_options info": "learning_options in ['learning_random_async_update_states', 'learning_random_init_states', 'learning_with_noise']",
     "learning_options": {
         "learning_random_async_update_states": {
-            "learning_random_async_update_states info": "false: agents states are updated in random grid-positions order and asynchronous time, meaning that the updated state value of a chosen agent is used to compute the state of a not yet updated neighbor (realistic robotic setup). true: in grid-positions order, each agent computes its new state using pre-update neighbors state values, then all new agents states are updated synchronously. In both options, all agents states are updated.",
+            "learning_random_async_update_states info": "false: agents states are updated in random grid-positions order and asynchronous time, meaning that the updated state value of a chosen agent is used to compute the state of a not yet updated neighbor (realistic robotic setup). true: in grid-positions order, each agent computes its new state using pre-update neighbors state values, then all new agents states are updated synchronously. In both options, all agents states are updated",
             "learning_random_async_update_states_bool": false
         },
         "learning_random_init_states": {
@@ -39,7 +40,7 @@
             "learning_random_init_states_bool": false
         },
         "learning_with_noise": {
-            "learning_with_noise info": "Each newly computed agent' state is perturbed by a noise N(0, learning_with_noise_std, len_state)",
+            "learning_with_noise info": "each newly computed agent' state is perturbed by a noise N(0, learning_with_noise_std, len_state)",
             "learning_with_noise_bool": false,
             "learning_with_noise_std": 1.0e-5
         }

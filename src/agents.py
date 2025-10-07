@@ -67,9 +67,9 @@ class agent1Output(swarmAgent):
     def init_state(self, random_init_bool=False):
         
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(0, 1, self.size_state).tolist()
+            self.state = np.random.uniform(0, 1, self.size_state).tolist()  # Python list
         else:
-            self.state = [self.init_cell_state_value] * self.size_state
+            self.state = [self.init_cell_state_value] * self.size_state  # Python list
 
     #---------------------------------------------------
 
@@ -103,10 +103,9 @@ class agent2Outputs(swarmAgent):
     def init_state(self, random_init_bool=False):
 
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
-            # self.state[1] = np.abs(self.state[1])
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist()  # Python list
         else:
-            self.state = [self.init_cell_state_value] * self.size_state
+            self.state = [self.init_cell_state_value] * self.size_state  # Python list
 
     #---------------------------------------------------
 
@@ -141,10 +140,9 @@ class agent3Outputs(swarmAgent):
     def init_state(self, random_init_bool=False):
 
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
-            self.state[1] = np.abs(self.state[1])
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist()  # Python list
         else:
-            self.state = [self.init_cell_state_value] * self.size_state
+            self.state = [self.init_cell_state_value] * self.size_state  # Python list
 
     #---------------------------------------------------
 
@@ -179,9 +177,9 @@ class agent3Outputs_Devert2011(swarmAgent):
 
     def init_state(self, random_init_bool=False):
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist() # Devert, 2011. State in [-1,1] because phenotype is not included in the state
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist() # Python list. Devert, 2011. State in [-1,1] because phenotype is not included in the state
         else:
-            self.state = [self.init_cell_state_value] * self.size_state
+            self.state = [self.init_cell_state_value] * self.size_state  # Python list
 
     #---------------------------------------------------
 
@@ -234,10 +232,9 @@ class agentCoordinates_gradient(swarmAgent):
     def init_state(self, random_init_bool=False):
 
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
-            self.state[1] = np.abs(self.state[1])
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist()  # Python list
         else:
-            self.state = [self.init_cell_state_value] * self.size_state
+            self.state = [self.init_cell_state_value] * self.size_state  # Python list
 
     #---------------------------------------------------
 
@@ -272,10 +269,9 @@ class agent2Outputs_RGB(swarmAgent):
     def init_state(self, random_init_bool=False):
 
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
-            # self.state[1] = np.abs(self.state[1]) # useless ???? rescaled apres
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist()  # Python list
         else:
-            self.state = [self.init_cell_state_value] * self.size_state
+            self.state = [self.init_cell_state_value] * self.size_state  # Python list
 
     #---------------------------------------------------
 
@@ -310,10 +306,9 @@ class agent3Outputs_RGB(swarmAgent):
     def init_state(self, random_init_bool=False):
 
         if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist()
-            # self.state[1] = np.abs(self.state[1])
+            self.state = np.random.uniform(-1, 1, self.size_state).tolist()  # Python list
         else:
-            self.state = [self.init_cell_state_value] * self.size_state
+            self.state = [self.init_cell_state_value] * self.size_state  # Python list
 
     #---------------------------------------------------
 

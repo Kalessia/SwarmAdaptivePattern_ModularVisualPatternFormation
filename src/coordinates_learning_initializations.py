@@ -89,6 +89,10 @@ def check_params_validity(params): # params = coordinates_params
 def set_env(params):
 
     # check_params_validity(params)
+
+    # lines from coordinate_learning_params to erase or write somewhere else !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #     "nn_controller info": "The agent's controller is a forward neural network. 'nb_neuronsPerInputs' is >= 4. 'hidden_layers' lists the nb of neurons per hidden layer. One biais neuron is added to the input and each hidden layer. Weights (individual) values are in ]-inf, +inf[. nn_controller_stacking_mode in [ANN_stacking_phenotypes_only, ANN_stacking_phenotypes_and_NWES]",
+    # "nn_controller_stacking_mode": "ANN_stacking_phenotypes_and_NWES",
     
     ann1 = NeuralNetwork(input_size=params['learning_nn_controller']['nb_neuronsPerInputs'],
                         hidden_layers=params['learning_nn_controller']['hidden_layers'],
@@ -301,7 +305,7 @@ def copy_params_from_learning_x(learning_gradient_params, coordinates_params):
     coordinates_params['coordinates_nn_controller'] = {}
 
     # coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs'] = {}
-    # coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = None
+    # coordinates_params['evolutionary_settings']['sliding_puzzle_multiEnvs']['env_dims_list'] = None # is it possible ? add a security check on that !!!!!!!!!!!!!!!!!!!!!!
     if coordinates_params['evolutionary_settings']['same_as_learning_gradient']:
         coordinates_params['evolutionary_settings']['nb_runs'] = learning_gradient_params['evolutionary_settings']['nb_runs']
         coordinates_params['evolutionary_settings']['nb_evals'] = learning_gradient_params['evolutionary_settings']['nb_evals']

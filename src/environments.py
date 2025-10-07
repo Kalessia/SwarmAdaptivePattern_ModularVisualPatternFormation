@@ -481,6 +481,7 @@ class swarmGrid:
             scales = {
                 "bn-SU-8x8": 1,
                 "bn-SU-16x16": 2,
+                "bn-SU-24x24": 3,
                 "bn-SU-32x32": 4
             }
 
@@ -512,6 +513,7 @@ class swarmGrid:
             scales = {
                 "bn-smile1-8x8": 1,
                 "bn-smile1-16x16": 2,
+                "bn-smile1-24x24": 3,
                 "bn-smile1-32x32": 4
             }
 
@@ -540,6 +542,7 @@ class swarmGrid:
             scales = {
                 "bn-smile2-8x8": 1,
                 "bn-smile2-16x16": 2,
+                "bn-smile2-24x24": 3,
                 "bn-smile2-32x32": 4
             }
 
