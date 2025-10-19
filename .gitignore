@@ -1,9 +1,11 @@
 data_plots*
+results_cluster*
 simu.txt
 data.csv
 src/tools/profilesXY*
 test_*
 requirements_old.txt
+*.sif
 
 
 

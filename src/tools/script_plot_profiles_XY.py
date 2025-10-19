@@ -52,7 +52,7 @@ flag_array = np.array(flag_list).reshape(nb_rows, nb_cols, first_elem_size)
 
 # Plot x values of a specific row in the grid
 for index in row_indexes_to_inspect:
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(8, 4), dpi=300)
 
     # Target
     target_x_values = target_array[index, :, 0] # 'index' selects a specific row, ':' selects all columns in that row, '0' selects the first value (x) in each [x, y] pair
@@ -78,7 +78,7 @@ for index in row_indexes_to_inspect:
 
 # Plot y values of a specific column in the grid
 for index in cols_indexes_to_inspect:
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(8, 4), dpi=300)
 
     # Target
     target_y_values = target_array[:, index, 1]  # ':' selects all rows, 'index' selects a specific grid column, '1' selects the second value (y) in each [x, y] pair

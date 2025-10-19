@@ -479,6 +479,7 @@ class swarmGrid:
         elif flag_pattern == "bn-SU":
 
             scales = {
+                "bn-SU-4x4": 0.5,
                 "bn-SU-8x8": 1,
                 "bn-SU-16x16": 2,
                 "bn-SU-24x24": 3,
@@ -511,6 +512,7 @@ class swarmGrid:
         elif flag_pattern == "bn-smile1":
 
             scales = {
+                "bn-smile1-4x4": 0.5,
                 "bn-smile1-8x8": 1,
                 "bn-smile1-16x16": 2,
                 "bn-smile1-24x24": 3,
@@ -540,6 +542,7 @@ class swarmGrid:
         elif flag_pattern == "bn-smile2":
 
             scales = {
+                "bn-smile2-4x4": 0.5,
                 "bn-smile2-8x8": 1,
                 "bn-smile2-16x16": 2,
                 "bn-smile2-24x24": 3,
@@ -1683,7 +1686,7 @@ class swarmGrid:
             else:
                 raise ValueError("Error in evironments.py, plot_flag. Unrecognized flag structure: expected float, 1D/2D list, or RGB triplet.")
 
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=(12, 7), dpi=300)
 
             grid_pos = []
             for row in range(grid_nb_rows):
@@ -1858,7 +1861,7 @@ class swarmGrid:
         x = dataset['Step'].tolist()
         y = dataset['Flags_distance'].tolist()
 
-        _, ax = plt.subplots()
+        _, ax = plt.subplots(figsize=(12, 7), dpi=300)
 
         plt.plot(x, y)
 

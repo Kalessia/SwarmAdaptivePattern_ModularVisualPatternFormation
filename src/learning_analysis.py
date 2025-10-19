@@ -435,9 +435,9 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, switc
     filtered_dataset['Max_evaluation_per_gen'] = pd.to_numeric(filtered_dataset['Generation'].apply(lambda gen: pop_size * (gen + 1))) # nb_eval is here the last evaluation of a given generation, even if the best ind per run per gen was registered in different nb_eval within the same generation
     evaluations = filtered_dataset['Max_evaluation_per_gen'].unique()
 
-    plt.figure(figsize=(12, 7))
+    plt.figure(figsize=(12, 7), dpi=300)
     sns.set_theme(style='darkgrid')
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(12, 7), dpi=300)
     sns.boxplot(x='Max_evaluation_per_gen',
                 y='Fitness',
                 data=filtered_dataset,
@@ -514,9 +514,9 @@ def plot_best_inds_per_gen(dataset_path, nb_evals, grid_size, switch_eval, with_
     filtered_dataset['Max_evaluation_per_gen'] = pd.to_numeric(filtered_dataset['Generation'].apply(lambda gen: pop_size * (gen + 1))) # nb_eval is here the last evaluation of a given generation, even if the best ind per run per gen was registered in different nb_eval within the same generation
     evaluations = filtered_dataset['Max_evaluation_per_gen'].unique()
 
-    plt.figure(figsize=(12, 7))
+    plt.figure(figsize=(12, 7), dpi=300)
     sns.set_theme(style='darkgrid')
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(12, 7), dpi=300)
     sns.boxplot(x='Max_evaluation_per_gen',
                 y='Fitness',
                 data=filtered_dataset,

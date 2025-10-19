@@ -87,9 +87,9 @@ def plot_sliding_puzzle_incremental_learning_density_fluidity(experiences_dir_to
     #     crossed_box = plt.Rectangle(case, 1, 1, facecolor='none', edgecolor='grey', hatch='//')
     #     heatmap_plot.add_patch(crossed_box)
 
-    plt.figure(figsize=(12, 7))
+    plt.figure(figsize=(12, 7), dpi=300)
     sns.set_theme(style='darkgrid')
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(12, 7), dpi=300)
     sns.boxplot(x='Experience',
                 y='Fitness',
                 data=df_gne,

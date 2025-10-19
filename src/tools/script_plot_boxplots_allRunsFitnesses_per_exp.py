@@ -30,9 +30,9 @@ def plot_boxplots_allRunsFitnesses_per_exp_NOcoordinates(experiences_dir_to_plot
     df_gne.head()
 
     sns.set_theme(style='dark')
-    plt.figure(figsize=(14, 7))
+    plt.figure(figsize=(14, 7), dpi=300)
     sns.set_theme(style='darkgrid')
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(12, 7), dpi=300)
     sns.boxplot(x='Experiment',
                 y='Fitness',
                 data=df_gne,
@@ -80,9 +80,9 @@ def plot_boxplots_allRunsFitnesses_per_exp_coordinatesONLY(experiences_dir_to_pl
     df_gne.head()
 
     sns.set_theme(style='dark')
-    plt.figure(figsize=(12, 7))
+    plt.figure(figsize=(12, 7), dpi=300)
     sns.set_theme(style='darkgrid')
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(12, 7), dpi=300)
     sns.boxplot(x='Experiment',
                 y='Fitness',
                 data=df_gne,

@@ -162,7 +162,7 @@ class NeuralNetwork:
         h_spacing = 0.8 / float(num_layers-1)
         circle_radius = v_spacing / 4.
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(12, 7), dpi=300)
 
         # Draw neurons and edges
         for n, layer_size in enumerate(layer_sizes):
