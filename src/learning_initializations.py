@@ -94,7 +94,7 @@ def check_params_validity(params):
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
 
-    patterns = ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile1', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']
+    patterns = ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile2', 'bn-smile', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']
     if params['grid']['flag_pattern'] not in patterns:
         print(f"Error in learning_initializations.py - The flag_pattern parameter must be one of the following: {patterns}")
         exit_bool = True
@@ -119,6 +119,7 @@ def set_env(params):
                                     activation_function='tanh')
         agent_type = agentCoordinates_gradient # size_chemicals_to_spread = 1, size_phenotype = 2
         flag_pattern = "coordinates" # 2D flag representing a 2D coordinates system (x,y)
+        params['grid']['flag_pattern'] = "coordinates"
     
     else: # one only learning phase (no coordinates system) to learn directly the flag target 
     

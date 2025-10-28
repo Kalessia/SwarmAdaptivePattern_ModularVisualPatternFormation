@@ -49,7 +49,7 @@ def plot_boxplots_allRunsFitnesses_per_exp_NOcoordinates(experiences_dir_to_plot
 
     df_gne.to_csv(f"../data_plots/learning_boxplots_sliding_puzzle_NOcoordinates.csv") # write data
     plt.savefig(f"../data_plots/learning_boxplots_sliding_puzzle_NOcoordinates.png")
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
 
     plt.clf()
     plt.close()
@@ -99,7 +99,7 @@ def plot_boxplots_allRunsFitnesses_per_exp_coordinatesONLY(experiences_dir_to_pl
 
     df_gne.to_csv(f"../data_plots/learning_boxplots_sliding_puzzle_coordinatesONLY_{exp_setup_and_dims[-1]}.csv") # write data
     plt.savefig(f"../data_plots/learning_boxplots_sliding_puzzle_coordinatesONLY_{exp_setup_and_dims[-1]}.png")
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     ax.tick_params(axis='x', labelsize=4)
 
     plt.clf()

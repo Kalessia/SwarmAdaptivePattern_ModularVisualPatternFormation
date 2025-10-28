@@ -1,4 +1,6 @@
 import os
+import time
+from datetime import datetime
 import shutil
 
 import argparse
@@ -17,7 +19,7 @@ def init_all_runs_analysis(learning_analysis_dir_root, params):
 
     # Create the 'analysis_dir' folder
     params['analysis_dir'] = {}
-    params['analysis_dir']['root'] = learning_analysis_dir_root.replace("/learning", "/learning_coordinates")
+    params['analysis_dir']['root'] = learning_analysis_dir_root.replace("/learning", "/learning_coordinates")+"_"+params['grid']['flag_pattern']+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if os.path.exists(params['analysis_dir']['root']):
         shutil.rmtree(params['analysis_dir']['root'])
     
@@ -41,14 +43,14 @@ if (__name__ == "__main__"):
 
     # Get parameters from the bash launcher
     parser = argparse.ArgumentParser()
-    parser.add_argument("--learning_analysis_dir", default="", type=str)
+    parser.add_argument("--coordinates_learning_analysis_dir", default="", type=str)
     parser.add_argument("--with_parallelization_bool", default=False, type=lambda x:x=="True")
     parser.add_argument("--with_parallelization_nb_free_cores", default=0, type=int)
     parser.add_argument("--plot_with_animation_bool", default=False, type=lambda x:x=="True")
     args = parser.parse_args()
 
-    # Get parameters from the learning simulation
-    with open(args.learning_analysis_dir+"/learning_coordinates/coordinates_learning_params.json", "r") as f:
+    # Get parameters from the coordinates learning simulation
+    with open(args.coordinates_learning_analysis_dir+"/coordinates_learning_params.json", "r") as f:
         params = json.load(f)
     
     # Save best ever individual data for this single run
@@ -74,5 +76,6 @@ if (__name__ == "__main__"):
         for run in range(params['evolutionary_settings']['nb_runs']):
             plot_single_run_data(run, params)
 
-    write_all_runs_data(args.learning_analysis_dir+"/learning_coordinates")
+    write_all_runs_data(args.coordinates_learning_analysis_dir)
+    # write_all_runs_data(args.coordinates_learning_analysis_dir+"/learning_coordinates") qual'é giusto?
     plot_all_runs_data(params)

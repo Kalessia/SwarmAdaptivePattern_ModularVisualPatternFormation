@@ -142,7 +142,7 @@ def plot_sliding_puzzle_incremental_learning_density_fluidity(experiences_dir_to
     # plt.xlabel("Evaluations", fontsize=12)
     # plt.ylabel("Flags distance", fontsize=12)
 
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     ax.set_xticks(range(0, len(evaluations))) # important: boxplot boxes locations are incremental number from 0 to N=len(evaluations)
     # pace = int(len(evaluations) / 7) # number of labels to display, for lisibility
     # evaluations_labels = [str(evaluations[i]) if i%pace == 0 else "" for i in range(0, len(evaluations))]

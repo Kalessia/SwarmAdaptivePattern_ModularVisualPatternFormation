@@ -246,7 +246,7 @@ def get_best_ind_per_run_dict(dataset_path):
         ind = dataset.loc[(dataset.Run==run) & (dataset.Learning_phase==learning_phase), 'Individual'].values.tolist()[0]
         ind = str(ind).replace('[', '').replace(']', '').strip()
         ind = list(np.asarray(ind.split(','), dtype=np.float64))
-        best_ind_per_run_dict[run] = ind
+        best_ind_per_run_dict[int(run)] = ind
 
     return best_ind_per_run_dict
 

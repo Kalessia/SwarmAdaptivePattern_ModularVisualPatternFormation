@@ -479,7 +479,6 @@ class swarmGrid:
         elif flag_pattern == "bn-SU":
 
             scales = {
-                "bn-SU-4x4": 0.5,
                 "bn-SU-8x8": 1,
                 "bn-SU-16x16": 2,
                 "bn-SU-24x24": 3,
@@ -509,14 +508,13 @@ class swarmGrid:
                 flag_target[cell] = 0.0 if cell in black_cells else 1.0
 
 
-        elif flag_pattern == "bn-smile1":
+        elif flag_pattern == "bn-smile2":
 
             scales = {
-                "bn-smile1-4x4": 0.5,
-                "bn-smile1-8x8": 1,
-                "bn-smile1-16x16": 2,
-                "bn-smile1-24x24": 3,
-                "bn-smile1-32x32": 4
+                "bn-smile2-8x8": 1,
+                "bn-smile2-16x16": 2,
+                "bn-smile2-24x24": 3,
+                "bn-smile2-32x32": 4
             }
 
             flag_pattern = flag_pattern + f"-{self.grid_nb_rows}x{self.grid_nb_cols}"
@@ -539,14 +537,13 @@ class swarmGrid:
                 flag_target[cell] = 0.0 if cell in black_cells else 1.0
 
 
-        elif flag_pattern == "bn-smile2":
+        elif flag_pattern == "bn-smile":
 
             scales = {
-                "bn-smile2-4x4": 0.5,
-                "bn-smile2-8x8": 1,
-                "bn-smile2-16x16": 2,
-                "bn-smile2-24x24": 3,
-                "bn-smile2-32x32": 4
+                "bn-smile-8x8": 1,
+                "bn-smile-16x16": 2,
+                "bn-smile-24x24": 3,
+                "bn-smile-32x32": 4
             }
 
             flag_pattern = flag_pattern + f"-{self.grid_nb_rows}x{self.grid_nb_cols}"
@@ -1686,7 +1683,7 @@ class swarmGrid:
             else:
                 raise ValueError("Error in evironments.py, plot_flag. Unrecognized flag structure: expected float, 1D/2D list, or RGB triplet.")
 
-            fig, ax = plt.subplots(figsize=(12, 7), dpi=300)
+            fig, ax = plt.subplots(figsize=(7, 7), dpi=300)
 
             grid_pos = []
             for row in range(grid_nb_rows):
@@ -1775,11 +1772,11 @@ class swarmGrid:
             plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
             ax.set_xticklabels([])
             ax.set_yticklabels([])
-            plt.xlabel(f"nb moves during this step = {nb_moves_per_step}", fontsize=12)
+            # plt.xlabel(f"nb moves during this step = {nb_moves_per_step}", fontsize=12)
 
 
             if setup_name:
-                plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=10)
+                # plt.title(f"Flag states - {setup_name}\nRun {run}, best individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=10)
                 dir_name = f"{analysis_dir_plots}/{setup_name}/flag/component{n_flag}"
                 if not os.path.exists(dir_name):
                     os.makedirs(dir_name, exist_ok=True)
@@ -1787,13 +1784,13 @@ class swarmGrid:
             else:
                 if nb_ind is not None:
                     file_name = f"run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}"
-                    plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, nb_eval {nb_eval}, individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)       
+                    # plt.title(f"Flag states - learning.\nRun {run}, gen {gen}, nb_eval {nb_eval}, individual {nb_ind}, step {step}.\nFlags distance = {fitness}", fontsize=12)       
                     dir_name = f"{analysis_dir_plots}/{file_name}/flag/component{n_flag}/env{env_id}"
                     if not os.path.exists(dir_name):
                         os.makedirs(dir_name, exist_ok=True)
                     plt.savefig(f"{dir_name}/plot_env_flag_{file_name}_step_{step:03}.png")
                 else:
-                    plt.suptitle(f"Flag target {grid_nb_rows}x{grid_nb_cols}", fontsize=12)
+                    # plt.suptitle(f"Flag target {grid_nb_rows}x{grid_nb_cols}", fontsize=12)
                     plt.savefig(f"{analysis_dir_plots}/plot_env{env_id}_flag_target_component{n_flag}.png")
 
             plt.clf()
@@ -1861,31 +1858,31 @@ class swarmGrid:
         x = dataset['Step'].tolist()
         y = dataset['Flags_distance'].tolist()
 
-        _, ax = plt.subplots(figsize=(12, 7), dpi=300)
+        _, ax = plt.subplots(figsize=(9, 7), dpi=300)
 
         plt.plot(x, y)
 
-        if setup_name is not None:
+        if setup_name is not None and switch_step is not None:
             plt.axvline(x=switch_step, color='r', linestyle='--')
         else:
             rectangle = patches.Rectangle((time_window_start, 0), time_window_length, 1, linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
             ax.add_patch(rectangle)
 
-        plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.yticks([0, 0.5, 1.0], fontsize=18)
         plt.xticks([0, 25, 49], fontsize=18)
         plt.xlabel("Steps", fontsize=18)
         plt.ylabel("Distance", fontsize=18)
 
         if setup_name:
-            plt.title(f"Flags distance related to the flag development over steps\n{setup_name}, {n} repetitions", fontsize=14)
+            plt.title(f"Patterns distance related to the pattern development over steps\n{setup_name}, {n} repetitions", fontsize=14)
             dir_name = analysis_dir_plots+"/"+setup_name
             if not (os.path.exists(dir_name)):
                 os.makedirs(dir_name, exist_ok=True)
             plt.savefig(f"{dir_name}/{setup_name}_flag_fitnesses_run_{run:03}_n_{n:03}.png")
         else:
             # plt.title(f"Flags distance related to the flag development over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=10)
-            plt.title(f"Dynamic of the best candidate solution\nFlag development over time", fontsize=18)
+            plt.title(f"Dynamic of the best candidate solution\nPattern development over time", fontsize=18)
             # plt.suptitle(f"Flag development over time", fontsize=18)
             plt.tight_layout()
             plt.savefig(f"{analysis_dir_plots}/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_fitnesses_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}.png")
@@ -1909,7 +1906,7 @@ class swarmGrid:
             if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
                 plt.axvline(x=switch_step, color='r', linestyle='--')
 
-        plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Flags distance", fontsize=12)
         plt.title(f"Flags distance related to the flag development over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
@@ -1934,7 +1931,7 @@ class swarmGrid:
     #     y = dataset['Nb_moves'].tolist()
     #     plt.plot(x, y)
 
-    #     plt.ylim(-0.1, grid_size) # 0 and 1 are respectively min and max values of flag distance
+    #     plt.ylim(0, grid_size) # 0 and 1 are respectively min and max values of flag distance
     #     plt.xlabel("Steps", fontsize=12)
     #     plt.ylabel("Nb moves", fontsize=12)
     #     plt.title(f"Number of agents' moves related to the flag development over steps. Run {run}\n{setup_name}", fontsize=12)
@@ -1964,7 +1961,7 @@ class swarmGrid:
             if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
                 plt.axvline(x=switch_step, color='r', linestyle='--')
 
-            plt.ylim(-0.1, grid_size) # 0 and 1 are respectively min and max values of flag distance
+            plt.ylim(0, grid_size) # 0 and 1 are respectively min and max values of flag distance
             plt.xlabel("Steps", fontsize=12)
             plt.ylabel("Nb moves", fontsize=12)
             plt.title(f"Number of agents' moves related to the flag development over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
@@ -1994,7 +1991,7 @@ class swarmGrid:
         if switch_step and not(setup_name.startswith("setup_sliding_puzzle_phase1_VS_phase2")):
             plt.axvline(x=switch_step, color='r', linestyle='--')
 
-        plt.ylim(-0.1, grid_size) # 0 and 1 are respectively min and max values of flag distance
+        plt.ylim(0, grid_size) # 0 and 1 are respectively min and max values of flag distance
         plt.xlabel("Steps", fontsize=12)
         plt.ylabel("Nb moves", fontsize=12)
         plt.title(f"Number of agents' moves related to the flag development over steps. Run {run}\n{setup_name}, {len(data_flag_files)} repetitions", fontsize=12)
@@ -2024,7 +2021,7 @@ class swarmGrid:
                     n = int(data_flag_file.split("n_")[1].split(".csv")[0])
                     plt.plot(x, y, color=plot_colors[phase], label=f"best_ind_phase_{phase+1}" if n == 0 else "")
 
-            plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
+            plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
             plt.xlabel("Steps", fontsize=12)
             plt.ylabel("Flags distance", fontsize=12)
             plt.title(f"Flags distance related to the flag development over steps. Run {run}\n{setups_names[setup]}, {len(data_flag_files)} repetitions", fontsize=12)
@@ -2057,7 +2054,7 @@ class swarmGrid:
     #                 plt.plot(x, y, color=plot_colors[phase], label=labels[phase] if n == 0 else "")
     #                 print(labels[phase], data_flag_dir)
 
-    #         plt.ylim(-0.1, 1) # 0 and 1 are respectively min and max values of flag distance
+    #         plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
     #         plt.xlabel("Steps", fontsize=12)
     #         plt.ylabel("Flags distance", fontsize=12)
     #         plt.title(f"Flags distance related to the flag development over steps. Run {run}\n{setups_names[setup]}, {len(data_flag_files)} repetitions", fontsize=12)

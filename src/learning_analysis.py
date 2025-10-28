@@ -453,7 +453,7 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, switc
     plt.xlabel("Evaluations", fontsize=12)
     plt.ylabel("Flags distance", fontsize=12)
 
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     ax.set_xticks(range(0, len(evaluations))) # important: boxplot boxes locations are incremental number from 0 to N=len(evaluations)
     pace = max(1, int(len(evaluations) / 7)) # number of labels to display, for lisibility
     evaluations_labels = [str(evaluations[i]) if i%pace == 0 else "" for i in range(0, len(evaluations))]
@@ -468,7 +468,7 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, switc
 def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, switch_eval, save_filename, params):
 
     dataset = pd.read_csv(dataset_path)
-
+    plt.figure(figsize=(12, 7), dpi=300)
     runs = dataset['Run'].unique()
     for run in runs:
         evals = dataset.loc[dataset.Run==run, 'Nb_eval'].tolist()
@@ -484,17 +484,17 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, sw
     if switch_eval is not None:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
 
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
     plt.yticks([0, 0.5, 1.0], fontsize=18)
-    plt.xticks([0, 7000, 14000], fontsize=18)
+    plt.xticks([0, nb_evals/2, nb_evals], fontsize=18)
     plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, {params['evolutionary_settings']['nb_runs']} runs, only best ever", fontsize=18)
     plt.xlabel("Evaluations", fontsize=18)
     plt.ylabel("Distance", fontsize=18)
-    plt.legend(loc="upper right") 
-    plt.tight_layout()
 
-    plt.savefig(save_filename)
+    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=12, ncol=1, frameon=False)
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    plt.savefig(save_filename, bbox_inches='tight')
     plt.clf()
     plt.close()
 
@@ -546,7 +546,7 @@ def plot_best_inds_per_gen(dataset_path, nb_evals, grid_size, switch_eval, with_
     plt.title("Flags distance over generations\nbest individuals distributions over evolution", fontsize=14)
     plt.xlabel("Evaluations", fontsize=12)
     plt.ylabel("Flags distance", fontsize=12)
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     ax.set_xticks(range(0, len(evaluations))) # important: boxplot boxes locations are incremental number from 0 to N=len(evaluations)
     pace = max(1, int(len(evaluations) / 7)) # number of labels to display, for lisibility
     evaluations_labels = [str(evaluations[i]) if i%pace == 0 else "" for i in range(0, len(evaluations))]
@@ -574,7 +574,7 @@ def plot_all_pop_fitnesses_mean(dataset_path, nb_evals, grid_size, switch_eval, 
     if switch_eval is not None:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
 
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
     plt.title("Flags distance over generations\nmean, quantile25 and quantile75 of all individuals fitnesses per generation", fontsize=12)
     plt.xlabel("Evaluations", fontsize=12)
@@ -603,7 +603,7 @@ def plot_all_pop_fitnesses_median(dataset_path, nb_evals, grid_size, switch_eval
     if switch_eval is not None:
         plt.axvline(x=switch_eval, color='r', linestyle='--')
 
-    plt.ylim(-0.1, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
     plt.title("Flags distance over generations\nmedian, quantile25 and quantile75 of all individuals fitnesses per generation", fontsize=12)
     plt.xlabel("Evaluations", fontsize=12)
@@ -662,14 +662,14 @@ if (__name__ == "__main__"):
     params['plot_with_animation_bool'] = args.plot_with_animation_bool
 
     # Launch plots
-    if params['with_parallelization_bool']:
-        task_queue = [] # create a queue of tasks to execute
-        for run in range(params['evolutionary_settings']['nb_runs']):
-            task_queue.append((run, params.copy()))
-        parallelize_processes(task_queue, params['with_parallelization_nb_free_cores'])
-    else:
-        for run in range(params['evolutionary_settings']['nb_runs']):
-            plot_single_run_data(run, params)
+    # if params['with_parallelization_bool']:
+    #     task_queue = [] # create a queue of tasks to execute
+    #     for run in range(params['evolutionary_settings']['nb_runs']):
+    #         task_queue.append((run, params.copy()))
+    #     parallelize_processes(task_queue, params['with_parallelization_nb_free_cores'])
+    # else:
+    #     for run in range(params['evolutionary_settings']['nb_runs']):
+    #         plot_single_run_data(run, params)
 
     write_all_runs_data(args.learning_analysis_dir+"/learning")
     plot_all_runs_data(params)
