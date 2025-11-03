@@ -278,8 +278,7 @@ def get_best_ind_ever(dataset_path=None):
     best_ind_ever_fitness = dataset['Fitness'].min()
     best_ind_ever = dataset.loc[dataset.Fitness==best_ind_ever_fitness, 'Individual'].values.tolist()[0]
     best_ind_ever = str(best_ind_ever).replace('[', '').replace(']', '').strip()
-    best_ind_ever = np.asarray(best_ind_ever.split(','), dtype=np.float32)
-    best_ind_ever = best_ind_ever.tolist()
+    best_ind_ever = [float(x) for x in best_ind_ever.split(',')]
 
     return best_ind_ever, best_ind_ever_fitness
 

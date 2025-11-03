@@ -1858,7 +1858,7 @@ class swarmGrid:
         x = dataset['Step'].tolist()
         y = dataset['Flags_distance'].tolist()
 
-        _, ax = plt.subplots(figsize=(9, 7), dpi=300)
+        _, ax = plt.subplots(figsize=(10, 7), dpi=300)
 
         plt.plot(x, y)
 

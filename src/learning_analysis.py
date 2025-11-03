@@ -9,7 +9,7 @@ from operator import attrgetter
 import bisect
 
 import matplotlib
-matplotlib.use('TkAgg')  # Use TkAgg backend instead of QtAgg
+matplotlib.use('Agg')  # Use TkAgg backend instead of QtAgg. Use only Agg to avoid error 'X connection to :0 broken (explicit kill or server shutdown)'
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio.v2 as iio
@@ -381,14 +381,14 @@ def plot_all_runs_data(params):
     plot_best_inds_per_gen(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, switch_eval=switch_eval, with_best_ever_bool=True, save_filename=save_filename)
 
     # Plot fitnesses mean
-    dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_fitnesses_stats_per_run_per_gen.csv"
-    save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_fitnesses_stats_per_run_per_gen_mean.png"
-    plot_all_pop_fitnesses_mean(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, switch_eval=switch_eval, save_filename=save_filename)
+    # dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_fitnesses_stats_per_run_per_gen.csv"
+    # save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_fitnesses_stats_per_run_per_gen_mean.png"
+    # plot_all_pop_fitnesses_mean(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, switch_eval=switch_eval, save_filename=save_filename)
 
     # Plot fitnesses median
-    dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_fitnesses_stats_per_run_per_gen.csv"
-    save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_fitnesses_stats_per_run_per_gen_median.png"
-    plot_all_pop_fitnesses_median(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, switch_eval=switch_eval, save_filename=save_filename)
+    # dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_fitnesses_stats_per_run_per_gen.csv"
+    # save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_fitnesses_stats_per_run_per_gen_median.png"
+    # plot_all_pop_fitnesses_median(dataset_path=dataset_path, nb_evals=nb_evals, grid_size=grid_size, switch_eval=switch_eval, save_filename=save_filename)
 
     # Plot flag target
     env_dims_list = [[params['grid']['grid_nb_rows'], params['grid']['grid_nb_cols']]]
@@ -438,6 +438,15 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, switc
     plt.figure(figsize=(12, 7), dpi=300)
     sns.set_theme(style='darkgrid')
     _, ax = plt.subplots(figsize=(12, 7), dpi=300)
+
+    twenty_colors = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+        "#00429d", "#96ffea", "#ff66b3", "#00cc44", "#ffcc00",
+        "#a6761d", "#009e73", "#f781bf", "#56b4e9", "#e41a1c",
+    ]
+    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=twenty_colors)
+
     sns.boxplot(x='Max_evaluation_per_gen',
                 y='Fitness',
                 data=filtered_dataset,
@@ -469,6 +478,15 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, sw
 
     dataset = pd.read_csv(dataset_path)
     plt.figure(figsize=(12, 7), dpi=300)
+
+    twenty_colors = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+        "#00429d", "#96ffea", "#ff66b3", "#00cc44", "#ffcc00",
+        "#a6761d", "#009e73", "#f781bf", "#56b4e9", "#e41a1c",
+    ]
+    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=twenty_colors)
+
     runs = dataset['Run'].unique()
     for run in runs:
         evals = dataset.loc[dataset.Run==run, 'Nb_eval'].tolist()
@@ -489,6 +507,7 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, sw
     plt.yticks([0, 0.5, 1.0], fontsize=18)
     plt.xticks([0, nb_evals/2, nb_evals], fontsize=18)
     plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, {params['evolutionary_settings']['nb_runs']} runs, only best ever", fontsize=18)
+    # plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} NxN, {params['evolutionary_settings']['nb_runs']} runs, only best ever", fontsize=18)
     plt.xlabel("Evaluations", fontsize=18)
     plt.ylabel("Distance", fontsize=18)
 
@@ -517,6 +536,15 @@ def plot_best_inds_per_gen(dataset_path, nb_evals, grid_size, switch_eval, with_
     plt.figure(figsize=(12, 7), dpi=300)
     sns.set_theme(style='darkgrid')
     _, ax = plt.subplots(figsize=(12, 7), dpi=300)
+
+    twenty_colors = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+        "#00429d", "#96ffea", "#ff66b3", "#00cc44", "#ffcc00",
+        "#a6761d", "#009e73", "#f781bf", "#56b4e9", "#e41a1c",
+    ]
+    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=twenty_colors)
+
     sns.boxplot(x='Max_evaluation_per_gen',
                 y='Fitness',
                 data=filtered_dataset,
@@ -662,14 +690,14 @@ if (__name__ == "__main__"):
     params['plot_with_animation_bool'] = args.plot_with_animation_bool
 
     # Launch plots
-    # if params['with_parallelization_bool']:
-    #     task_queue = [] # create a queue of tasks to execute
-    #     for run in range(params['evolutionary_settings']['nb_runs']):
-    #         task_queue.append((run, params.copy()))
-    #     parallelize_processes(task_queue, params['with_parallelization_nb_free_cores'])
-    # else:
-    #     for run in range(params['evolutionary_settings']['nb_runs']):
-    #         plot_single_run_data(run, params)
+    if params['with_parallelization_bool']:
+        task_queue = [] # create a queue of tasks to execute
+        for run in range(params['evolutionary_settings']['nb_runs']):
+            task_queue.append((run, params.copy()))
+        parallelize_processes(task_queue, params['with_parallelization_nb_free_cores'])
+    else:
+        for run in range(params['evolutionary_settings']['nb_runs']):
+            plot_single_run_data(run, params)
 
     write_all_runs_data(args.learning_analysis_dir+"/learning")
     plot_all_runs_data(params)

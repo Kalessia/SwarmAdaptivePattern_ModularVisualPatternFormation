@@ -1,14 +1,14 @@
 {
     "swarm_rollout_learning_params info": "",
 
-    "ann1_learning_path": "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16",
-    "ann2_coordinates_learning_path": "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_bn-smile_16x16_modelC_4-[]-3_6-[5,5]-1_2025-10-21_01-34-38",
+    "ann1_learning_path": "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_NxN_280kEvals/sliding_puzzle_multiEnvs_coordinates_2025-10-17_02-23-54_centered-half-discs_NxN",
+    "ann2_coordinates_learning_path": "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_centered-half-discs_16x16_modelA_4-[]-3_2-[5,5]-1",
 
     "swarm_rollout_settings info": "\ndensity and mobility parameters (sliding_puzzle_density, sliding_puzzle_proba_move, ..., see learning_params.json) are copied from learning parameters \nsame_as_learning_gradient: if true, swarm_rollout settings (nb_runs, nb_evals, env_name, flags_distance_mode, nb_intrasteps, see learning_params.json) are copied from learning parameters; if false, the following parameters are used \nnb_runs: number of independent rollout learnings to run \nnb_evals: the max budjet of allowed evaluations for one entire learning process \nsliding_puzzle_nb_intrasteps: activate (value: scalar, nb of intrasteps) or not (value: false) the repeated forward NN computation of each robot controller in the space of two subsequent steps",
     "swarm_rollout_settings": {
-        "nb_runs": 2,
+        "nb_runs": 11,
         "env_name info": "env_name in ['sliding_puzzle', 'sliding_puzzle_multiEnvs']",
-        "env_name": "sliding_puzzle",
+        "env_name": "sliding_puzzle_multiEnvs",
         "sliding_puzzle_multiEnvs": {
             "env_dims_list": [[4, 4], [8, 8], [16, 16], [24, 24]]
         },
@@ -23,9 +23,9 @@
 
     "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']. If env=sliding_puzzle_coordinates or env=sliding_puzzle_multiEnvs_coordinates, the flag_pattern is settled to 'coordinates', i.e. two 2D patterns: linear_gradient_left_right (x component) and linear_gradient_up_down (y component) \ninit_cell_state_value: value is a scalar (defined) or null (random initialization)",
     "grid": {
-        "flag_pattern": "bn-SU",
-        "grid_nb_rows": 16,
-        "grid_nb_cols": 16,
+        "flag_pattern": "centered-half-discs",
+        "grid_nb_rows": 32,
+        "grid_nb_cols": 32,
         "init_cell_state_value": 0.0
     },
 

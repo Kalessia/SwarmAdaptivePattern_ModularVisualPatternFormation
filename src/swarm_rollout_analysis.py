@@ -62,7 +62,7 @@ def write_single_run_analysis(run, time_run, params):
 def plot_single_run_single_ind_data(run, best_ind_run, params):
 
     time_run_ind = time.time()
-    print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Starting")
+    print(f"swarm_rollout_analysis plots run n.{run}, best_ind_{best_ind_run} - Starting")
 
     time_steps = params['environment']['time_steps']
     env_dims_list = [[params['grid']['grid_nb_rows'], params['grid']['grid_nb_cols']]]
@@ -93,9 +93,9 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
             if step in steps:
                 swarmGrid.plot_flag(grid_nb_rows=env_dims[0],
                                     grid_nb_cols=env_dims[1],
-                                    setup_name="sliding_puzzle_test",
+                                    setup_name=None,
                                     run=run,
-                                    nb_ind=best_ind_run,
+                                    nb_ind=0,
                                     gen=0,
                                     nb_eval=0,
                                     n="",
@@ -110,9 +110,9 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
                 # signals
                 swarmGrid.plot_flag(grid_nb_rows=env_dims[0],
                                     grid_nb_cols=env_dims[1],
-                                    setup_name="sliding_puzzle_test",
+                                    setup_name=None,
                                     run=run,
-                                    nb_ind=best_ind_run,
+                                    nb_ind=0,
                                     gen=0,
                                     nb_eval=0,
                                     n="",
@@ -129,11 +129,11 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
             ind = f.read().strip()
 
         swarmGrid.plot_flag_fitnesses_from_file(data_flag_file=params['analysis_dir']['root']+ f"/run_{run:03}/best_ind_{best_ind_run:03}/data/data_env{env_id}_flag/data_env_flag_run_{run:03}_gen_00000_eval_0000000.csv",
-                                                setup_name="sliding_puzzle_test",
+                                                setup_name=None,
                                                 time_window_start=params['environment']['time_window_start'],
                                                 time_window_length= params['environment']['time_window_end'] - params['environment']['time_window_start'] + 1,
                                                 run=run,
-                                                nb_ind=best_ind_run,
+                                                nb_ind=0,
                                                 ind=ind,
                                                 n="",
                                                 gen=0,
@@ -143,7 +143,7 @@ def plot_single_run_single_ind_data(run, best_ind_run, params):
     
 
     time_run = time.time() - time_run_ind
-    print(f"swarm_analysis plots run n.{run}, best_ind_{best_ind_run} - Completed. Execution time: {time_run} seconds")
+    print(f"swarm_rollout_analysis plots run n.{run}, best_ind_{best_ind_run} - Completed. Execution time: {time_run} seconds")
 
 
 ###########################################################################
@@ -203,5 +203,4 @@ if (__name__ == "__main__"):
             for best_ind_run in params['best_ind_per_run_dict']:
                 plot_single_run_single_ind_data(run=int(run), best_ind_run=int(best_ind_run), params=params)
 
-    # write_all_runs_data(args.swarm_rollout_analysis_dir)
     # plot_all_runs_data(params)

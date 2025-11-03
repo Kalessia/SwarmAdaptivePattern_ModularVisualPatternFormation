@@ -24,6 +24,19 @@ sep = "\n################################################\n"
 ###########################################################################
 
 def swarm_rollout_simulation(run, best_ind, best_ind_run, swarm_rollout_params):
+
+    # Run this test only for the best individual found on the BEST RUN on the last controller (swarm_rollout_params['nn_controller']['controller'][-1])
+    # Comment this block to run the test for the best individual of EACH RUN in the learning (or learning_coordinates) phase
+    if "ann2_best_ind_ever" in swarm_rollout_params.keys():
+        learning_best_ind_ever = swarm_rollout_params['ann2_best_ind_ever']
+    else:
+        learning_best_ind_ever = swarm_rollout_params['ann1_best_ind_ever']
+
+    if best_ind != learning_best_ind_ever:
+        return swarm_rollout_params
+
+
+    # Start of the algorithm
     print(f"swarm_rollout simulation run n.{run}, best_ind_{best_ind_run} [{best_ind[0]}, ...] - Starting")
 
     # Initializations
@@ -100,12 +113,12 @@ def get_env(swarm_rollout_params):
         }
     }
 
-    return copy.deepcopy(environments[swarm_rollout_params['swarm_rollout_settings']['env_name']])
+    swarm_rollout_params['env'] = copy.deepcopy(environments[swarm_rollout_params['swarm_rollout_settings']['env_name']])
+    return swarm_rollout_params
 
 #---------------------------------------------------
 
 def deduce_agent_type(params, ann_index=1):
-
     flag_pattern = params['grid']['flag_pattern']
 
     # ann_index = 1 → ANN1 (direct learning or coordinate system)
@@ -164,6 +177,13 @@ def deduce_agent_type(params, ann_index=1):
 
 def worker(task):
     run, best_ind, best_ind_run, swarm_rollout_params = task
+
+    # Unique seed (until run < 1000)
+    seed = 1000 + best_ind_run * 1000 + run
+    np.random.seed(seed)
+    random.seed(seed)
+
+    time.sleep(3*random.random()) # sleep between 0.0 and 3.0 seconds, avoid identical initial conditions
     return swarm_rollout_simulation(run=run, best_ind=best_ind, best_ind_run=best_ind_run, swarm_rollout_params=swarm_rollout_params)
 
 #---------------------------------------------------
@@ -228,14 +248,22 @@ if (__name__ == "__main__"):
                             activation_function=swarm_rollout_params['ann2_nn_controller']['activation_function'])
         
         swarm_rollout_params['best_ind_per_run_dict'] = get_best_ind_per_run_dict(dataset_path=swarm_rollout_params['ann2_coordinates_learning_path']+"/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv")
+        swarm_rollout_params['ann2_best_ind_ever'], swarm_rollout_params['ann2_best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=swarm_rollout_params['ann2_coordinates_learning_path']+"/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
         swarm_rollout_params = init_all_runs_analysis(learning_analysis_dir_root=swarm_rollout_params['ann2_coordinates_learning_path'], params=swarm_rollout_params)
         swarm_rollout_params['nn_controller']['agent_type'] = deduce_agent_type(params=swarm_rollout_params, ann_index=2) # NB: the outputs from ANN1 are managed in environments -> compute_agent_state, no need of agent_type for ANN1 if we link ANN1+ANN2
         swarm_rollout_params['nn_controller']['controller'] = [ann1, ann2]
+
+        file_path = swarm_rollout_params['analysis_dir']['root']+ f"/data_all_runs/ann1_coordSystem_flag_individual.txt"
+        if not os.path.exists(file_path):
+            with open (file_path, 'w') as f:
+                f.write(str(swarm_rollout_params['ann1_best_ind_ever']))
+
 
     else:  # we build a single ANN (pixel ANN) to test a pattern directly without coordinate system 
 
         swarm_rollout_params['ann2_nn_controller'] = {"nn_controller_stacking_mode": None}
         swarm_rollout_params['best_ind_per_run_dict'] = get_best_ind_per_run_dict(dataset_path=swarm_rollout_params['ann1_learning_path']+"/learning/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv")
+        swarm_rollout_params['ann1_best_ind_ever'], swarm_rollout_params['ann1_best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=swarm_rollout_params['ann1_learning_path']+"/learning/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
         swarm_rollout_params = init_all_runs_analysis(learning_analysis_dir_root=swarm_rollout_params['ann1_coordinates_learning_path'], params=swarm_rollout_params)
         swarm_rollout_params['nn_controller']['agent_type'] = deduce_agent_type(params=swarm_rollout_params, ann_index=1)
         swarm_rollout_params['nn_controller']['controller'] = [ann1]
@@ -253,10 +281,12 @@ if (__name__ == "__main__"):
     for i, ann in enumerate(swarm_rollout_params['nn_controller']['controller']):
         ann.plot_neural_network(env_name=f"ann{i+1}", analysis_dir=swarm_rollout_params['analysis_dir']['root']+"/plots_all_runs")
 
+
     # Save a trace of used parameters for this simulation in swarm_rollout_params.json
-    del swarm_rollout_params['env']['eval_function'] # not JSON serializable object
-    del swarm_rollout_params['env']['eval_function_params']['controller'] # not JSON serializable object
-    del swarm_rollout_params['env']['eval_function_params']['agent_type'] # not JSON serializable object
+    if "env" in swarm_rollout_params.keys():
+        del swarm_rollout_params['env']['eval_function'] # not JSON serializable object
+        del swarm_rollout_params['env']['eval_function_params']['controller'] # not JSON serializable object
+        del swarm_rollout_params['env']['eval_function_params']['agent_type'] # not JSON serializable object
     del swarm_rollout_params['nn_controller']['controller'] # not JSON serializable object
     del swarm_rollout_params['nn_controller']['agent_type'] # not JSON serializable object
     with open(swarm_rollout_params['analysis_dir']['root']+"/swarm_rollout_params.json", "w") as f:
