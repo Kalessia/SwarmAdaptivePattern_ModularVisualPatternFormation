@@ -59,30 +59,31 @@ flagMultiEnv_array = np.array(flagMultiEnv_list).reshape(nb_rows, nb_cols, first
 
 # Plot x values of a specific row in the grid
 for index in row_indexes_to_inspect:
-    plt.figure(figsize=(12, 7), dpi=300)
+    plt.figure(figsize=(12, 8), dpi=300)
 
     # Target
     target_x_values = target_array[index, :, 0] # 'index' selects a specific row, ':' selects all columns in that row, '0' selects the first value (x) in each [x, y] pair
-    plt.plot(target_x_values, label='Target', color=colors['target'], linestyle=line_styles['target'], linewidth=1)
+    plt.plot(target_x_values, label='Target', color=colors['target'], linestyle=line_styles['target'], linewidth=2)
 
     # Flag singleEnv
     flagSingleEnv_x_values = flagSingleEnv_array[index, :, 0]
-    plt.plot(flagSingleEnv_x_values, label='Best flag singleEnv step 49', color=colors['flagSingleEnv'], linestyle=line_styles['flagSingleEnv'], linewidth=1)
+    plt.plot(flagSingleEnv_x_values, label='Best flag singleEnv step 49', color=colors['flagSingleEnv'], linestyle=line_styles['flagSingleEnv'], linewidth=2)
 
     # Flag multiEnv
     flagMultiEnv_x_values = flagMultiEnv_array[index, :, 0]
-    plt.plot(flagMultiEnv_x_values, label='Best flag multiEnv step 49', color=colors['flagMultiEnv'], linestyle=line_styles['flagMultiEnv'], linewidth=1)
+    plt.plot(flagMultiEnv_x_values, label='Best flag multiEnvs step 49', color=colors['flagMultiEnv'], linestyle=line_styles['flagMultiEnv'], linewidth=2)
 
 
-    plt.suptitle(f"Profile XY - Row {index}, component X", fontsize=18)
-    plt.title("Pattern: coordinates 16x16; 20 runs; 280,000 evaluations", fontsize=18)
-    plt.xlabel("Grid column index", fontsize=18, labelpad=20)
-    plt.ylabel("X value", fontsize=18, labelpad=20)
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
+    # plt.suptitle(f"Profile XY - Row {index}, component X", fontsize=18)
+    # plt.title("Pattern: coordinates 16x16; 20 runs; 280,000 evaluations", fontsize=18)
+    plt.title(f"Row {index}, component X", fontsize=40, pad=20)
+    plt.xlabel("Grid column index", fontsize=40, labelpad=15)
+    plt.ylabel("X value", fontsize=40, labelpad=15)
+    plt.xticks(fontsize=30)
+    plt.yticks(fontsize=30)
     plt.xlim(0, 15)
     plt.ylim(-0.01, 1.01) # 0 and 1 are respectively min and max values of flag distance (fitness)
-    plt.legend(frameon=True, fontsize=16)
+    plt.legend(frameon=True, fontsize=27)
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     
@@ -93,29 +94,30 @@ for index in row_indexes_to_inspect:
 
 # Plot y values of a specific column in the grid
 for index in cols_indexes_to_inspect:
-    plt.figure(figsize=(12, 7), dpi=300)
+    plt.figure(figsize=(12, 8), dpi=300)
 
     # Target
     target_y_values = target_array[:, index, 1]  # ':' selects all rows, 'index' selects a specific grid column, '1' selects the second value (y) in each [x, y] pair
-    plt.plot(target_y_values, label='Target', color=colors['target'], linestyle=line_styles['target'], linewidth=1)
+    plt.plot(target_y_values, label='Target', color=colors['target'], linestyle=line_styles['target'], linewidth=2)
 
     # Flag singleEnv
     flagSingleEnv_y_values = flagSingleEnv_array[:, index, 1]
-    plt.plot(flagSingleEnv_y_values, label='Best flag singleEnv step 49', color=colors['flagSingleEnv'], linestyle=line_styles['flagSingleEnv'], linewidth=1)
+    plt.plot(flagSingleEnv_y_values, label='Best flag singleEnv step 49', color=colors['flagSingleEnv'], linestyle=line_styles['flagSingleEnv'], linewidth=2)
 
     # Flag multiEnv
     flagMultiEnv_y_values = flagMultiEnv_array[:, index, 1]
-    plt.plot(flagMultiEnv_y_values, label='Best flag multiEnv step 49', color=colors['flagMultiEnv'], linestyle=line_styles['flagMultiEnv'], linewidth=1)
+    plt.plot(flagMultiEnv_y_values, label='Best flag multiEnvs step 49', color=colors['flagMultiEnv'], linestyle=line_styles['flagMultiEnv'], linewidth=2)
 
-    plt.suptitle(f"Profile XY - Column {index}, component Y", fontsize=18)
-    plt.title("Pattern: coordinates 16x16; 20 runs; 280,000 evaluations", fontsize=18)
-    plt.xlabel("Grid row index", fontsize=18, labelpad=20)
-    plt.ylabel("Y value", fontsize=18, labelpad=20)
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
+    # plt.suptitle(f"Profile XY - Column {index}, component Y", fontsize=18)
+    # plt.title("Pattern: coordinates 16x16; 20 runs; 280,000 evaluations", fontsize=18)
+    plt.title(f"Column {index}, component Y", fontsize=40, pad=20)
+    plt.xlabel("Grid row index", fontsize=40, labelpad=15)
+    plt.ylabel("Y value", fontsize=40, labelpad=15)
+    plt.xticks(fontsize=30)
+    plt.yticks(fontsize=30)
     plt.xlim(0, 15)
     plt.ylim(-0.01, 1.01)
-    plt.legend(frameon=True, fontsize=16)
+    plt.legend(frameon=True, fontsize=27)
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
 
