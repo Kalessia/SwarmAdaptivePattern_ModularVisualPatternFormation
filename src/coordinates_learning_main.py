@@ -64,4 +64,4 @@ if (__name__ == "__main__"):
         json.dump({k:v for k,v in coordinates_params.items()}, f, indent=2)
 
     # Plots: this line allows the learning_launch.sh script to plot figures
-    print(coordinates_params['analysis_dir']['root'].replace("/learning_coordinates", ""))
+    print(coordinates_params['analysis_dir']['root'])

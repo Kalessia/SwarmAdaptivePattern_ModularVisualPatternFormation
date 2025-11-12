@@ -49,16 +49,8 @@ def init_swarmGrid_env(grid_nb_rows, grid_nb_cols, learning_modes, flags_distanc
                         nn_controller_stacking_mode=nn_controller_stacking_mode,
                         nb_intrasteps=nb_intrasteps)
     
-    # Some genomes could have 2 components, one dedicated to the controller NN and one for other purpose. Ex: in Devert 2011, 4 weights are required for the expression function
-    agent_additional_weights = None
-    nn_controller_weights_size = nn_controller[-1].weights_biases_size
-    ind_size = len(agent_controller_weights)
-    if (ind_size > nn_controller_weights_size):
-        agent_controller_weights = agent_controller_weights[:nn_controller_weights_size]
-        agent_additional_weights = agent_controller_weights[nn_controller_weights_size:]
-    
     # grid and agent re-initialization are required for each new individual (new agent_controller_weights) before evaluation
-    env.set_agent_controller_weights(agent_controller_weights=agent_controller_weights, agent_additional_weights=agent_additional_weights)
+    env.set_agent_controller_weights(agent_controller_weights=agent_controller_weights)
     env.init_agents_state() # to execute at last in this function
     return env
 
@@ -148,7 +140,7 @@ def sliding_puzzle(env_eval_function_params, analysis_dir, run, gen, nb_eval, nb
     mean_tw_flags_distances = sum_flags_distances/(time_window_end - time_window_start)
     if mean_tw_flags_distances < best_fit:
         env.write_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=flags, flags_signals=flags_signals, weights=weights, deleted_agents_per_step=deleted_agents_per_step, nb_moves_per_step=nb_moves_per_step, analysis_dir=analysis_dir)
-        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
+        env.write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, nn_controller_stacking_mode=env_eval_function_params['nn_controller_stacking_mode'], analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     # Restore original grid
     env.restore_deleted_agents(deleted_map_pos_agent=deleted_map_pos_agent) # i have a new grid each time?
@@ -298,7 +290,6 @@ class swarmGrid:
         self.agent_controller = nn_controller # list of one or more nn_controllers
         self.agent_controller_stacking_mode = nn_controller_stacking_mode
         self.agent_controller_weights = None
-        self.agent_additional_weights = None
         self.agent_type = agent_type
         self.size_phenotype = None
         self.size_chemicals_to_spread = None
@@ -321,15 +312,9 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def set_agent_controller_weights(self, agent_controller_weights, agent_additional_weights=None):
+    def set_agent_controller_weights(self, agent_controller_weights):
         self.agent_controller_weights = agent_controller_weights
         self.agent_controller[-1].set_weights_biases_vectors_from_list(agent_controller_weights)
-
-        if self.agent_type == agent3Outputs_Devert2011:
-            self.agent_additional_weights = agent_additional_weights
-            agents = self.get_agents()
-            for agent in agents:
-                agent.agent_additional_weights=agent_additional_weights # check si ça pose probleme en cas de deletion et reinsertion (agents sans additional_weights) ?
 
     #---------------------------------------------------
 
@@ -476,6 +461,11 @@ class swarmGrid:
                 flag_target[cell] = [round((1.0 / (self.grid_nb_cols-1)) * cell[1], 2), # linear_gradient_left_right = x component
                                     round((1.0 / (self.grid_nb_rows-1)) * cell[0], 2)] # linear_gradient_up_down = y component
 
+                # flag_target[cell] = [round((1.0 / (self.grid_nb_cols-1)) * cell[1], 2), # linear_gradient_left_right = x component
+                #                     0.7] # linear_gradient_up_down = y component
+                
+                # flag_target[cell] = [0.7, # linear_gradient_left_right = x component
+                #                     round((1.0 / (self.grid_nb_rows-1)) * cell[0], 2)] # linear_gradient_up_down = y component
 
         elif flag_pattern == "bn-SU":
 
@@ -823,14 +813,14 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def get_swarmGrid_energy(self):
-        if self.agent_type == agent3Outputs_Devert2011:
-            organism_energy = 0
-            agents = self.get_agents()
-            for agent in agents:
-                organism_energy += agent.get_agent_energy()
-            return organism_energy
-        raise ValueError("Error: <get_swarmGrid_energy>: energy not available for this agent. Set a agent3Outputs_Devert2011 agent.")
+    # def get_swarmGrid_energy(self):
+    #     if self.agent_type == agent3Outputs_Devert2011:
+    #         organism_energy = 0
+    #         agents = self.get_agents()
+    #         for agent in agents:
+    #             organism_energy += agent.get_agent_energy()
+    #         return organism_energy
+    #     raise ValueError("Error: <get_swarmGrid_energy>: energy not available for this agent. Set a agent3Outputs_Devert2011 agent.")
 
     #---------------------------------------------------
 
@@ -849,9 +839,7 @@ class swarmGrid:
             else:
                 neighbors_states += [self.default_missing_neighbor_state] * agent.size_chemicals_to_spread
 
-        if (self.agent_type == agent3Outputs_Devert2011):
-            neighbors_states += agent.get_internal_chemicals()
-        
+       
 
         # Compute controller outputs (state)
         if len(self.agent_controller) == 1: # one only ANN is used
@@ -1610,14 +1598,13 @@ class swarmGrid:
 
     #---------------------------------------------------
 
-    def write_controller_data_for_pogobots(self, run, gen, nb_eval, nb_ind, analysis_file):
+    def write_controller_data_for_pogobots(self, run, gen, nb_eval, nb_ind, nn_controller_stacking_mode, analysis_file):
         
         with open (analysis_file, 'w') as f:
             s = f"// flagAutomata individual controller run {run:03}, gen {gen:05}, eval {nb_eval:07}, nb_ind {nb_ind:03}\n"
             s += self.agent_controller[-1].get_weights_biases_for_pogobots()
-            if self.agent_additional_weights:
-                s += f"const double additional_weights[] = {(str(self.agent_additional_weights).replace('[','{')).replace(']','}')};\n"
             s += f"#define {self.agent_type.__name__}"
+            s += f"#define {nn_controller_stacking_mode}" # used in the coordinate system setups to link ann1 and ann2
             f.write(s)
 
     #---------------------------------------------------

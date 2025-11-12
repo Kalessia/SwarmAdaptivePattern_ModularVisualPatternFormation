@@ -10,7 +10,7 @@ import random
 import csv
 
 from environments import sliding_puzzle, sliding_puzzle_multiEnvs
-from agents import agent2Outputs, agent3Outputs, agent3Outputs_Devert2011, agentCoordinates_gradient, agent2Outputs_RGB, agent3Outputs_RGB 
+from agents import agent2Outputs, agent3Outputs, agentCoordinates_gradient, agent2Outputs_RGB, agent3Outputs_RGB 
 from nn import NeuralNetwork
 
 
@@ -162,8 +162,6 @@ def set_env(params):
     params['nn_controller']['activation_function'] = nn_controller.activation_function
 
     params['evolutionary_settings']['ind_size'] = nn_controller.weights_biases_size
-    if agent_type == agent3Outputs_Devert2011: # Devert 2011
-        params['evolutionary_settings']['ind_size'] = params['evolutionary_settings']['ind_size'] + 4 # Devert 2011 +4 weights for the Expression function
 
     environments = {
         'sliding_puzzle': {
