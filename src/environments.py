@@ -1724,6 +1724,8 @@ class swarmGrid:
 
                     if color_mode != 'rgb' and grey_value > 0.9: # close to white
                         circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=edgecolor_color, facecolor=facecolor_color, linestyle='--', linewidth=1.0, zorder=2)
+                    elif color_mode == 'rgb' and edgecolor_color[0] > 0.9 and edgecolor_color[1] > 0.9 and edgecolor_color[2] > 0.9 and grid_nb_rows < 10 and grid_nb_cols < 10: # close to white
+                        circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor='black', facecolor=facecolor_color, linestyle='--', linewidth=1.0, zorder=2)
                     else:
                         circle = patches.Circle((pos[1], -pos[0]), circle_radius, edgecolor=edgecolor_color, facecolor=facecolor_color, linewidth=6.0, zorder=2)
 
@@ -1737,7 +1739,7 @@ class swarmGrid:
 
                     # if grid_nb_rows < 6 and grid_nb_cols < 6:
                     #     ax.text(pos[1], -pos[0], "(" + str(pos[0]) +"," + str(pos[1]) + ")\n"+ str(round(grey_value,2)), color='black', va='center', ha='center')
-                    
+
                     # Hide axis lines and ticks, but still show labels
                     ax.spines['top'].set_visible(False)
                     ax.spines['right'].set_visible(False)
@@ -1860,9 +1862,19 @@ class swarmGrid:
         x = dataset['Step'].tolist()
         y = dataset['Flags_distance'].tolist()
 
-        _, ax = plt.subplots(figsize=(10, 7), dpi=300)
         plt.style.use('dark_background')
         sns.set_style("darkgrid", {"grid.color": "white"})
+
+        twenty_colors = [
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+            "#00429d", "#96ffea", "#ff66b3", "#00cc44", "#ffcc00",
+            "#a6761d", "#009e73", "#f781bf", "#56b4e9", "#e41a1c",
+        ]
+        plt.rcParams['axes.prop_cycle'] = plt.cycler(color=twenty_colors)
+
+        fig, ax = plt.subplots(figsize=(14, 11), dpi=300)
+        fig.subplots_adjust(left=0.25, bottom=0.25, right=0.95, top=0.87)
 
         plt.plot(x, y, c='#1f77b4')
 
@@ -1872,11 +1884,11 @@ class swarmGrid:
             rectangle = patches.Rectangle((time_window_start, 0), time_window_length, 1, linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
             ax.add_patch(rectangle)
 
-        plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
-        plt.yticks([0, 0.5, 1.0], fontsize=18)
-        plt.xticks([0, 25, 49], fontsize=18)
-        plt.xlabel("Steps", fontsize=18)
-        plt.ylabel("Distance", fontsize=18)
+        plt.ylim(-0.05, 1.05) # 0 and 1 are respectively min and max values of flag distance
+        plt.yticks([0, 0.5, 1.0], fontsize=50)
+        plt.xticks([0, 25, 49], fontsize=50)
+        plt.xlabel("Steps", fontsize=65, labelpad=-5)
+        plt.ylabel("Distance", fontsize=65, labelpad=5)
 
         if setup_name:
             plt.title(f"Patterns distance related to the pattern development over steps\n{setup_name}, {n} repetitions", fontsize=14)
@@ -1886,9 +1898,8 @@ class swarmGrid:
             plt.savefig(f"{dir_name}/{setup_name}_flag_fitnesses_run_{run:03}_n_{n:03}.png")
         else:
             # plt.title(f"Flags distance related to the flag development over steps. Gen {gen}, individual {nb_ind}\nTime window zone from step {time_window_start} to step {time_window_start+time_window_length-1} (included).", fontsize=10)
-            plt.title(f"Dynamic of the best candidate solution\nPattern development over time", fontsize=18)
-            # plt.suptitle(f"Flag development over time", fontsize=18)
-            plt.tight_layout()
+            # plt.title(f"Development of the best controller over time", fontsize=55, pad=20)
+            plt.title(f"Best controller development", fontsize=50, pad=20)
             plt.savefig(f"{analysis_dir_plots}/run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}/flag_fitnesses_run_{run:03}_gen_{gen:05}_eval_{nb_eval:07}_individual_{nb_ind:03}.png")
 
         plt.clf()
