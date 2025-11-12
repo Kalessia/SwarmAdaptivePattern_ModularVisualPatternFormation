@@ -55,7 +55,7 @@ class swarmAgent:
 ###########################################################################
 
 class agent1Output(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+    def __init__(self, pos, init_cell_state_value):
         self.size_state = 1
         self.size_chemicals_to_spread = 1
         self.size_phenotype = 1
@@ -91,7 +91,7 @@ class agent1Output(swarmAgent):
 ###########################################################################
 
 class agent2Outputs(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+    def __init__(self, pos, init_cell_state_value):
         self.size_state = 2
         self.size_chemicals_to_spread = 1
         self.size_phenotype = 1
@@ -128,7 +128,7 @@ class agent2Outputs(swarmAgent):
 ###########################################################################
 
 class agent3Outputs(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+    def __init__(self, pos, init_cell_state_value):
         self.size_state = 3
         self.size_chemicals_to_spread = 2
         self.size_phenotype = 1
@@ -164,63 +164,8 @@ class agent3Outputs(swarmAgent):
 
 ###########################################################################
 
-class agent3Outputs_Devert2011(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
-        self.size_state = 3
-        self.size_chemicals_to_spread = 2
-        self.size_phenotype = 1
-        self.agent_additional_weights = agent_additional_weights
-        super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
-        self.init_state()
-
-    #---------------------------------------------------
-
-    def init_state(self, random_init_bool=False):
-        if self.init_cell_state_value is None or random_init_bool:
-            self.state = np.random.uniform(-1, 1, self.size_state).tolist() # Python list. Devert, 2011. State in [-1,1] because phenotype is not included in the state
-        else:
-            self.state = [self.init_cell_state_value] * self.size_state  # Python list
-
-    #---------------------------------------------------
-
-    def set_state(self, vector, with_noise_bool, noise_std):
-        super().set_state(vector, with_noise_bool, noise_std)
-    
-    #---------------------------------------------------
-
-    def get_external_chemicals_to_spread(self): # Devert, 2011. A state is 2 external chemicals + 1 internal chemicals
-        state = super().get_state()
-        return state[:self.size_chemicals_to_spread]
-
-    #---------------------------------------------------
-
-    def get_internal_chemicals(self): # Devert, 2011. A state is 2 external chemicals + 1 internal chemicals
-        state = super().get_state()
-        return state[self.size_chemicals_to_spread:] # list of floats
-    
-    #---------------------------------------------------
-
-    def get_phenotype(self): # Devert, 2011. Expression function
-        state = super().get_state()
-        
-        val = 0
-        for i in range(len(state)):
-            val += self.agent_additional_weights[i] * state[i]
-        val += self.agent_additional_weights[-1] # bias neuron
-
-        return (0.5 * (1 + np.tanh(val))) # float
-    
-    #---------------------------------------------------
-
-    def get_agent_energy(self): # Devert, 2011. Expression function: energy is the square root of the sum of the squared values of chemicals u and v
-        state = super().get_state()
-        return (state[0]**2 + state[1]**2 + state[2]**2)**0.5
-
-
-###########################################################################
-
 class agentCoordinates_gradient(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+    def __init__(self, pos, init_cell_state_value):
         self.size_state = 3
         self.size_chemicals_to_spread = 1
         self.size_phenotype = 2
@@ -257,7 +202,7 @@ class agentCoordinates_gradient(swarmAgent):
 ###########################################################################
 
 class agent2Outputs_RGB(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+    def __init__(self, pos, init_cell_state_value):
         self.size_state = 4
         self.size_chemicals_to_spread = 1
         self.size_phenotype = 3
@@ -294,7 +239,7 @@ class agent2Outputs_RGB(swarmAgent):
 ###########################################################################
 
 class agent3Outputs_RGB(swarmAgent):
-    def __init__(self, pos, init_cell_state_value, agent_additional_weights=None):
+    def __init__(self, pos, init_cell_state_value):
         self.size_state = 5
         self.size_chemicals_to_spread = 2
         self.size_phenotype = 3

@@ -20,7 +20,7 @@ plot_with_animation_bool=False
 # Used in learning_analysis.py and coordinates_learning_main.py only
 # example path: "/home/kalessia/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2025-03-10_15-39-37_two-bands_8x5"
 # example path on cluster: "/scratch/sliding_puzzle_coordinates_2025-10-15_00-35-40_bn-SU_12x12"
-learning_analysis_dir=""
+learning_analysis_dir="/home/loi/Documents/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2025-11-12_03-13-01_rgb-rainbow-full_1x4"
 
 # Specify a precise coordinate_learning path to plot coordinate_learning figures for a specific coordinate_learning simulation or to launch a related swarm_rollout simulation
 # Used in coordinates_learning_analysis.py only
@@ -30,7 +30,7 @@ coordinates_learning_analysis_dir=""
 # Specify a swarm_rollout path to plot swarm_rollout figures
 # Used in swarm_rollout_analysis.py only
 # example path: "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_bn-smile_16x16_modelC_4-[]-3_6-[5,5]-1_2025-10-21_01-34-38_swarm_rollout_2025-10-27_04-33-54"
-swarm_rollout_analysis_dir="/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_centered-half-discs_16x16_modelA_4-[]-3_2-[5,5]-1_swarm_rollout_2025-11-02_23-52-47"
+swarm_rollout_analysis_dir=""
 
 
 ###########################################################################
@@ -47,7 +47,7 @@ swarm_rollout_analysis_dir="/home/loi/flagAutomata/data_plots/ANTS/centered-half
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new learning simulation. NB: this line modifies the "learning_analysis_dir" parameter
-# output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; coordinates_learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; coordinates_learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
@@ -73,9 +73,9 @@ swarm_rollout_analysis_dir="/home/loi/flagAutomata/data_plots/ANTS/centered-half
 ###########################################################################
 
 # # COMMENT the following lines if you DON'T want to plot the learning data (map_xy_flag)
-# python3 -u coordinates_learning_analysis.py --coordinates_learning_analysis_dir ${coordinates_learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-#                                             --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-#                                             --plot_with_animation_bool ${plot_with_animation_bool}
+python3 -u coordinates_learning_analysis.py --coordinates_learning_analysis_dir ${coordinates_learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+                                            --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+                                            --plot_with_animation_bool ${plot_with_animation_bool}
 
 
 ###########################################################################
@@ -83,6 +83,6 @@ swarm_rollout_analysis_dir="/home/loi/flagAutomata/data_plots/ANTS/centered-half
 ###########################################################################
 
 # COMMENT the following lines if you DON'T want to plot the swarm rollout data
-python3 -u swarm_rollout_analysis.py --swarm_rollout_analysis_dir ${swarm_rollout_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-                                     --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-                                     --plot_with_animation_bool ${plot_with_animation_bool}
+# python3 -u swarm_rollout_analysis.py --swarm_rollout_analysis_dir ${swarm_rollout_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+#                                      --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+#                                      --plot_with_animation_bool ${plot_with_animation_bool}
