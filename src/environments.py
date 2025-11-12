@@ -9,6 +9,7 @@ matplotlib.use('TkAgg') # Use TkAgg backend instead of QtAgg
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
+import seaborn as sns
 #from flags_distance_methods import convert_flag_to_image, get_images_distance_MSE, get_images_distance_SSIM, get_images_distance_CLIP
 
 from agents import *
@@ -1642,7 +1643,6 @@ class swarmGrid:
 
     @staticmethod
     def plot_flag(grid_nb_rows, grid_nb_cols, setup_name, run, nb_ind, gen, nb_eval, n, step, flag_list, fitness, env_id, permutated_pos=[], deleted_pos=[], nb_moves_per_step=0, analysis_dir_plots=None):
-
         if isinstance(flag_list[0], (list, tuple)): # this means that we have a flag with N dimensions (called components)
             flag_components = swarmGrid.get_flag_components(flag_list)
 
@@ -1733,6 +1733,8 @@ class swarmGrid:
 
 
             if grid_nb_rows > 10 or grid_nb_cols > 10:
+                plt.style.use('dark_background')
+                sns.set_style("darkgrid", {"grid.color": "white"})
                 if color_mode == 'monochrome1':
                     colors = [(0.0, 0.0, 0.0), (0.7, 0.9, 1.0)]  # black → light blue
                 elif color_mode == 'monochrome2':
@@ -1846,8 +1848,10 @@ class swarmGrid:
         y = dataset['Flags_distance'].tolist()
 
         _, ax = plt.subplots(figsize=(10, 7), dpi=300)
+        plt.style.use('dark_background')
+        sns.set_style("darkgrid", {"grid.color": "white"})
 
-        plt.plot(x, y)
+        plt.plot(x, y, c='#1f77b4')
 
         if setup_name is not None and switch_step is not None:
             plt.axvline(x=switch_step, color='r', linestyle='--')

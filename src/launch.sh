@@ -55,7 +55,7 @@ output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_di
 ###########################################################################
 
 # COMMENT the following lines if you DON'T want to launch a new swarm rollout simulation. NB: this line modifies the "swarm_rollout_analysis_dir" parameter
-# output=$(mktemp); python3 -u swarm_rollout_main.py | tee ${output}; swarm_rollout_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u swarm_rollout_main.py | tee ${output}; swarm_rollout_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
