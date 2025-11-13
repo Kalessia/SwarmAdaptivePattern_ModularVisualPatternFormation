@@ -1600,11 +1600,15 @@ class swarmGrid:
 
     def write_controller_data_for_pogobots(self, run, gen, nb_eval, nb_ind, nn_controller_stacking_mode, analysis_file):
         
+        controller_id_str = f"ann{len(self.agent_controller)}"
+
         with open (analysis_file, 'w') as f:
             s = f"// flagAutomata individual controller run {run:03}, gen {gen:05}, eval {nb_eval:07}, nb_ind {nb_ind:03}\n"
-            s += self.agent_controller[-1].get_weights_biases_for_pogobots()
-            s += f"#define {self.agent_type.__name__}"
-            s += f"#define {nn_controller_stacking_mode}" # used in the coordinate system setups to link ann1 and ann2
+            s += self.agent_controller[-1].get_weights_biases_for_pogobots(controller_id_str)
+            s += f"#define {controller_id_str.upper()}_AGENT \"{self.agent_type.__name__}\"\n"
+            s += f"#define {controller_id_str.upper()}_CHEMICALS_TO_SPREAD_SIZE {self.agent_type.size_chemicals_to_spread}\n"
+            s += f"#define {controller_id_str.upper()}_PHENOTYPE_SIZE {self.agent_type.size_phenotype}\n"
+            s += f"#define {controller_id_str.upper()}_STACKING_MODE \"{nn_controller_stacking_mode}\"" # used in the coordinate system setups to link ann1 and ann2
             f.write(s)
 
     #---------------------------------------------------

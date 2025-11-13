@@ -55,10 +55,11 @@ class swarmAgent:
 ###########################################################################
 
 class agent1Output(swarmAgent):
+    size_state = 1
+    size_chemicals_to_spread = 1
+    size_phenotype = 1
+
     def __init__(self, pos, init_cell_state_value):
-        self.size_state = 1
-        self.size_chemicals_to_spread = 1
-        self.size_phenotype = 1
         super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
         self.init_state()
 
@@ -91,10 +92,11 @@ class agent1Output(swarmAgent):
 ###########################################################################
 
 class agent2Outputs(swarmAgent):
+    size_state = 2
+    size_chemicals_to_spread = 1
+    size_phenotype = 1
+
     def __init__(self, pos, init_cell_state_value):
-        self.size_state = 2
-        self.size_chemicals_to_spread = 1
-        self.size_phenotype = 1
         super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
         self.init_state()
 
@@ -128,10 +130,11 @@ class agent2Outputs(swarmAgent):
 ###########################################################################
 
 class agent3Outputs(swarmAgent):
+    size_state = 3
+    size_chemicals_to_spread = 2
+    size_phenotype = 1
+
     def __init__(self, pos, init_cell_state_value):
-        self.size_state = 3
-        self.size_chemicals_to_spread = 2
-        self.size_phenotype = 1
         super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
         self.init_state()
 
@@ -165,10 +168,11 @@ class agent3Outputs(swarmAgent):
 ###########################################################################
 
 class agentCoordinates_gradient(swarmAgent):
+    size_state = 3
+    size_chemicals_to_spread = 1
+    size_phenotype = 2
+
     def __init__(self, pos, init_cell_state_value):
-        self.size_state = 3
-        self.size_chemicals_to_spread = 1
-        self.size_phenotype = 2
         super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
         self.init_state()
 
@@ -202,10 +206,11 @@ class agentCoordinates_gradient(swarmAgent):
 ###########################################################################
 
 class agent2Outputs_RGB(swarmAgent):
+    size_state = 4
+    size_chemicals_to_spread = 1
+    size_phenotype = 3
+
     def __init__(self, pos, init_cell_state_value):
-        self.size_state = 4
-        self.size_chemicals_to_spread = 1
-        self.size_phenotype = 3
         super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
         self.init_state()
 
@@ -239,10 +244,11 @@ class agent2Outputs_RGB(swarmAgent):
 ###########################################################################
 
 class agent3Outputs_RGB(swarmAgent):
+    size_state = 5
+    size_chemicals_to_spread = 2
+    size_phenotype = 3
+
     def __init__(self, pos, init_cell_state_value):
-        self.size_state = 5
-        self.size_chemicals_to_spread = 2
-        self.size_phenotype = 3
         super().__init__(pos=pos, size_state=self.size_state, init_cell_state_value=init_cell_state_value)
         self.init_state()
 

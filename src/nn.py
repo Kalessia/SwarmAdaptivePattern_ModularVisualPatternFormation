@@ -104,7 +104,7 @@ class NeuralNetwork:
 
     #---------------------------------------------------
 
-    def get_weights_biases_for_pogobots(self): # ameliorer ^____________^
+    def get_weights_biases_for_pogobots(self, controller_id_str): # ameliorer ^____________^
         s_weights = ""
         s_biases = ""
         s_pointers_weights = ""
@@ -113,40 +113,44 @@ class NeuralNetwork:
         s_pointers_biases_sizes = ""
         s_pointers = ""
      
-        s_variables = f"uint16_t nb_layers = {len(self.weights)+1};\n"
-        s_variables += f"uint16_t input_size = {self.input_size};\n"
-        s_variables += f"uint16_t output_size = {self.output_size};\n"
+        s_variables = f"uint16_t {controller_id_str}_nb_layers = {len(self.weights)};  // nb_layers = 1 input layer + N hidden layers. Output layer excluded\n"
+        s_variables += f"uint16_t {controller_id_str}_input_size = {self.input_size};\n"
+        s_variables += f"uint16_t {controller_id_str}_output_size = {self.output_size};\n"
 
         for nb_layer in range(len(self.weights)):
             layer_id = f"l{nb_layer}_l{nb_layer+1}"
             nb_neurons_prev_layer = len(self.weights[nb_layer])
             nb_neurons_next_layer = len(self.weights[nb_layer][0])
-            s_variables += f"uint16_t nb_neurons_l{nb_layer} = {nb_neurons_prev_layer};\n"
-            s_weights += f"const double weights_{layer_id}[{nb_neurons_prev_layer}][{nb_neurons_next_layer}] = {(str(self.weights[nb_layer]).replace('[','{')).replace(']','}')};\n"
-            s_biases += f"const double biases_{layer_id}[{nb_neurons_next_layer}] = {(str(self.biases[nb_layer]).replace('[','{')).replace(']','}')};\n"
+            s_variables += f"uint16_t {controller_id_str}_nb_neurons_l{nb_layer} = {nb_neurons_prev_layer};\n"
+            s_weights += f"const double {controller_id_str}_weights_{layer_id}[{nb_neurons_prev_layer}][{nb_neurons_next_layer}] = {(str(self.weights[nb_layer]).replace('[','{')).replace(']','}')};\n"
+            s_biases += f"const double {controller_id_str}_biases_{layer_id}[{nb_neurons_next_layer}] = {(str(self.biases[nb_layer]).replace('[','{')).replace(']','}')};\n"
             
             if nb_layer > 0:
-                s_pointers_weights += f", weights_{layer_id}"
-                s_pointers_biases += f", biases_{layer_id}"
+                s_pointers_weights += f", {controller_id_str}_weights_{layer_id}"
+                s_pointers_biases += f", {controller_id_str}_biases_{layer_id}"
                 s_pointers_weights_sizes += f", {{{nb_neurons_prev_layer}, {nb_neurons_next_layer}}}"
                 s_pointers_biases_sizes += f", {nb_neurons_next_layer}"
             else:
-                s_pointers_weights += f"weights_{layer_id}"
-                s_pointers_biases += f"biases_{layer_id}"
+                s_pointers_weights += f"{controller_id_str}_weights_{layer_id}"
+                s_pointers_biases += f"{controller_id_str}_biases_{layer_id}"
                 s_pointers_weights_sizes += f"{{{nb_neurons_prev_layer}, {nb_neurons_next_layer}}}"
                 s_pointers_biases_sizes += f"{nb_neurons_next_layer}"
 
-        s_variables += f"uint16_t nb_neurons_l{nb_layer+1} = {nb_neurons_next_layer};\n" # output layer
+        s_variables += f"uint16_t {controller_id_str}_nb_neurons_l{nb_layer+1} = {nb_neurons_next_layer};\n" # output layer
 
-        s_pointers = f"const double weights[] = {{{s_pointers_weights}}};\n"
-        s_pointers += f"const double biases[] = {{{s_pointers_biases}}};\n"
-        s_pointers += f"const int weights_sizes[] = {{{s_pointers_weights_sizes}}};\n"
-        s_pointers += f"const int biases_sizes[] = {{{s_pointers_biases_sizes}}};\n"
+        s_pointers = f"const void* {controller_id_str}_weights[] = {{{s_pointers_weights}}};\n"
+        s_pointers += f"const double* {controller_id_str}_biases[] = {{{s_pointers_biases}}};\n"
+        s_pointers += f"const int {controller_id_str}_weights_sizes[][2] = {{{s_pointers_weights_sizes}}};\n"
+        s_pointers += f"const int {controller_id_str}_biases_sizes[] = {{{s_pointers_biases_sizes}}};\n"
+        s_pointers += f"double {controller_id_str}_input_layer[{self.input_size}] = {{{s_pointers_biases_sizes}}};\n"
+        s_pointers += f"double {controller_id_str}_output_layer[{self.output_size}] = {{{s_pointers_biases_sizes}}};\n"
 
-        s_define = f"\n#define ACTIVATION_FUNCTION {self.activation_function}_activation\n"
+        max_nb_neurons_all_layers = max([self.input_size] + self.hidden_layers + [self.output_size])
+        s_define = f"\n#define {controller_id_str.upper()}_MAX_NB_NEURONS_ALL_LAYERS {max_nb_neurons_all_layers}\n"
+        s_define = f"\n#define {controller_id_str.upper()}_ACTIVATION_FUNCTION_ARRAY {self.activation_function}_activation_array\n"
 
         return s_variables + s_weights + s_biases + s_pointers + s_define
-    
+
 
 ###########################################################################
 # Neural Network structure visualization
