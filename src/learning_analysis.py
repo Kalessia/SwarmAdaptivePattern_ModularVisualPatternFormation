@@ -369,7 +369,7 @@ def plot_all_runs_data(params):
     if params['evolutionary_settings']['env_name'] == "sliding_puzzle_incremental":
         switch_eval = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_switch_eval'] # switch_eval is the 1st evaluation of the new generation starting after the switch_eval defined in parameters
         density = params['evolutionary_settings']['sliding_puzzle_incremental']['sliding_puzzle_incremental_density_ticks']
-
+    
     # Plot_best_inds_ever
     dataset_path = params['analysis_dir']['root']+"/data_all_runs/data_evo_all_runs_best_inds_ever.csv"
     save_filename = params['analysis_dir']['root']+"/plots_all_runs/plot_evo_all_runs_best_inds_ever.png"
@@ -477,7 +477,9 @@ def plot_all_pop_fitnesses_boxplot(run, dataset_path, nb_evals, grid_size, switc
 def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, switch_eval, save_filename, params):
 
     dataset = pd.read_csv(dataset_path)
-    plt.figure(figsize=(12, 7), dpi=300)
+    # plt.figure(figsize=(12, 7), dpi=300)
+    fig, ax = plt.subplots(figsize=(14, 11), dpi=300)
+    fig.subplots_adjust(left=0.25, bottom=0.25, right=0.95, top=0.87)
 
     twenty_colors = [
         "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
@@ -485,7 +487,7 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, sw
         "#00429d", "#96ffea", "#ff66b3", "#00cc44", "#ffcc00",
         "#a6761d", "#009e73", "#f781bf", "#56b4e9", "#e41a1c",
     ]
-    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=twenty_colors)
+    ax.set_prop_cycle(color=twenty_colors)
 
     runs = dataset['Run'].unique()
     for run in runs:
@@ -497,23 +499,27 @@ def plot_best_inds_ever(dataset_path, nb_evals, grid_size, density, fluidity, sw
             evals.append(nb_evals)
             best_fitnesses_ever.append(best_fitnesses_ever[-1])
 
-        plt.step(evals, best_fitnesses_ever, where='post', label= f"run {run}") # plot
+        ax.step(evals, best_fitnesses_ever, where='post', label= f"run {run}") # plot
 
-    if switch_eval is not None:
-        plt.axvline(x=switch_eval, color='r', linestyle='--')
+    # if switch_eval is not None:
+    #     plt.axvline(x=switch_eval, color='r', linestyle='--')
 
-    plt.ylim(0, 1.1) # 0 and 1 are respectively min and max values of flag distance (fitness)
+    plt.ylim(-0.05, 1.05) # 0 and 1 are respectively min and max values of flag distance (fitness)
     plt.xlim(0, nb_evals)
-    plt.yticks([0, 0.5, 1.0], fontsize=18)
-    plt.xticks([0, nb_evals/2, nb_evals], fontsize=18)
-    plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} {params['grid']['grid_nb_rows']}x{params['grid']['grid_nb_cols']}, {params['evolutionary_settings']['nb_runs']} runs, only best ever", fontsize=18)
-    # plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} NxN, {params['evolutionary_settings']['nb_runs']} runs, only best ever", fontsize=18)
-    plt.xlabel("Evaluations", fontsize=18)
-    plt.ylabel("Distance", fontsize=18)
+    plt.yticks([0, 0.5, 1.0], fontsize=50)
+    plt.xticks([0, nb_evals/2, nb_evals], fontsize=50)
+    for label in plt.gca().get_xticklabels()[-1:]:
+        label.set_horizontalalignment('right')
+    plt.xlabel("Evaluations", fontsize=65, labelpad=-5)
+    plt.ylabel("Distance", fontsize=65, labelpad=5)
 
-    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=12, ncol=1, frameon=False)
-    plt.tight_layout(rect=[0, 0, 0.85, 1])
-    plt.savefig(save_filename, bbox_inches='tight')
+    plt.title(f"Learning, only best ever", fontsize=50, pad=20)
+    # plt.title(f"Learning $\\rho$={density}, $\\Phi$={fluidity}" + f"\n{params['grid']['flag_pattern']} NxN, {params['evolutionary_settings']['nb_runs']} runs, only best ever", fontsize=18)
+
+    # plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=12, ncol=1, frameon=False)
+    # plt.tight_layout(rect=[0, 0, 0.85, 1])
+    # plt.savefig(save_filename, bbox_inches='tight')
+    plt.savefig(save_filename)
     plt.clf()
     plt.close()
 

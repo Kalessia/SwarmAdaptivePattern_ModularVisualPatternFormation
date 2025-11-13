@@ -13,7 +13,7 @@ def plot_all_runs_flag_fitnesses():
 
 
 
-    swarm_rollout_path = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-italian-flag_16x16_modelA_4-[]-3_2-[5,5]-3_2025-10-21_01-56-46_swarm_rollout_2025-11-04_05-53-24"
+    swarm_rollout_path = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-italian-flag_16x16_modelC_4-[]-3_6-[5,5]-3_2025-10-21_01-37-55_swarm_rollout_2025-11-08_04-02-40"
 
     plt.style.use('dark_background')
     sns.set_style("darkgrid", {"grid.color": "white"})
@@ -39,10 +39,12 @@ def plot_all_runs_flag_fitnesses():
 
     for env_id, env_dims in enumerate(env_dims_list):
         for best_ind in best_inds:
-            _, ax = plt.subplots(figsize=(11, 7), dpi=300, constrained_layout=True)
+            # _, ax = plt.subplots(figsize=(12, 8), dpi=300, constrained_layout=True)
+            fig, ax = plt.subplots(figsize=(14, 11), dpi=300)
+            fig.subplots_adjust(left=0.25, bottom=0.25, right=0.95, top=0.87)
 
             time_window_start = swarm_rollout_params['environment']['time_window_start']
-            time_window_length = swarm_rollout_params['environment']['time_window_end'] - swarm_rollout_params['environment']['time_window_start'] + 1
+            time_window_length = swarm_rollout_params['environment']['time_window_end'] - swarm_rollout_params['environment']['time_window_start'] - 1
             rectangle = patches.Rectangle((time_window_start, 0), time_window_length, 1, linewidth=1, edgecolor=None, facecolor='lemonchiffon', alpha=0.5)
             ax.add_patch(rectangle)
 
@@ -66,15 +68,17 @@ def plot_all_runs_flag_fitnesses():
                     plt.plot(x, y, label=f"run {run}")
 
 
-            plt.ylim(0, 1) # 0 and 1 are respectively min and max values of flag distance
-            # plt.xlim(0, time_steps-1)
-            plt.yticks([0, 0.5, 1.0], fontsize=18)
-            plt.xticks([0, time_steps/2, time_steps-1], fontsize=18)
-            plt.xlabel("Steps", fontsize=18)
-            plt.ylabel("Distance", fontsize=18)
+            plt.ylim(-0.05, 1.05) # 0 and 1 are respectively min and max values of flag distance
+            # plt.xlim(-0.05, time_steps-0.95)
+            # ax.margins(x=0.02)
+            plt.yticks([0, 0.5, 1.0], fontsize=50)
+            plt.xticks([0, time_steps/2, time_steps-1], fontsize=50)
+            plt.xlabel("Steps", fontsize=65, labelpad=-5)
+            plt.ylabel("Distance", fontsize=65, labelpad=5)
 
-            plt.title(f"Swarm rollout of {best_ind}, {len(run_dirs)} repetitions\n{swarm_rollout_params['grid']['flag_pattern']} {swarm_rollout_params['grid']['grid_nb_rows']}x{swarm_rollout_params['grid']['grid_nb_cols']}", fontsize=18)
-            plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=12, ncol=1, frameon=False)
+            plt.title(f"{swarm_rollout_params['grid']['flag_pattern']} {env_dims[0]}x{env_dims[1]}", fontsize=55, pad=20)
+            # plt.title(f"{len(run_dirs)} rollouts of the best controller", fontsize=48, pad=20)
+            # plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=25, ncol=1, frameon=False)
 
             plt.savefig(f"{swarm_rollout_path}/plots_all_runs/flag_fitnesses_{best_ind}_env{env_id}.png")
             plt.clf()

@@ -61,6 +61,9 @@ def write_single_run_analysis(run, time_run, params):
 
 def plot_single_run_single_ind_data(run, best_ind_run, params):
 
+    if run != 0:
+        return
+
     time_run_ind = time.time()
     print(f"swarm_rollout_analysis plots run n.{run}, best_ind_{best_ind_run} - Starting")
 

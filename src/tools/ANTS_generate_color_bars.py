@@ -3,27 +3,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def plot_colorbar(color_mode, orientation='vertical'):
+    ticks = [0.0, 0.5, 1.0]
+    tick_labels = [f"{t:.1f}" for t in ticks]
+    label_fontsize = 35
+
     if color_mode == 'rgb':
         channels = ['R', 'G', 'B']
         colors = ['red', 'green', 'blue']
 
         for channel, color in zip(channels, colors):
-            fig = plt.figure(figsize=(1, 6))
+            fig = plt.figure(figsize=(2, 6))
             cax = fig.add_axes([0.25, 0.05, 0.3, 0.9])  # [left, bottom, width, height] en fraction de figure
             
             cmap = mpl.colors.LinearSegmentedColormap.from_list(f"cmap_{channel}", [(0, 0, 0), mpl.colors.to_rgb(color)])
             norm = mpl.colors.Normalize(vmin=0, vmax=1)
-            ticks = np.linspace(0,1,5)
 
             cb = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, orientation='vertical')
             cb.set_ticks(ticks)
-            cb.set_ticklabels([f"{t:.1f}" for t in ticks])
+            cb.set_ticklabels(tick_labels)
+            cb.ax.tick_params(labelsize=label_fontsize)
 
             plt.savefig(f"colorbar_rgb_{channel}_{orientation}.png", dpi=300)
             plt.close()
 
     else: # Monochrome1 e Monochrome2
-        fig = plt.figure(figsize=(1, 6))
+        fig = plt.figure(figsize=(2, 6))
         cax = fig.add_axes([0.25, 0.05, 0.3, 0.9])  # [left, bottom, width, height] en fraction de figure
 
         if color_mode == 'monochrome1':
@@ -44,11 +48,11 @@ def plot_colorbar(color_mode, orientation='vertical'):
 
         cmap = mpl.colors.ListedColormap(np.linspace(colors[0], colors[1], 100))
         norm = mpl.colors.Normalize(vmin=0, vmax=1)
-        ticks = np.linspace(0,1,5)
 
         cb = mpl.colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, orientation='vertical')
         cb.set_ticks(ticks)
-        cb.set_ticklabels([f"{t:.1f}" for t in ticks])
+        cb.set_ticklabels(tick_labels)
+        cb.ax.tick_params(labelsize=label_fontsize)
 
         plt.savefig(f"colorbar_{color_mode}_{orientation}.png", dpi=300)
         plt.close()
