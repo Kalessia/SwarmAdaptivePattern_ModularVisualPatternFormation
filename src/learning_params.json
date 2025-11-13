@@ -1,8 +1,8 @@
 {
     "evolutionary_settings info": "nb_runs: number of independent evolutionary learnings to run \nnb_evals: the max budjet of allowed evaluations for one entire learning process \nsliding_puzzle_nb_intrasteps: activate (value: scalar, nb of intrasteps) or not (value: false) the repeated forward NN computation of each robot controller in the space of two subsequent steps",
     "evolutionary_settings": {
-        "nb_runs": 10,
-        "nb_evals": 3000,
+        "nb_runs": 1,
+        "nb_evals": 500,
         "env_name info": "env_name in ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']",
         "env_name": "sliding_puzzle_coordinates",
         "sliding_puzzle_density": 1.0,

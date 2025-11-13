@@ -104,7 +104,7 @@ class NeuralNetwork:
 
     #---------------------------------------------------
 
-    def get_weights_biases_for_pogobots(self, controller_id_str): # ameliorer ^____________^
+    def get_weights_biases_for_pogobots(self, controller_id_str):
         s_weights = ""
         s_biases = ""
         s_pointers_weights = ""
@@ -147,7 +147,7 @@ class NeuralNetwork:
 
         max_nb_neurons_all_layers = max([self.input_size] + self.hidden_layers + [self.output_size])
         s_define = f"\n#define {controller_id_str.upper()}_MAX_NB_NEURONS_ALL_LAYERS {max_nb_neurons_all_layers}\n"
-        s_define = f"\n#define {controller_id_str.upper()}_ACTIVATION_FUNCTION_ARRAY {self.activation_function}_activation_array\n"
+        s_define += f"#define {controller_id_str.upper()}_ACTIVATION_FUNCTION_ARRAY {self.activation_function}_activation_array\n"
 
         return s_variables + s_weights + s_biases + s_pointers + s_define
 

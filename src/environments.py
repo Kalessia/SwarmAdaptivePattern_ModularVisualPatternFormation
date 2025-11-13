@@ -458,14 +458,20 @@ class swarmGrid:
         elif flag_pattern == "coordinates":
             assert self.size_phenotype == 2
             for cell in self.grid_map_pos_agent.keys():
-                flag_target[cell] = [round((1.0 / (self.grid_nb_cols-1)) * cell[1], 2), # linear_gradient_left_right = x component
-                                    round((1.0 / (self.grid_nb_rows-1)) * cell[0], 2)] # linear_gradient_up_down = y component
-
-                # flag_target[cell] = [round((1.0 / (self.grid_nb_cols-1)) * cell[1], 2), # linear_gradient_left_right = x component
-                #                     0.7] # linear_gradient_up_down = y component
                 
-                # flag_target[cell] = [0.7, # linear_gradient_left_right = x component
-                #                     round((1.0 / (self.grid_nb_rows-1)) * cell[0], 2)] # linear_gradient_up_down = y component
+                if self.grid_nb_rows == 1:
+                    y_component = 0.5
+                else:
+                    y_component = round((1.0 / (self.grid_nb_rows-1)) * cell[0], 2)
+                
+                if self.grid_nb_cols == 1:
+                    x_component = 0.5
+                else:
+                    x_component = round((1.0 / (self.grid_nb_cols-1)) * cell[1], 2)
+
+                flag_target[cell] = [x_component, # linear_gradient_left_right = x component
+                                    y_component]  # linear_gradient_up_down = y component
+
 
         elif flag_pattern == "bn-SU":
 
