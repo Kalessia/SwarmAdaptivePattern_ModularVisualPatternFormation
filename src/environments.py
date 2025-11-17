@@ -266,7 +266,7 @@ def sliding_puzzle_multiEnvs(env_eval_function_params, analysis_dir, run, gen, n
     averaged_multiEnvs_mean_tw_flags_distances = sum(multiEnvs_mean_tw_flags_distances)/len(multiEnvs_mean_tw_flags_distances)
     if averaged_multiEnvs_mean_tw_flags_distances < best_fit:
         multiEnvs[env_id].write_multiEnvs_flag_data_learning(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, time_steps=time_steps, flags_distances=multiEnvs_flags_distances, in_t_window_zone_bools=in_t_window_zone_bools, flags=multiEnvs_flags, flags_signals=multiEnvs_flags_signals, weights=weights, deleted_agents_per_step=multiEnvs_deleted_agents_per_step, nb_moves_per_step=multiEnvs_nb_moves_per_step, analysis_dir=analysis_dir)
-        multiEnvs[env_id].write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
+        multiEnvs[env_id].write_controller_data_for_pogobots(run=run, gen=gen, nb_eval=nb_eval, nb_ind=nb_ind, nn_controller_stacking_mode=env_eval_function_params['nn_controller_stacking_mode'], analysis_file=analysis_dir['data']+ f"/data_env_run_{run:03}_individual_controller_pogobots.txt") # overwrite previous saved files, to keep the best ind controller
 
     # Verbose debug
     global verbose_str
@@ -570,6 +570,7 @@ class swarmGrid:
             vertical_threshold_left = band_thickness
             vertical_threshold_right = self.grid_nb_cols - 1 - band_thickness
 
+            # Version used in simulations (paper ANTS26)
             for cell in self.grid_map_pos_agent.keys():
                 if cell[1] <= vertical_threshold_left:
                     flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
@@ -577,6 +578,16 @@ class swarmGrid:
                     flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
                 else:
                     flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+
+            # Version used for Pogobots (small flags)
+            # offset = int(self.grid_nb_cols % 3 == 0)
+            # for cell in self.grid_map_pos_agent.keys():
+            #     if cell[1] <= vertical_threshold_left - offset:
+            #         flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
+            #     elif cell[1] >= vertical_threshold_right + offset:
+            #         flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
+            #     else:
+            #         flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
 
 
         elif flag_pattern == "rgb-french-cockade":
