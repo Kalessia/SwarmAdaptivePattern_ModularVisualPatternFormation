@@ -17,12 +17,12 @@ def add_experiment_to_experiences_data(experiences_data, experiences_dir_to_plot
 
     # Modify the name of the models for the paper
     new_names_models = {
-        "modelGECCO_4-[3]-2": "GECCO_[3]",
-        "modelGECCO_4-[5,5]-2": "GECCO_[5,5]",
+        "modelGECCO_4-[3]-2": "SP_[3]",
+        "modelGECCO_4-[5,5]-2": "SP_[5,5]",
         "modelD_8-[3]-3": "ANN-G_[3]",
         "modelD_8-[5,5]-3": "ANN-G_[5,5]",
-        "modelGECCO_4-[3]-4": "GECCO_[3]",
-        "modelGECCO_4-[5,5]-4": "GECCO_[5,5]",
+        "modelGECCO_4-[3]-4": "SP_[3]",
+        "modelGECCO_4-[5,5]-4": "SP_[5,5]",
         "modelD_8-[3]-5": "ANN-G_[3]",
         "modelD_8-[5,5]-5": "ANN-G_[5,5]",
         "modelA_4-[]-3_2-[3]-1": "PIX-A_[3]",

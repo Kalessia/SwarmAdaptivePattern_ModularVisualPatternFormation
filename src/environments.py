@@ -442,7 +442,7 @@ class swarmGrid:
                         else:
                             flag_target[cell] = 0.0 # black
                 else:
-                    radius = np.floor(min((flag_pattern/2), (self.grid_nb_cols/2)))
+                    radius = np.floor(min((self.grid_nb_rows/2), (self.grid_nb_cols/2)))
                     if ((cell[0] - center[0])**2 + (cell[1] - center[1])**2 <= radius**2):
                         if cell[1] <= center[1]:
                             flag_target[cell] = 0.0 # black
@@ -537,6 +537,10 @@ class swarmGrid:
         elif flag_pattern == "bn-smile":
 
             scales = {
+                "bn-smile-4x4": 1,
+                "bn-smile-5x5": 1,
+                "bn-smile-6x6": 1,
+                "bn-smile-7x7": 1,
                 "bn-smile-8x8": 1,
                 "bn-smile-16x16": 2,
                 "bn-smile-24x24": 3,
@@ -547,18 +551,36 @@ class swarmGrid:
             assert flag_pattern in scales, f"Error in environments.py, build_flag - Pattern {flag_pattern} not supported."
             scale = scales[flag_pattern]
 
-            pattern_black_cells_8x8_list = [(1,1), (1,2), (1,5), (1,6),
-                                            (2,1), (2,2), (2,5), (2,6),
-                                            (4,0), (4,7),
-                                            (5,0), (5,1), (5,6), (5,7),
-                                            (6,1), (6,2), (6,3), (6,4), (6,5), (6,6),
-                                            (7,2), (7,3), (7,4), (7,5)]
+            if self.grid_nb_rows >= 8:
+                pattern_black_cells_8x8_list = [(1,1), (1,2), (1,5), (1,6),
+                                                (2,1), (2,2), (2,5), (2,6),
+                                                (4,0), (4,7),
+                                                (5,0), (5,1), (5,6), (5,7),
+                                                (6,1), (6,2), (6,3), (6,4), (6,5), (6,6),
+                                                (7,2), (7,3), (7,4), (7,5)]
 
-            black_cells = []
-            for row, col in pattern_black_cells_8x8_list:
-                for shift_row in range(scale):
-                    for shift_col in range(scale):
-                        black_cells.append((row * scale + shift_row, col * scale + shift_col))
+                black_cells = []
+                for row, col in pattern_black_cells_8x8_list:
+                    for shift_row in range(scale):
+                        for shift_col in range(scale):
+                            black_cells.append((row * scale + shift_row, col * scale + shift_col))
+            
+            elif self.grid_nb_rows == 4:
+                black_cells = [(1,1), (1,2), (2,0), (2,3), (3,1), (3,2)]
+
+            elif self.grid_nb_rows == 5:
+                black_cells = [(1,1), (1,3), (2,0), (2,4), (3,1), (3,2), (3,3), (4,2)]
+
+            elif self.grid_nb_rows == 6:
+                black_cells = [(1,1), (1,4), (2,1), (2,4), (3,0), (3,5), (4,1), (4,2), (4,3), (4,4), (5,2), (5,3)]
+
+            elif self.grid_nb_rows == 7:
+                black_cells = [(1,1), (1,2), (1,4), (1,5),
+                                (2,1), (2,2), (2,4), (2,5),
+                                (3,0), (3,6),
+                                (4,0), (4, 1), (4,5), (4,6),
+                                (5,1), (5,2), (5,3), (5,4), (5,5),
+                                (6,2), (6,3), (6,4)]
 
             for cell in self.grid_map_pos_agent.keys():
                 flag_target[cell] = 0.0 if cell in black_cells else 1.0
@@ -571,23 +593,23 @@ class swarmGrid:
             vertical_threshold_right = self.grid_nb_cols - 1 - band_thickness
 
             # Version used in simulations (paper ANTS26)
-            for cell in self.grid_map_pos_agent.keys():
-                if cell[1] <= vertical_threshold_left:
-                    flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
-                elif cell[1] >= vertical_threshold_right:
-                    flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
-                else:
-                    flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
-
-            # Version used for Pogobots (small flags)
-            # offset = int(self.grid_nb_cols % 3 == 0)
             # for cell in self.grid_map_pos_agent.keys():
-            #     if cell[1] <= vertical_threshold_left - offset:
+            #     if cell[1] <= vertical_threshold_left:
             #         flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
-            #     elif cell[1] >= vertical_threshold_right + offset:
+            #     elif cell[1] >= vertical_threshold_right:
             #         flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
             #     else:
             #         flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+
+            # Version used for Pogobots (small flags)
+            offset = int(self.grid_nb_cols % 3 == 0)
+            for cell in self.grid_map_pos_agent.keys():
+                if cell[1] <= vertical_threshold_left - offset:
+                    flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
+                elif cell[1] >= vertical_threshold_right + offset:
+                    flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
+                else:
+                    flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
 
 
         elif flag_pattern == "rgb-french-cockade":
