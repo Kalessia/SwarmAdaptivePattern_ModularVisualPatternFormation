@@ -124,6 +124,9 @@ def deduce_agent_type(params, ann_index=1):
     # ann_index = 1 → ANN1 (direct learning or coordinate system)
     if ann_index == 1:
 
+        if flag_pattern == "coordinates":
+            return agentCoordinates_gradient
+        
         if flag_pattern.startswith("rgb"):
             if params['ann1_nn_controller']['nb_neuronsPerOutputs'] == 5:
                 return agent3Outputs_RGB
@@ -264,7 +267,7 @@ if (__name__ == "__main__"):
         swarm_rollout_params['ann2_nn_controller'] = {"nn_controller_stacking_mode": None}
         swarm_rollout_params['best_ind_per_run_dict'] = get_best_ind_per_run_dict(dataset_path=swarm_rollout_params['ann1_learning_path']+"/learning/data_all_runs/data_evo_all_runs_best_ind_per_run_per_phase.csv")
         swarm_rollout_params['ann1_best_ind_ever'], swarm_rollout_params['ann1_best_ind_ever_fitness'] = get_best_ind_ever(dataset_path=swarm_rollout_params['ann1_learning_path']+"/learning/data_all_runs/data_evo_all_runs_best_ind_per_run.csv")
-        swarm_rollout_params = init_all_runs_analysis(learning_analysis_dir_root=swarm_rollout_params['ann1_coordinates_learning_path'], params=swarm_rollout_params)
+        swarm_rollout_params = init_all_runs_analysis(learning_analysis_dir_root=swarm_rollout_params['ann1_learning_path'], params=swarm_rollout_params)
         swarm_rollout_params['nn_controller']['agent_type'] = deduce_agent_type(params=swarm_rollout_params, ann_index=1)
         swarm_rollout_params['nn_controller']['controller'] = [ann1]
 
