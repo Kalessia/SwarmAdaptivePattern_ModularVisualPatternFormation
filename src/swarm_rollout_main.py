@@ -10,7 +10,7 @@ import numpy as np
 import copy
 
 from environments import sliding_puzzle, sliding_puzzle_multiEnvs
-from agents import agent2Outputs, agent3Outputs, agent3Outputs_Devert2011, agentCoordinates_gradient, agent2Outputs_RGB, agent3Outputs_RGB 
+from agents import agent2Outputs, agent3Outputs, agentCoordinates_gradient, agent2Outputs_RGB, agent3Outputs_RGB 
 from nn import NeuralNetwork
 
 from swarm_rollout_analysis import init_all_runs_analysis, init_one_run_analysis, write_single_run_analysis
