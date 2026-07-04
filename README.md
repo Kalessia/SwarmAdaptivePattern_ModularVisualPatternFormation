@@ -29,7 +29,7 @@ Keywords: Adaptive Pattern Formation, Swarm Robotics, Multi-Cellular Development
 <img src="media/flag_target_centered-half-discs_16x16.png" height="220">
 </td>
 <td align="center">
-<img src="media/centered-half-discs_16x16_modelC_4-[]-3_6-[5,5]-1_run002.gif" height="220">
+<img src="media/centered-half-discs_16x16_modelC_run002.gif" height="220">
 </td>
 </tr>
 </table>
@@ -46,7 +46,7 @@ Keywords: Adaptive Pattern Formation, Swarm Robotics, Multi-Cellular Development
 <img src="media/flag_target_bn-smile_16x16.png" height="220">
 </td>
 <td align="center">
-<img src="media/bn-smile_16x16_modelC_4-[]-3_6-[5,5]-1_2025-10-21_01-34-38_run009.gif" height="220">
+<img src="media/bn-smile_16x16_modelC_run009.gif" height="220">
 </td>
 </tr>
 </table>
@@ -63,7 +63,7 @@ Keywords: Adaptive Pattern Formation, Swarm Robotics, Multi-Cellular Development
 <img src="media/flag_target_bn-SU_16x16.png" height="220">
 </td>
 <td align="center">
-<img src="media/bn-SU_16x16_modelC_4-[]-3_6-[5,5]-1_2025-10-21_01-31-22_run015.gif" height="220">
+<img src="media/bn-SU_16x16_modelC_run015.gif" height="220">
 </td>
 </tr>
 </table>
@@ -80,7 +80,7 @@ Keywords: Adaptive Pattern Formation, Swarm Robotics, Multi-Cellular Development
 <img src="media/flag_target_rgb-italian-flag_16x16.png" height="220">
 </td>
 <td align="center">
-<img src="media/rgb-italian-flag_16x16_modelC_4-[]-3_6-[5,5]-3_2025-10-21_01-37-55_run019.gif" height="220">
+<img src="media/rgb-italian-flag_16x16_modelC_run019.gif" height="220">
 </td>
 </tr>
 </table>
@@ -97,7 +97,7 @@ Keywords: Adaptive Pattern Formation, Swarm Robotics, Multi-Cellular Development
 <img src="media/flag_target_rgb-french-cockade_16x16.png" height="220">
 </td>
 <td align="center">
-<img src="media/rgb-french-cockade_16x16_modelC_4-[]-3_6-[5,5]-3_2025-10-21_01-38-59_run014.gif" height="220">
+<img src="media/rgb-french-cockade_16x16_modelC_run014.gif" height="220">
 </td>
 </tr>
 </table>
@@ -114,7 +114,7 @@ Keywords: Adaptive Pattern Formation, Swarm Robotics, Multi-Cellular Development
 <img src="media/flag_target_rgb-rainbow-full_16x16.png" height="220">
 </td>
 <td align="center">
-<img src="media/rgb-rainbow-full_16x16_modelC_4-[]-3_6-[5,5]-3_2025-10-21_01-41-02_run003.gif" height="220">
+<img src="media/rgb-rainbow-full_16x16_modelC_run003.gif" height="220">
 </td>
 </tr>
 </table>
