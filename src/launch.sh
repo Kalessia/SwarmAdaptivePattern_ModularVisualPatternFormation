@@ -22,7 +22,7 @@ plot_with_animation_bool=False
 # Used in learning_analysis.py and coordinates_learning_main.py only
 # example path: "/home/kalessia/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2025-03-10_15-39-37_two-bands_8x5"
 # example path on cluster: "/scratch/sliding_puzzle_coordinates_2025-10-15_00-35-40_bn-SU_12x12"
-learning_analysis_dir=""
+learning_analysis_dir="/home/loi/flagAutomata/data_plots/simulationAnalysis/sliding_puzzle_coordinates_2026-05-07_15-42-08_rgb-french-cockade-3x3_3x3"
 
 # Specify a precise coordinate_learning path to plot coordinate_learning figures for a specific coordinate_learning simulation or to launch a related swarm_rollout simulation
 # Used in coordinates_learning_analysis.py only
@@ -41,7 +41,7 @@ swarm_rollout_analysis_dir=""
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new learning simulation. NB: this line modifies the "learning_analysis_dir" parameter
-output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+# output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
@@ -49,7 +49,7 @@ output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis
 ###########################################################################
 
 # COMMENT the following line if you DON'T want to launch a new learning simulation. NB: this line modifies the "learning_analysis_dir" parameter
-# output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; coordinates_learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
+output=$(mktemp); python3 -u coordinates_learning_main.py --learning_analysis_dir ${learning_analysis_dir} | tee ${output}; coordinates_learning_analysis_dir=$(tail -n 1 ${output}); rm ${output}
 
 
 ###########################################################################
@@ -75,9 +75,9 @@ output=$(mktemp); python3 -u learning_main.py | tee ${output}; learning_analysis
 ###########################################################################
 
 # # COMMENT the following lines if you DON'T want to plot the learning data (map_xy_flag)
-# python3 -u coordinates_learning_analysis.py --coordinates_learning_analysis_dir ${coordinates_learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
-#                                             --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
-#                                             --plot_with_animation_bool ${plot_with_animation_bool}
+python3 -u coordinates_learning_analysis.py --coordinates_learning_analysis_dir ${coordinates_learning_analysis_dir} --with_parallelization_bool ${with_parallelization_bool} \
+                                            --with_parallelization_nb_free_cores ${with_parallelization_nb_free_cores} \
+                                            --plot_with_animation_bool ${plot_with_animation_bool}
 
 
 ###########################################################################

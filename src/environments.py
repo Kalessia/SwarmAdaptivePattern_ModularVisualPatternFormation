@@ -592,16 +592,22 @@ class swarmGrid:
             vertical_threshold_left = band_thickness
             vertical_threshold_right = self.grid_nb_cols - 1 - band_thickness
 
-            # Version used in simulations (paper ANTS26)
-            # for cell in self.grid_map_pos_agent.keys():
-            #     if cell[1] <= vertical_threshold_left:
-            #         flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
-            #     elif cell[1] >= vertical_threshold_right:
-            #         flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
-            #     else:
-            #         flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+            # Version used in simulations (paper EA26)
+            for cell in self.grid_map_pos_agent.keys():
+                if cell[1] <= vertical_threshold_left:
+                    flag_target[cell] = [0.0, 0.60, 0.20] # green in the region left
+                elif cell[1] >= vertical_threshold_right:
+                    flag_target[cell] = [1.0, 0.0, 0.0] # red in the region right
+                else:
+                    flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
 
-            # Version used for Pogobots (small flags)
+
+        elif flag_pattern == "rgb-italian-flag-3x3": # version used for Pogobots (small flags)
+            assert self.size_phenotype == 3
+            band_thickness = int(self.grid_nb_cols/3)
+            vertical_threshold_left = band_thickness
+            vertical_threshold_right = self.grid_nb_cols - 1 - band_thickness
+
             offset = int(self.grid_nb_cols % 3 == 0)
             for cell in self.grid_map_pos_agent.keys():
                 if cell[1] <= vertical_threshold_left - offset:
@@ -654,7 +660,17 @@ class swarmGrid:
                         flag_target[cell] = [1.0, 0.0, 0.0] # red in the outer region
                     else:
                         flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
-            
+
+
+        elif flag_pattern == "rgb-french-cockade-3x3":
+            assert self.size_phenotype == 3
+            for cell in self.grid_map_pos_agent.keys():
+                if cell in [(0,0), (0,2), (2,0), (2,2)]:
+                    flag_target[cell] = [1.0, 0.0, 0.0] # red in the outer region 
+                elif cell in [(0,1), (1,0), (1,2), (2,1)]:
+                    flag_target[cell] = [1.0, 1.0, 1.0] # white in the middle region
+                else:
+                    flag_target[cell] = [0.0, 0.0, 1.0] # blue in the inner region         
 
         elif flag_pattern == "rgb-rainbow-full":
             assert self.size_phenotype == 3
@@ -736,7 +752,7 @@ class swarmGrid:
         if verbose_debug:
             global verbose_str
             verbose_str += f"\n<build_flag> - Flag pattern just built: {flag_pattern}.\n{self.convert_flag_to_list(flag_target, self.size_phenotype)}"
-
+        
         return self.convert_flag_to_list(flag_target, self.size_phenotype)
 
     #---------------------------------------------------

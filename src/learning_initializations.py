@@ -94,7 +94,7 @@ def check_params_validity(params):
         print(f"Error in learning_initializations.py - The env_name parameter must be one of the following: {patterns}")
         exit_bool = True
 
-    patterns = ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile2', 'bn-smile', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']
+    patterns = ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile2', 'bn-smile', 'rgb-italian-flag', 'rgb-italian-flag-3x3', 'rgb-french-cockade', 'rgb-french-cockade-3x3', 'rgb-rainbow-full', 'rgb-rainbow-arrow']
     if params['grid']['flag_pattern'] not in patterns:
         print(f"Error in learning_initializations.py - The flag_pattern parameter must be one of the following: {patterns}")
         exit_bool = True

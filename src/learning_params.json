@@ -1,8 +1,8 @@
 {
     "evolutionary_settings info": "nb_runs: number of independent evolutionary learnings to run \nnb_evals: the max budjet of allowed evaluations for one entire learning process \nsliding_puzzle_nb_intrasteps: activate (value: scalar, nb of intrasteps) or not (value: false) the repeated forward NN computation of each robot controller in the space of two subsequent steps",
     "evolutionary_settings": {
-        "nb_runs": 1,
-        "nb_evals": 500,
+        "nb_runs": 20,
+        "nb_evals": 1000,
         "env_name info": "env_name in ['sliding_puzzle', 'sliding_puzzle_incremental', 'sliding_puzzle_coordinates', 'sliding_puzzle_multiEnvs', 'sliding_puzzle_multiEnvs_coordinates']",
         "env_name": "sliding_puzzle_coordinates",
         "sliding_puzzle_density": 1.0,
@@ -21,11 +21,11 @@
         "sliding_puzzle_nb_intrasteps": false
     },
 
-    "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile', 'bn-smile2', 'rgb-italian-flag', 'rgb-french-cockade', 'rgb-rainbow-full', 'rgb-rainbow-arrow']. If env=sliding_puzzle_coordinates or env=sliding_puzzle_multiEnvs_coordinates, the flag_pattern is settled to 'coordinates', i.e. two 2D patterns: linear_gradient_left_right (x component) and linear_gradient_up_down (y component) \ninit_cell_state_value: value is a scalar (defined) or null (random initialization)",
+    "grid info": "flag_pattern in ['two-bands', 'three-bands', 'centered-disc', 'not-centered-disc', 'centered-half-discs', 'not-centered-half-discs', 'bn-SU', 'bn-smile', 'bn-smile2', 'rgb-italian-flag', 'rgb-italian-flag-3x3', 'rgb-french-cockade', 'rgb-french-cockade-3x3', 'rgb-rainbow-full', 'rgb-rainbow-arrow']. If env=sliding_puzzle_coordinates or env=sliding_puzzle_multiEnvs_coordinates, the flag_pattern is settled to 'coordinates', i.e. two 2D patterns: linear_gradient_left_right (x component) and linear_gradient_up_down (y component) \ninit_cell_state_value: value is a scalar (defined) or null (random initialization)",
     "grid": {
-        "flag_pattern": "rgb-italian-flag",
+        "flag_pattern": "rgb-french-cockade-3x3",
         "grid_nb_rows": 3,
-        "grid_nb_cols": 5,
+        "grid_nb_cols": 3,
         "init_cell_state_value": 0.0
     },
 

@@ -28,9 +28,17 @@ labels = []
 # filepath = f"/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-italian-flag_16x16_modelC_4-[]-3_6-[5,5]-3_2025-10-21_01-37-55/run_019/plots/env/run_019_gen_01623_eval_0027595_individual_003/flag/component3/env0/plot_env_flag_run_019_gen_01623_eval_0027595_individual_003_step_{idx:03}.png"
 # filepath = f"/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-rainbow-full_16x16_modelC_4-[]-3_6-[5,5]-3_2025-10-21_01-41-02/run_003/plots/env/run_003_gen_01642_eval_0027918_individual_003/flag/component3/env0/plot_env_flag_run_003_gen_01642_eval_0027918_individual_003_step_{idx:03}.png"
 
-target_filepath = f"/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-rainbow-full_16x16_modelA_4-[]-3_2-[5,5]-3_2025-10-21_01-59-02/plots_all_runs/plot_env0_flag_target_component3.png"
+# Targets for both models
+# target_filepath = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_bn-smile_16x16_modelA_4-[]-3_2-[5,5]-1_2025-10-21_01-54-53/plots_all_runs/plot_env0_flag_target_component0.png"
+# target_filepath = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_bn-SU_16x16_modelA_4-[]-3_2-[5,5]-1_2025-10-21_01-53-30/plots_all_runs/plot_env0_flag_target_component0.png"
+# target_filepath = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_centered-half-discs_16x16_modelA_4-[]-3_2-[5,5]-1/plots_all_runs/plot_env0_flag_target_component0.png"
+# target_filepath = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-french-cockade_16x16_modelA_4-[]-3_2-[5,5]-3_2025-10-21_01-57-47/plots_all_runs/plot_env0_flag_target_component3.png"
+# target_filepath = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-italian-flag_16x16_modelA_4-[]-3_2-[5,5]-3_2025-10-21_01-56-46/plots_all_runs/plot_env0_flag_target_component3.png"
+# target_filepath = "/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-rainbow-full_16x16_modelA_4-[]-3_2-[5,5]-3_2025-10-21_01-59-02/plots_all_runs/plot_env0_flag_target_component3.png"
+
 images.append(target_filepath)
-labels.append(f"target")
+# labels.append(f"target")
+labels.append(r"$\bf{TARGET}$")
 
 for idx in indexes_flags_to_plot:
     filepath = f"/home/loi/flagAutomata/data_plots/ANTS/centered-half-discs_16x16_models-A-C-D-GECCO/sliding_puzzle_coordinates_2025-05-22_14-07-36_centered-half-discs_16x16/learning_coordinates_rgb-rainbow-full_16x16_modelA_4-[]-3_2-[5,5]-3_2025-10-21_01-59-02/run_005/plots/env/run_005_gen_01468_eval_0023499_individual_010/flag/component3/env0/plot_env_flag_run_005_gen_01468_eval_0023499_individual_010_step_{idx:03}.png"
